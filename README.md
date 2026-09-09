@@ -4,7 +4,12 @@ GBV News AI is a postgraduate research project that aims to develop an ethical, 
 
 The project is in its initial development stage. Trial collection has begun, but no validated research dataset is available yet. The immediate priority is to validate reliable news scrapers and review extraction quality before building the research corpus. Planned reporting sources include Daily Nation, Citizen Digital, The Standard, and The Star Kenya, with collection intended to include both GBV-related and non-GBV reporting. The current Nation trial uses archived Daily Nation reporting, as described below.
 
-Future work will include annotation, task-specific fine-tuning and evaluation of multilingual models such as AfroXLMR, location extraction, geocoding, and a Flask dashboard for human review and mapping. These are planned research capabilities; data collection and validation come first. Privacy, provenance, reproducibility, and human oversight will guide development throughout.
+The repository includes a read-only Flask monitor for collection operations. Future
+work will include annotation, task-specific fine-tuning and evaluation of multilingual
+models such as AfroXLMR, location extraction, geocoding, and human-review and mapping
+interfaces. These remain planned research capabilities; data collection and validation
+come first. Privacy, provenance, reproducibility, and human oversight will guide
+development throughout.
 
 ## Corpus Collection Monitor
 
@@ -14,15 +19,58 @@ progress, searchable article metadata, complete extraction lineage, and infrastr
 health. Counts come from Supabase; GCS is consulted only for read-only bucket health.
 Full article text is not displayed.
 
-Apply the versioned scan-state migration once per database, then start the app:
+### Run the monitor locally
+
+Run the following commands from the repository root. Create and activate a virtual
+environment if one does not already exist:
+
+```bash
+cd /Users/mutua/Documents/Projects/gbv-news-ai
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
+Configure the required Supabase and GCS variables using the project configuration
+described in `.env.example`. Do not commit credentials. Authenticate to Google Cloud
+locally with Application Default Credentials; no service-account key file is needed:
+
+```bash
+gcloud auth application-default login
+python3 scripts/test_infrastructure_connections.py
+```
+
+Apply the versioned scan-state migration once per database if it has not already been
+applied:
 
 ```bash
 psql "$DIRECT_DATABASE_URL" -f migrations/20260909_add_collection_run_scans.sql
+```
+
+Start the application with Gunicorn:
+
+```bash
 gunicorn -b 127.0.0.1:8080 main:app
 ```
 
-Open `http://127.0.0.1:8080/`. Available routes are `/`, `/runs`, `/articles`, and
-`/health`. The first monitor has no collection controls or destructive actions.
+Open `http://127.0.0.1:8080/`. Available pages are:
+
+- Dashboard: `http://127.0.0.1:8080/`
+- Collection runs: `http://127.0.0.1:8080/runs`
+- Articles and extraction lineage: `http://127.0.0.1:8080/articles`
+- Infrastructure health: `http://127.0.0.1:8080/health`
+
+For local development with debug mode and automatic reload, use:
+
+```bash
+flask --app main:app run --debug --port 8080
+```
+
+Stop either server with Ctrl-C. The monitor has no collection controls or destructive
+actions. If startup or `/health` fails, rerun
+`python3 scripts/test_infrastructure_connections.py` and verify the configured database,
+bucket, and ADC access before changing application code.
+
 App Engine uses `app.yaml`; required secret/configuration handling is documented in
 [`docs/app_engine_deployment.md`](docs/app_engine_deployment.md).
 
