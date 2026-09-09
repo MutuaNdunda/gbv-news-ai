@@ -56,8 +56,13 @@ def publication_month(value):
 
 def index_url(publisher, month, resume=None):
     year, number = map(int, month.split("-"))
-    host = publisher.PUBLISHER_HOSTS[0].removeprefix("www.")
-    query = [("url", host), ("matchType", "domain"),
+    default_scope = (publisher.PUBLISHER_HOSTS[0].removeprefix("www."), "domain")
+    scope = getattr(publisher, "CDX_INDEX_SCOPE", default_scope)
+    if (not isinstance(scope, tuple) or len(scope) != 2
+            or not all(isinstance(value, str) for value in scope)):
+        scope = default_scope
+    target, match_type = scope
+    query = [("url", target), ("matchType", match_type),
              ("from", f"{year}{number:02d}01"),
              ("to", f"{year}{number:02d}{calendar.monthrange(year, number)[1]}"),
              ("output", "json"), ("fl", "timestamp,original"),
@@ -157,8 +162,12 @@ def run(config, run_name, services=None):
     failures = 0
     index_client = Client(("web.archive.org",), config["delay"],
                           os.environ.get("SCRAPER_USER_AGENT", "GBVResearchBot/0.1"),
-                          url_validator=lambda url: urlsplit(url).path == "/cdx/search/cdx")
-    article_client = Client(("web.archive.org",), config["delay"], index_client.user_agent)
+                          url_validator=lambda url: urlsplit(url).path == "/cdx/search/cdx",
+                          request_stage="cdx_index")
+    article_client = Client(
+        ("web.archive.org",), config["delay"], index_client.user_agent,
+        request_stage="wayback_replay",
+    )
     report(run_name, run_id, state, objects, articles, scans)
     try:
         for month in months:
@@ -184,13 +193,19 @@ def run(config, run_name, services=None):
                     if payload is None:
                         response = index_client.fetch(query)
                         if response is None:
+                            scan["failed"] += 1
                             scan.update(status="index_failed", error=index_client.last_failure)
+                            LOG.warning(
+                                "%s %s CDX index unavailable: %s",
+                                name, month, index_client.last_failure,
+                            )
                             failures += 1
                             break
                         try:
                             payload = response.json()
                             parse_index(payload)
                         except (ValueError, TypeError):
+                            scan["failed"] += 1
                             scan.update(status="index_failed", error={"kind": "invalid_index_response"})
                             failures += 1
                             break
@@ -274,6 +289,7 @@ def run(config, run_name, services=None):
                         scan["status"] = "index_page_limit"
                         break
                     if next_resume in seen_tokens:
+                        scan["failed"] += 1
                         scan.update(status="index_failed", error={"kind": "repeated_resume_key"})
                         failures += 1
                         break

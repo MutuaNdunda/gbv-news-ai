@@ -25,6 +25,28 @@ def article():
 
 
 class PersistenceTests(unittest.TestCase):
+    def test_distinct_raw_and_processed_versions_get_immutable_object_names(self):
+        objects, articles = FakeObjects(), FakeArticles()
+        service = CollectionPersistence(objects, articles)
+        first = article()
+        second = article()
+        second["article_text"] = "Updated synthetic article body"
+        second["content_hash"] = hashlib.sha256(
+            second["article_text"].encode()
+        ).hexdigest()
+
+        first_raw = service.store_raw(
+            "citizen", first["canonical_url"], b"<html>first</html>", "2026-08"
+        )
+        second_raw = service.store_raw(
+            "citizen", second["canonical_url"], b"<html>second</html>", "2026-08"
+        )
+        self.assertNotEqual(first_raw.uri, second_raw.uri)
+        self.assertTrue(service.persist_article(first, first_raw, uuid4()))
+        self.assertTrue(service.persist_article(second, second_raw, uuid4()))
+        processed = [name for role, name in objects.writes if role == "processed"]
+        self.assertEqual(len(set(processed)), 2)
+
     def test_raw_precedes_processed_and_database_and_retry_is_idempotent(self):
         objects, articles = FakeObjects(), FakeArticles()
         service = CollectionPersistence(objects, articles)

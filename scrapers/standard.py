@@ -15,6 +15,7 @@ HOSTS = ('web.archive.org',)
 PUBLISHER_HOSTS = ('standardmedia.co.ke', 'www.standardmedia.co.ke')
 CAPTURE = '20200812220501'
 LISTINGS = (f'https://web.archive.org/web/{CAPTURE}/https://standardmedia.co.ke/',)
+CDX_INDEX_SCOPE = ('standardmedia.co.ke/', 'prefix')
 FEEDS = ()
 BODY_SELECTORS = ('.standard-archive-body', '.article-body', '.story-content', '[itemprop="articleBody"]')
 

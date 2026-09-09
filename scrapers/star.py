@@ -12,6 +12,7 @@ HOSTS = ('web.archive.org',)
 PUBLISHER_HOSTS = ('the-star.co.ke', 'www.the-star.co.ke')
 CAPTURE = '20251227053140'
 LISTINGS = (f'https://web.archive.org/web/{CAPTURE}/https://www.the-star.co.ke/',)
+CDX_INDEX_SCOPE = ('www.the-star.co.ke/', 'prefix')
 FEEDS = ()
 BODY_SELECTORS = ('.story-content',)
 

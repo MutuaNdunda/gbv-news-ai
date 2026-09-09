@@ -41,9 +41,9 @@ and extraction versions remain deduplicated across runs.
 
 ## Outputs
 
-- `gs://<GCS_RAW_BUCKET>/<publisher>/<year>/<month>/<article-id>.html`: original HTML,
+- `gs://<GCS_RAW_BUCKET>/<publisher>/<capture-year>/<capture-month>/<article-id>/<raw-content-hash>.html`: original HTML,
   persisted before parsing.
-- `gs://<GCS_PROCESSED_BUCKET>/<parser-version>/<publisher>/<year>/<month>/<article-id>.json`:
+- `gs://<GCS_PROCESSED_BUCKET>/<parser-version>/<publisher>/<year>/<month>/<article-id>/<content-hash>.json`:
   normalized JSON with dates and provenance.
 - `gs://<GCS_RUNS_BUCKET>/runs/<run-name>/monthly_counts.csv`: 32 rows, ordered August to January, containing
   publisher, publication month, newly saved articles for the run, and total stored

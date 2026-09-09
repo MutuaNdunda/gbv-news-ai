@@ -451,7 +451,7 @@ Publisher parsers and collection scripts then add provenance and run fields.
 | `requested_url` | URL requested by the collection script; a replay URL in current archive flows. |
 | `discovery_url` / `discovery_method` | Listing or CDX query provenance and discovery method. |
 | `http_status` | Successful article response status. |
-| `article_id` | SHA-256 of `"<source>:<canonical_url>"`; also the raw/JSON filename. |
+| `article_id` | SHA-256 of `"<source>:<canonical_url>"`; stable parent prefix for content-addressed raw/JSON objects. |
 | `raw_object_uri` / `raw_object_generation` | Added after raw-first GCS persistence and stored with version lineage. |
 | `publication_month` | Monthly collector only; derived from `published_at`. |
 | `collection_run` | Monthly collector run name; durable linkage uses `collection_run_id`. |
@@ -516,7 +516,8 @@ Collectors do not use local paths as durable storage or resume state.
 - Collection skips an existing URL or an existing `(source, content_hash)` pair.
   Therefore identical text is deduplicated within a publisher but remains traceable
   if published by different sources.
-- GCS create preconditions prevent raw/processed replacement, and the database unique
+- Content hashes distinguish immutable raw and processed objects beneath each logical
+  article prefix. GCS create preconditions prevent replacement, and the database unique
   constraints resolve repeated logical articles and identical parser/content versions.
 
 The relevant implementation is in `scrapers/common.py`, `storage/persistence.py`,

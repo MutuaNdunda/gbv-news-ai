@@ -31,39 +31,56 @@ def allowed_url(url, hosts):
 
 class Client:
     """Check robots, throttle all requests, and validate each redirect before fetching."""
-    def __init__(self, hosts, delay=2.0, user_agent='GBVResearchBot/0.1', url_validator=None):
+    def __init__(self, hosts, delay=2.0, user_agent='GBVResearchBot/0.1',
+                 url_validator=None, request_stage='http'):
         self.hosts = hosts
         self.delay = delay
         self.user_agent = user_agent
         self.url_validator = url_validator
+        self.request_stage = request_stage
         self.session = requests.Session()
         self.session.headers['User-Agent'] = user_agent
         self.robots = {}
         self.last_request = 0.0
         self.last_failure = None
 
-    def _request(self, url):
+    @staticmethod
+    def _log_url(url):
+        """Return useful request context without retaining query values or credentials."""
+        parts = urlsplit(url)
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, '', ''))
+
+    def _request(self, url, stage=None):
+        stage = stage or self.request_stage
+        safe_url = self._log_url(url)
+        host = urlsplit(url).hostname or 'unknown'
         for attempt in range(3):
             time.sleep(max(0, self.delay - (time.monotonic() - self.last_request)))
             self.last_request = time.monotonic()
             try:
                 response = self.session.get(url, timeout=(10, 30), allow_redirects=False)
-            except requests.RequestException:
+            except requests.RequestException as exc:
                 if attempt == 2:
                     raise
-                LOGGER.info('Retrying request after network failure')
+                LOGGER.info(
+                    'Retrying stage=%s host=%s url=%s exception=%s attempt=%d/3',
+                    stage, host, safe_url, type(exc).__name__, attempt + 1,
+                )
                 time.sleep(2 ** attempt)
                 continue
             if response.status_code not in (500, 502, 503, 504) or attempt == 2:
                 return response
-            LOGGER.info('Retrying transient HTTP %s', response.status_code)
+            LOGGER.info(
+                'Retrying stage=%s host=%s url=%s status=%s attempt=%d/3',
+                stage, host, safe_url, response.status_code, attempt + 1,
+            )
             time.sleep(2 ** attempt)
 
     def permitted(self, url):
         parts = urlsplit(url)
         origin = f'{parts.scheme}://{parts.netloc}'
         if origin not in self.robots:
-            response = self._request(origin + '/robots.txt')
+            response = self._request(origin + '/robots.txt', stage='robots')
             robot = RobotFileParser()
             if response.status_code == 404:
                 robot.parse(['User-agent: *', 'Allow: /'])
@@ -96,8 +113,15 @@ class Client:
                 return response
         except requests.RequestException as exc:
             self.last_failure = {'kind': type(exc).__name__,
+                                 'stage': self.request_stage,
+                                 'host': urlsplit(url).hostname,
+                                 'url': self._log_url(url),
                                  'http_status': exc.response.status_code if exc.response is not None else None}
-            LOGGER.warning('Fetch failed (%s)', type(exc).__name__)
+            LOGGER.warning(
+                'Fetch failed stage=%s host=%s url=%s exception=%s',
+                self.request_stage, self.last_failure['host'],
+                self.last_failure['url'], type(exc).__name__,
+            )
         if self.last_failure is None:
             self.last_failure = {'kind': 'redirect_limit'}
         return None

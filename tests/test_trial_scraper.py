@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from scrapers import citizen, nation, standard, star
 from scrapers.common import Client, allowed_url, discover, parse_article
 from scripts import trial_scraper
-from scripts.trial_scraper import raw_identity_url
+from scripts.trial_scraper import archive_capture_month, raw_identity_url
 from storage.persistence import CollectionPersistence, article_identifier
 from tests.storage_fakes import FakeArticles, FakeObjects, FakeRuns
 
@@ -57,6 +57,7 @@ class TrialTests(unittest.TestCase):
         self.assertEqual(len(article_identifier('citizen', URL)), 64)
         replay = 'https://web.archive.org/web/20260908000000/' + URL
         self.assertEqual(raw_identity_url(citizen, replay), URL)
+        self.assertEqual(archive_capture_month(citizen, replay), "2026-09")
 
     def test_trial_run_uses_gcs_artifacts_and_supabase_lineage(self):
         objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()

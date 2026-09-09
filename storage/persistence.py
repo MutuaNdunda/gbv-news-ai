@@ -38,8 +38,9 @@ class CollectionPersistence:
         """Persist raw evidence before parsing or database indexing."""
         identifier = article_identifier(source, identity_url)
         year, number = object_month(month).split("-")
-        name = f"{source}/{year}/{number}/{identifier}.html"
         payload = raw_html if isinstance(raw_html, bytes) else raw_html.encode("utf-8")
+        raw_hash = hashlib.sha256(payload).hexdigest()
+        name = f"{source}/{year}/{number}/{identifier}/{raw_hash}.html"
         return self.objects.write_bytes(
             "raw", name, payload, "text/html; charset=utf-8", create_only=True
         )
@@ -52,7 +53,7 @@ class CollectionPersistence:
         month = article.get("publication_month") or article.get("published_at")
         year, number = object_month(month).split("-")
         name = (f"{article['parser_version']}/{article['source']}/{year}/{number}/"
-                f"{article['article_id']}.json")
+                f"{article['article_id']}/{article['content_hash']}.json")
         processed_article = dict(article)
         # Run linkage belongs in Supabase; keeping it out of the canonical processed
         # object makes an identical extraction byte-for-byte idempotent across retries.

@@ -72,6 +72,15 @@ def raw_identity_url(publisher, url: str) -> str:
         return normalize_url(url)
 
 
+def archive_capture_month(publisher, url: str) -> str | None:
+    """Return YYYY-MM for a validated archive replay, if the source provides one."""
+    try:
+        timestamp = publisher.archive_parts(url)[0]
+    except (AttributeError, TypeError, ValueError):
+        return None
+    return f"{timestamp[:4]}-{timestamp[4:6]}"
+
+
 def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                          run_name=None, services=None):
     persistence, articles, runs = services or build_services()
@@ -121,7 +130,10 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                     if not publisher.accepts(response.url):
                         continue
                     try:
-                        raw = persistence.store_raw(name, identity_url, response.content)
+                        raw = persistence.store_raw(
+                            name, identity_url, response.content,
+                            archive_capture_month(publisher, response.url),
+                        )
                     except Exception:
                         LOGGER.exception("Raw GCS persistence failed for %s", url)
                         continue

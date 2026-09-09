@@ -172,8 +172,8 @@ The collectors keep object payloads in private GCS buckets and structured lineag
 Supabase:
 
 ```text
-gs://<GCS_RAW_BUCKET>/<source>/<year>/<month>/<article-id>.html
-gs://<GCS_PROCESSED_BUCKET>/<parser-version>/<source>/<year>/<month>/<article-id>.json
+gs://<GCS_RAW_BUCKET>/<source>/<capture-year>/<capture-month>/<article-id>/<raw-content-hash>.html
+gs://<GCS_PROCESSED_BUCKET>/<parser-version>/<source>/<publication-year>/<publication-month>/<article-id>/<content-hash>.json
 gs://<GCS_RUNS_BUCKET>/runs/<run-name>/progress.json
 gs://<GCS_RUNS_BUCKET>/runs/<run-name>/monthly_counts.csv
 gs://<GCS_RUNS_BUCKET>/runs/<run-name>/collection.log
