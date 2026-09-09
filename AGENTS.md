@@ -128,7 +128,18 @@ Trial data must not automatically be treated as final research data.
 
 Do not move experimental datasets into the primary research dataset until their extraction and cleaning quality has been reviewed.
 
-Large datasets and raw article collections should not normally be committed to Git.
+The repository `README.md` is the operator guide for trial collection. It documents
+environment setup, offline validation, bounded single-snapshot trials, monthly smoke
+tests, full retrospective collection, output inspection, monitoring, and resume/error
+handling. Keep that guide aligned whenever collector commands, options, paths, or scan
+statuses change.
+
+All collected data is local-only and must not be committed or pushed to Git. The
+repository `.gitignore` excludes everything under `data/` except `README.md`
+documentation and `.gitkeep` placeholders. This covers raw HTML, normalized records,
+run logs, counts, progress state, cached discovery responses, annotation exports, and
+future collection-output directories. Never use `git add -f` to add these artifacts.
+Small synthetic regression fixtures belong under `tests/fixtures/` and may be tracked.
 
 ---
 
@@ -710,7 +721,20 @@ git status
 
 Keep changes scoped to the task.
 
-Do not commit generated datasets, secrets, large model checkpoints, or temporary files unless explicitly required.
+Do not commit generated or collected datasets, secrets, large model checkpoints, or
+temporary files. Collected data under `data/` must remain local even when a task asks
+for other project changes to be committed or pushed.
+
+Before committing or pushing, verify that Git is not tracking collected data:
+
+```bash
+git status --short
+git ls-files data
+```
+
+Any output from the second command must be limited to intentional `README.md` and
+`.gitkeep` files. If a collected artifact is already tracked, remove it from Git's
+index without deleting the local copy, then recheck the staged diff.
 
 Before committing:
 

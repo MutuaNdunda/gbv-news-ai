@@ -1,3 +1,71 @@
-data/trials/raw/
-data/raw/
+# Local configuration (keep safe example files trackable)
 .env
+.env.*
+!.env.example
+!.env.*.example
+app.deploy.yaml
+
+# Python environments, bytecode, and packaging
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Test, lint, and notebook caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.ipynb_checkpoints/
+
+# All collected datasets and collection-run artifacts; retain only documentation
+# and empty-directory placeholders. This broad rule also protects future data
+# subdirectories that collection scripts may introduce.
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+!/data/**/README.md
+
+# Model weights and training artifacts (keep model code/configuration trackable)
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+/models/**/pytorch_model*.bin
+/models/**/checkpoint-*/
+/checkpoints/
+/runs/
+/wandb/
+
+# Local Flask state, databases, and logs
+instance/
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite3-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.log
+/logs/
+
+# Editor and operating-system files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+._*
+Thumbs.db

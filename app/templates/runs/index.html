@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Runs{% endblock %}{% block content %}<h1 class="h3">Collection runs</h1>
+<div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Run</th><th>Status</th><th>Window</th><th>Started</th><th>Finished</th><th>Articles</th><th>Scans</th></tr></thead><tbody>
+{% for run, articles, complete, scans in rows %}<tr><td><a href="{{ url_for('runs.detail', run_id=run.id) }}">{{ run.run_name }}</a></td><td>{{ run.status }}</td><td>{{ run.start_month or '—' }}–{{ run.end_month or '—' }}</td><td>{{ run.started_at }}</td><td>{{ run.finished_at or '—' }}</td><td>{{ articles }}</td><td>{{ complete }}/{{ scans }}</td></tr>{% else %}<tr><td colspan="7">No runs</td></tr>{% endfor %}</tbody></table></div>
+<p class="text-secondary">Page {{ page }} · {{ total }} total</p>{% endblock %}
