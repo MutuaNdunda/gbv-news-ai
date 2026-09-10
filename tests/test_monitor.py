@@ -83,6 +83,14 @@ class MonitorRouteTests(unittest.TestCase):
         self.assertEqual(articles.filters["month"], "2026-08")
         self.assertEqual(articles.filters["parser_version"], "citizen-test")
 
+    def test_articles_source_filter_lists_all_publishers(self):
+        app, _ = self.make_app()
+        response = app.test_client().get("/articles")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        for source in ("nation", "citizen", "standard", "star", "tuko", "kenyans"):
+            self.assertIn(f">{source}</option>", html)
+
     def test_health_returns_503_when_a_read_check_fails(self):
         app, _ = self.make_app(False)
         self.assertEqual(app.test_client().get("/health").status_code, 503)

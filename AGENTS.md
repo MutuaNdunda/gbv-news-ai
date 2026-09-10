@@ -34,6 +34,8 @@ Initial collection targets include:
 * Citizen Digital
 * The Standard
 * The Star Kenya
+* Tuko
+* Kenyans.co.ke
 
 Additional sources may be added later.
 
@@ -53,16 +55,20 @@ The intended high-level repository structure is:
 ├── scrapers/
 │   ├── nation.py
 │   ├── citizen.py
+│   ├── kenyans.py
 │   ├── standard.py
-│   └── star.py
+│   ├── star.py
+│   └── tuko.py
 │
 ├── data/
 │   ├── trials/
 │   │   ├── raw/
 │   │   │   ├── nation/
 │   │   │   ├── citizen/
+│   │   │   ├── kenyans/
 │   │   │   ├── standard/
-│   │   │   └── star/
+│   │   │   ├── star/
+│   │   │   └── tuko/
 │   │   └── processed/
 │   │
 │   ├── raw/
@@ -114,8 +120,10 @@ Source-specific trial data should use directories such as:
 ```text
 data/trials/raw/nation/
 data/trials/raw/citizen/
+data/trials/raw/kenyans/
 data/trials/raw/standard/
 data/trials/raw/star/
+data/trials/raw/tuko/
 ```
 
 Cleaned or normalized trial data should be stored under:
@@ -256,8 +264,10 @@ Example:
 scrapers/
 ├── nation.py
 ├── citizen.py
+├── kenyans.py
 ├── standard.py
-└── star.py
+├── star.py
+└── tuko.py
 ```
 
 Common functionality may later be moved into shared modules such as:
@@ -268,8 +278,10 @@ scrapers/
 ├── utils.py
 ├── nation.py
 ├── citizen.py
+├── kenyans.py
 ├── standard.py
-└── star.py
+├── star.py
+└── tuko.py
 ```
 
 Shared functionality may include:

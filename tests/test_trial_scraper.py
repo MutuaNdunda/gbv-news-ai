@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
 
-from scrapers import citizen, nation, standard, star
+from scrapers import citizen, kenyans, nation, standard, star, tuko
 from scrapers.common import Client, allowed_url, discover, parse_article
 from scripts import trial_scraper
 from scripts.trial_scraper import archive_capture_month, raw_identity_url
@@ -20,6 +20,14 @@ def parse_fixture(html, url):
 
 
 class TrialTests(unittest.TestCase):
+    def test_all_six_publishers_are_registered(self):
+        self.assertEqual(
+            set(trial_scraper.SOURCES),
+            {"nation", "citizen", "standard", "star", "tuko", "kenyans"},
+        )
+        self.assertIs(trial_scraper.SOURCES["tuko"], tuko)
+        self.assertIs(trial_scraper.SOURCES["kenyans"], kenyans)
+
     def test_metadata_and_null_author(self):
         result = parse_fixture(FIXTURE.read_text(), URL)
         self.assertEqual(result['title'], 'County schools open')

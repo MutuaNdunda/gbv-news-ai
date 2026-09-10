@@ -35,3 +35,15 @@ class CollectionRunScanModelTests(unittest.TestCase):
             self.assertIn(phrase, sql)
         self.assertNotIn("CREATE POLICY", sql)
         self.assertIn("index_exhausted", TERMINAL_SCAN_STATUSES)
+
+    def test_source_expansion_migration_and_models_allow_new_publishers(self):
+        sql = Path("migrations/20260910_expand_collection_sources.sql").read_text()
+        for constraint in ("articles_source_check", "collection_run_scans_source_check"):
+            self.assertIn(f"DROP CONSTRAINT IF EXISTS {constraint}", sql)
+            self.assertIn(f"ADD CONSTRAINT {constraint}", sql)
+        for source in ("tuko", "kenyans"):
+            self.assertIn(f"'{source}'", sql)
+            for table in (Article.__table__, CollectionRunScan.__table__):
+                checks = " ".join(str(item.sqltext) for item in table.constraints
+                                  if hasattr(item, "sqltext"))
+                self.assertIn(source, checks)

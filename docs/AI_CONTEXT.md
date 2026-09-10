@@ -9,7 +9,7 @@ near-real-time multilingual system that will identify, classify, geotag, and map
 gender-based violence (GBV) reporting in Kenyan digital news. The repository is in
 the **data-collection MVP** phase. Its current objective is reliable, reproducible
 collection and manual validation of broad news samples from Daily Nation, Citizen
-Digital, The Standard, and The Star Kenya.
+Digital, The Standard, The Star Kenya, Tuko, and Kenyans.co.ke.
 
 Implemented technologies are Python, Requests, Beautiful Soup, lxml, Google Cloud
 Storage, Supabase PostgreSQL, SQLAlchemy/psycopg, the Internet Archive CDX API/Wayback
@@ -54,7 +54,8 @@ gbv-news-ai/
 │   ├── app_engine_deployment.md
 │   └── collection_protocol.md
 ├── migrations/
-│   └── 20260909_add_collection_run_scans.sql
+│   ├── 20260909_add_collection_run_scans.sql
+│   └── 20260910_expand_collection_sources.sql
 ├── models/
 │   ├── classification/          # empty placeholder
 │   └── ner/                     # empty placeholder
@@ -64,9 +65,11 @@ gbv-news-ai/
 │   ├── archive.py
 │   ├── common.py
 │   ├── citizen.py
+│   ├── kenyans.py
 │   ├── nation.py
 │   ├── standard.py
-│   └── star.py
+│   ├── star.py
+│   └── tuko.py
 ├── scripts/
 │   ├── collect_monthly.py
 │   ├── test_infrastructure_connections.py
@@ -80,11 +83,14 @@ gbv-news-ai/
 └── tests/
     ├── fixtures/
     │   ├── citizen_archive_article.html
+    │   ├── kenyans_archive_article.html
     │   ├── nation_archive_article.html
     │   ├── standard_archive_article.html
     │   ├── star_archive_article.html
+    │   ├── tuko_archive_article.html
     │   └── trial_article.html
     ├── test_citizen_archive.py
+    ├── test_kenyans_archive.py
     ├── test_collection_run_scans.py
     ├── test_monitor.py
     ├── test_monitor_services.py
@@ -93,12 +99,14 @@ gbv-news-ai/
     ├── test_persistence.py
     ├── test_standard_archive.py
     ├── test_star_archive.py
+    ├── test_tuko_archive.py
     ├── test_trial_scraper.py
     └── storage_fakes.py
 ```
 
-The initial Supabase article/run schema is mapped by the repository. A versioned SQL
-migration adds `collection_run_scans`; it has been applied to the configured database.
+The initial Supabase article/run schema is mapped by the repository. Versioned SQL
+migrations add `collection_run_scans` and expand article/scan source constraints for
+Tuko and Kenyans.co.ke. Apply migrations in filename order to each database.
 
 ## 3. Root Files
 
@@ -190,7 +198,7 @@ links to replay links, rejects premium-labelled links, and deduplicates original
 **Inputs/outputs:** Archived listing HTML and replay URLs in; validated
 `(timestamp, original_url)` pairs or archive article URLs out.
 
-**Called by:** All four publisher modules.
+**Called by:** All six publisher modules.
 
 **Edit this when:** Archive replay syntax or shared archive discovery changes.
 
@@ -277,13 +285,33 @@ Star replay pages; depends on shared scraper modules, Beautiful Soup, and dateti
 
 **Do not put here:** Cross-source orchestration, databases, or ML logic.
 
+### `scrapers/tuko.py`
+
+**Purpose:** Tuko archive discovery and parsing from the configured August 2026
+homepage seed and compatible Wayback captures.
+
+**Key components:** Numeric-ID story validation beneath one to three section path
+components, canonical restoration, promotional/related/ad/figure cleanup from
+`.post__content`, ISO publication metadata normalization, archive provenance, and
+parser version `tuko-archive-1.0`.
+
+### `scrapers/kenyans.py`
+
+**Purpose:** Kenyans.co.ke archive discovery and parsing from the configured July
+2024 homepage seed and compatible Wayback captures.
+
+**Key components:** Strict `/news/<numeric-id>-<slug>` validation, canonical
+restoration, JSON-LD metadata, Drupal news-body extraction, ISO publication metadata
+normalization, archive provenance, and parser version `kenyans-archive-1.0`. August
+2026 CDX results include compatible news captures, with non-exhaustive coverage.
+
 ### `scripts/trial_scraper.py`
 
 **Purpose:** Executable bounded, single-snapshot trial collector.
 
 **Key components:**
 
-- `SOURCES` registers the four publisher modules.
+- `SOURCES` registers the six publisher modules.
 - Supabase repositories provide existing URLs and `(source, content_hash)` identities.
 - `candidates` uses source-specific expanded discovery when available, otherwise feeds
   then listings.
@@ -352,7 +380,7 @@ publication-window logic, or reporting changes.
 
 ### `tests/`
 
-**Purpose:** Offline `unittest` regression coverage. The five HTML fixtures are small,
+**Purpose:** Offline `unittest` regression coverage. The seven HTML fixtures are small,
 synthetic representations of inspected layouts, not collected research data.
 
 - `test_trial_scraper.py`: shared metadata/body parsing, URL safety, paywall/canonical
@@ -365,6 +393,10 @@ synthetic representations of inspected layouts, not collected research data.
   listings, round-robin candidates, pagination, and rejection paths.
 - `test_star_archive.py`: metadata/body/date extraction, discovery, paywalls, canonical
   and redirect restrictions.
+- `test_tuko_archive.py`: numeric-ID URL rules, discovery, metadata/body/date parsing,
+  cleanup, canonical restoration, provenance, and rejection paths.
+- `test_kenyans_archive.py`: news URL rules, Drupal-body and metadata parsing,
+  canonical restoration, provenance, and rejection paths.
 - `test_monthly_collection.py`: month attribution, CDX continuation, GCS-backed
   resume/idempotence, and index-failure pausing through offline fakes.
 - `test_persistence.py`: raw-first ordering, GCS/database failures, retry behavior,
@@ -427,7 +459,7 @@ Publisher parsers and collection scripts then add provenance and run fields.
 
 | Field | Current behavior |
 |---|---|
-| `source` | Required internal key: `nation`, `citizen`, `standard`, or `star`. |
+| `source` | Required internal key: `nation`, `citizen`, `standard`, `star`, `tuko`, or `kenyans`. |
 | `url` | Normalized original publisher URL passed into shared parsing, not replay URL. |
 | `canonical_url` | Required normalized publisher canonical; used for identity/deduplication. |
 | `title` | Required headline from JSON-LD, Open Graph, or `h1`. |
@@ -686,7 +718,7 @@ AI_CONTEXT.md.
 
 ### Implemented
 
-- Source-specific archive URL validation, discovery, and parsing for four publishers.
+- Source-specific archive URL validation, discovery, and parsing for six publishers.
 - Shared URL normalization, host/port restrictions, robots checks, throttling, retries,
   redirect validation, metadata/body extraction, and content hashing.
 - Bounded single-snapshot trials and retrospective monthly CDX collection.
@@ -730,8 +762,9 @@ AI_CONTEXT.md.
 - Language and Kenya relevance require manual verification.
 - Raw HTML may be incomplete, restricted, malformed, or unavailable; these attempts
   are logged and skipped.
-- Only `collection_run_scans` currently has a checked-in migration; the initial
-  Supabase tables predate repository migration history. There is no annotation UI, ML layer,
+- Only `collection_run_scans` and the source-constraint expansion currently have
+  checked-in migrations; the initial Supabase tables predate repository migration
+  history. There is no annotation UI, ML layer,
   prospective scheduler, or end-to-end latency instrumentation.
 - Tests cover important deterministic behavior but do not perform live archive
   compatibility checks or broad extraction-quality evaluation.

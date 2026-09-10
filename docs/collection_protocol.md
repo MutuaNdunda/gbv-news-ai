@@ -2,14 +2,14 @@
 
 The collection window is **1 January–31 August 2026, inclusive**. Discovery scans
 archive capture months from August backwards to January, for Nation, Citizen,
-Standard, and Star in each month. Publication metadata, rather than capture or
+Standard, Star, Tuko, and Kenyans.co.ke in each month. Publication metadata, rather than capture or
 retrieval time, determines whether an article belongs in this corpus and which
 monthly count it contributes to. The stated publication calendar date is retained;
 unknown timezones are not silently converted to UTC.
 
 ## Sampling and scope
 
-Collect broad reporting candidates from the four publishers, without gender or
+Collect broad reporting candidates from the six publishers, without gender or
 GBV keyword selection. Every record still needs Kenya-relevance and extraction
 quality review. The 5,000 target in the proposal is a minimum **annotated** corpus,
 including GBV and non-GBV reporting; it is not an ingestion stopping rule.
@@ -35,7 +35,8 @@ against the same run name; Supabase advisory locking rejects concurrent use. Add
 `--max-index-pages 1 --max-fetches-per-month 2`. These limits apply to each
 publisher/capture-month scan and are recorded as incomplete coverage, not success.
 
-`--source citizen` (repeatable) restricts publishers. Resume requires the same
+`--source citizen` (repeatable) restricts publishers. Valid keys are `nation`,
+`citizen`, `standard`, `star`, `tuko`, and `kenyans`. Resume requires the same
 configuration; choose a new run name to change limits or dates. Existing articles
 and extraction versions remain deduplicated across runs.
 

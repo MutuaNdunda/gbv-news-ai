@@ -53,7 +53,7 @@ class MonthlyTests(unittest.TestCase):
         objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()
         persistence = CollectionPersistence(objects, articles)
         publishers = {}
-        for name in ("nation", "citizen", "standard", "star"):
+        for name in ("nation", "citizen", "standard", "star", "tuko", "kenyans"):
             publisher = Mock(PUBLISHER_HOSTS=(name + ".example",))
             publisher.is_article = lambda url: True
             publisher.accepts = lambda url: True
@@ -100,8 +100,8 @@ class MonthlyTests(unittest.TestCase):
             first_order = list(order)
             monthly.run(config, "test-run", services)
             self.assertEqual(order, first_order)
-            self.assertEqual(len(articles.versions), 32)
-            self.assertEqual(len(scans.rows), 32)
+            self.assertEqual(len(articles.versions), 48)
+            self.assertEqual(len(scans.rows), 48)
             self.assertTrue(all(row["status"] == "index_exhausted" for row in scans.rows.values()))
 
     def test_nation_cdx_timeout_records_context_and_is_not_empty_coverage(self):

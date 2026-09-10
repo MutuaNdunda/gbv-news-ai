@@ -2,7 +2,7 @@
 
 GBV News AI is a postgraduate research project that aims to develop an ethical, human-supervised system for identifying, classifying, geotagging, and mapping gender-based violence (GBV) reporting in Kenyan digital news. The planned system will investigate multilingual approaches for English, Swahili, Sheng, and code-switched content, where available.
 
-The project is in its initial development stage. Trial collection has begun, but no validated research dataset is available yet. The immediate priority is to validate reliable news scrapers and review extraction quality before building the research corpus. Planned reporting sources include Daily Nation, Citizen Digital, The Standard, and The Star Kenya, with collection intended to include both GBV-related and non-GBV reporting. The current Nation trial uses archived Daily Nation reporting, as described below.
+The project is in its initial development stage. Trial collection has begun, but no validated research dataset is available yet. The immediate priority is to validate reliable news scrapers and review extraction quality before building the research corpus. Reporting sources include Daily Nation, Citizen Digital, The Standard, The Star Kenya, Tuko, and Kenyans.co.ke, with collection intended to include both GBV-related and non-GBV reporting. The current trials use archived publisher reporting, as described below.
 
 The repository includes a read-only Flask monitor for collection operations. Future
 work will include annotation, task-specific fine-tuning and evaluation of multilingual
@@ -45,6 +45,7 @@ applied:
 
 ```bash
 psql "$DIRECT_DATABASE_URL" -f migrations/20260909_add_collection_run_scans.sql
+psql "$DIRECT_DATABASE_URL" -f migrations/20260910_expand_collection_sources.sql
 ```
 
 Start the application with Gunicorn:
@@ -128,7 +129,7 @@ For the quickest end-to-end check, collect up to two Citizen articles:
 python3 scripts/trial_scraper.py --source citizen --limit 2 --run-name trial-citizen-smoke
 ```
 
-To sample all four publishers, omit `--source`:
+To sample all six publishers, omit `--source`:
 
 ```bash
 python3 scripts/trial_scraper.py --limit 5
@@ -160,18 +161,20 @@ python3 scripts/trial_scraper.py --source nation --limit 2
 python3 scripts/trial_scraper.py --source citizen --limit 2
 python3 scripts/trial_scraper.py --source standard --limit 2
 python3 scripts/trial_scraper.py --source star --limit 2
+python3 scripts/trial_scraper.py --source tuko --limit 2
+python3 scripts/trial_scraper.py --source kenyans --limit 2
 ```
 
 #### Per-publisher monthly smoke tests
 
-The following bounded commands test January 2026 archive collection. Run all four
+The following bounded commands test January 2026 archive collection. Run all six
 publishers sequentially from the repository root with:
 
 ```bash
 cd /Users/mutua/Documents/Projects/gbv-news-ai
 source .venv/bin/activate
 
-for source in nation citizen standard star; do
+for source in nation citizen standard star tuko kenyans; do
   python3 scripts/collect_monthly.py \
     --start-month 2026-01 \
     --end-month 2026-01 \
@@ -225,6 +228,32 @@ python3 scripts/collect_monthly.py \
 These are smoke tests, not complete monthly collection runs. The index-page and
 article-fetch limits intentionally produce incomplete coverage. Use new run names if
 you later remove either limit for complete January collection.
+
+To smoke-test the two newer sources against August 2026 archive coverage:
+
+```bash
+# Tuko
+python3 scripts/collect_monthly.py \
+  --start-month 2026-08 \
+  --end-month 2026-08 \
+  --source tuko \
+  --max-index-pages 1 \
+  --max-fetches-per-month 2 \
+  --run-name tuko-aug-smoke
+
+# Kenyans.co.ke
+python3 scripts/collect_monthly.py \
+  --start-month 2026-08 \
+  --end-month 2026-08 \
+  --source kenyans \
+  --max-index-pages 1 \
+  --max-fetches-per-month 2 \
+  --run-name kenyans-aug-smoke
+```
+
+The Wayback CDX index contains Kenyans.co.ke `/news/` captures in August 2026, so
+August is a valid smoke-test month even though its configured single-snapshot trial
+seed is from July 2024.
 
 Before starting the full monthly collection, run a bounded smoke test with a new,
 descriptive run name:
@@ -293,7 +322,7 @@ undated pages are not stored as valid article records.
 
 ## January–August 2026 collection
 
-The monthly collector scans all four publishers from August back to January 2026,
+The monthly collector scans all six publishers from August back to January 2026,
 without GBV keyword filtering. It filters by article publication date and writes
 per-publisher, per-month counts, including explicit failed and pending scan states.
 
@@ -328,7 +357,8 @@ may remain tracked; they are not collected research data.
 ## Single-snapshot trial data collection
 
 The trial scraper discovers news candidates from Daily Nation, Citizen Digital,
-The Standard, and The Star. It does not filter by GBV keywords or assign GBV labels.
+The Standard, The Star, Tuko, and Kenyans.co.ke. It does not filter by GBV keywords
+or assign GBV labels.
 Publisher-specific URL rules and body selectors live in `scrapers/`; shared HTTP
 and metadata handling lives in `scrapers/common.py`.
 
@@ -336,7 +366,7 @@ and metadata handling lives in `scrapers/common.py`.
 python3 scripts/trial_scraper.py --source standard --limit 5
 ```
 
-Repeat `--source` to select multiple publishers, or omit it to try all four.
+Repeat `--source` to select multiple publishers, or omit it to try all six.
 `--limit` caps new records per publisher; retrieval attempts are capped at five
 times that limit. `--delay` defaults to two seconds and cannot be below 1.5 seconds.
 Optionally set `SCRAPER_USER_AGENT` to an honest research-bot identity with your
@@ -411,9 +441,32 @@ Explicit EAT publication timestamps are normalized to UTC+03:00.
 This single-snapshot command follows pages from the supplied snapshot. Use the
 monthly collector above for the January–August 2026 archive window.
 
+The `tuko` option uses the supplied [archived Tuko homepage](https://web.archive.org/web/20260831023500/https://www.tuko.co.ke/).
+It accepts publisher-hosted story paths containing a numeric article ID beneath one
+to three section components, for example `/kenya/638082-story/` and
+`/people/family/638077-story/`. Section, tag, author, and navigation URLs are rejected.
+The inspected layout exposes JSON-LD metadata and article prose in `.post__content`;
+promotional calls to action, related-story cards, advertisements, and figure captions
+are removed. Records use parser version `tuko-archive-1.0`.
+
+```bash
+python3 scripts/trial_scraper.py --source tuko --limit 2
+```
+
+The `kenyans` option uses the supplied [archived Kenyans.co.ke homepage](https://web.archive.org/web/20240725032840/https://www.kenyans.co.ke/).
+It accepts only `/news/<numeric-id>-<slug>` stories, excluding `/news`, tracker,
+featured, author, and other non-article routes. The inspected Drupal layout provides
+JSON-LD title, author, and date metadata and stores prose in the news-body field.
+Records use parser version `kenyans-archive-1.0`. August 2026 CDX inspection found
+archived `/news/` stories, although Wayback coverage remains non-exhaustive.
+
+```bash
+python3 scripts/trial_scraper.py --source kenyans --limit 2
+```
+
 Discovery is a bounded sample of configured listings/feeds, not a complete archive.
 The parser uses structured article metadata or publisher body containers.
-The supplied homepages for all four publishers and linked archived articles were checked
+The supplied homepages for all six publishers and linked archived articles were checked
 successfully during development. Other pages and publishers still require live quality
 review; the offline fixtures are synthetic and do not establish complete compatibility.
 

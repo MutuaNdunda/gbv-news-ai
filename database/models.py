@@ -33,7 +33,14 @@ class CollectionRun(Base):
 
 class Article(Base):
     __tablename__ = "articles"
-    __table_args__ = (UniqueConstraint("source", "canonical_url"), {"schema": "public"})
+    __table_args__ = (
+        UniqueConstraint("source", "canonical_url"),
+        CheckConstraint(
+            "source IN ('nation','citizen','standard','star','tuko','kenyans')",
+            name="articles_source_check",
+        ),
+        {"schema": "public"},
+    )
 
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -100,7 +107,10 @@ class CollectionRunScan(Base):
     __tablename__ = "collection_run_scans"
     __table_args__ = (
         UniqueConstraint("collection_run_id", "source", "capture_month"),
-        CheckConstraint("source IN ('nation','citizen','standard','star')", name="collection_run_scans_source_check"),
+        CheckConstraint(
+            "source IN ('nation','citizen','standard','star','tuko','kenyans')",
+            name="collection_run_scans_source_check",
+        ),
         CheckConstraint("status IN ('pending','running','index_exhausted','index_exhausted_with_gaps','fetch_limit','index_page_limit','index_failed')", name="collection_run_scans_status_check"),
         Index("idx_collection_run_scans_collection_run_id", "collection_run_id"),
         Index("idx_collection_run_scans_source", "source"),
