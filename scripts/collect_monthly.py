@@ -56,13 +56,8 @@ def publication_month(value):
 
 def index_url(publisher, month, resume=None):
     year, number = map(int, month.split("-"))
-    default_scope = (publisher.PUBLISHER_HOSTS[0].removeprefix("www."), "domain")
-    scope = getattr(publisher, "CDX_INDEX_SCOPE", default_scope)
-    if (not isinstance(scope, tuple) or len(scope) != 2
-            or not all(isinstance(value, str) for value in scope)):
-        scope = default_scope
-    target, match_type = scope
-    query = [("url", target), ("matchType", match_type),
+    host = publisher.PUBLISHER_HOSTS[0].removeprefix("www.")
+    query = [("url", host), ("matchType", "domain"),
              ("from", f"{year}{number:02d}01"),
              ("to", f"{year}{number:02d}{calendar.monthrange(year, number)[1]}"),
              ("output", "json"), ("fl", "timestamp,original"),
@@ -163,10 +158,10 @@ def run(config, run_name, services=None):
     index_client = Client(("web.archive.org",), config["delay"],
                           os.environ.get("SCRAPER_USER_AGENT", "GBVResearchBot/0.1"),
                           url_validator=lambda url: urlsplit(url).path == "/cdx/search/cdx",
-                          request_stage="cdx_index")
+                          request_stage="CDX_INDEX")
     article_client = Client(
         ("web.archive.org",), config["delay"], index_client.user_agent,
-        request_stage="wayback_replay",
+        request_stage="ARCHIVE_REPLAY",
     )
     report(run_name, run_id, state, objects, articles, scans)
     try:
@@ -177,6 +172,8 @@ def run(config, run_name, services=None):
                 if scan["status"] == "index_exhausted":
                     continue
                 publisher = SOURCES[name]
+                index_client.source = name
+                article_client.source = name
                 article_client.url_validator = publisher.accepts
                 scan["status"] = "running"
                 scans.update(run_id, name, month, scan)

@@ -42,7 +42,7 @@ def candidates(publisher, client, max_pages=1):
         return
     seen = set()
     for feed in publisher.FEEDS:
-        response = client.fetch(feed)
+        response = client.fetch(feed, stage="LISTING")
         if response is None:
             continue
         soup = BeautifulSoup(response.content, "xml")
@@ -53,7 +53,7 @@ def candidates(publisher, client, max_pages=1):
                 seen.add(url)
                 yield url, feed, "rss"
     for listing in publisher.LISTINGS:
-        response = client.fetch(listing)
+        response = client.fetch(listing, stage="LISTING")
         if response is None:
             continue
         discover_links = getattr(publisher, "discover", None)
@@ -114,6 +114,7 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
             client = Client(publisher.HOSTS, delay,
                             os.environ.get("SCRAPER_USER_AGENT", "GBVResearchBot/0.1"),
                             url_validator=getattr(publisher, "accepts_fetch", None))
+            client.source = name
             saved = attempted = 0
             try:
                 for url, discovery_url, method in candidates(publisher, client, max_pages):
@@ -124,7 +125,7 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                         continue
                     attempted += 1
                     state["sources"][name]["attempted"] += 1
-                    response = client.fetch(url)
+                    response = client.fetch(url, stage="ARTICLE_FETCH")
                     if response is None or "html" not in response.headers.get("Content-Type", "").lower():
                         continue
                     if not publisher.accepts(response.url):

@@ -32,7 +32,7 @@ def allowed_url(url, hosts):
 class Client:
     """Check robots, throttle all requests, and validate each redirect before fetching."""
     def __init__(self, hosts, delay=2.0, user_agent='GBVResearchBot/0.1',
-                 url_validator=None, request_stage='http'):
+                 url_validator=None, request_stage='HTTP'):
         self.hosts = hosts
         self.delay = delay
         self.user_agent = user_agent
@@ -63,16 +63,18 @@ class Client:
                 if attempt == 2:
                     raise
                 LOGGER.info(
-                    'Retrying stage=%s host=%s url=%s exception=%s attempt=%d/3',
-                    stage, host, safe_url, type(exc).__name__, attempt + 1,
+                    'source=%s stage=%s host=%s attempt=%d/3 error=%s: %s url=%s',
+                    getattr(self, 'source', 'unknown'), stage, host, attempt + 1,
+                    type(exc).__name__, exc, safe_url,
                 )
                 time.sleep(2 ** attempt)
                 continue
             if response.status_code not in (500, 502, 503, 504) or attempt == 2:
                 return response
             LOGGER.info(
-                'Retrying stage=%s host=%s url=%s status=%s attempt=%d/3',
-                stage, host, safe_url, response.status_code, attempt + 1,
+                'source=%s stage=%s host=%s attempt=%d/3 error=HTTP %s url=%s',
+                getattr(self, 'source', 'unknown'), stage, host, attempt + 1,
+                response.status_code, safe_url,
             )
             time.sleep(2 ** attempt)
 
@@ -80,7 +82,7 @@ class Client:
         parts = urlsplit(url)
         origin = f'{parts.scheme}://{parts.netloc}'
         if origin not in self.robots:
-            response = self._request(origin + '/robots.txt', stage='robots')
+            response = self._request(origin + '/robots.txt', stage='ROBOTS')
             robot = RobotFileParser()
             if response.status_code == 404:
                 robot.parse(['User-agent: *', 'Allow: /'])
@@ -95,7 +97,8 @@ class Client:
                 self.delay = max(self.delay, crawl_delay)
         return self.robots[origin].can_fetch(self.user_agent, url)
 
-    def fetch(self, url):
+    def fetch(self, url, stage=None):
+        request_stage = stage or self.request_stage
         self.last_failure = None
         try:
             for _ in range(6):
@@ -105,7 +108,7 @@ class Client:
                     LOGGER.info('Skipped disallowed URL: %s', url)
                     self.last_failure = {'kind': 'policy_denied'}
                     return None
-                response = self._request(url)
+                response = self._request(url, stage=request_stage)
                 if response.status_code in (301, 302, 303, 307, 308):
                     url = urljoin(url, response.headers.get('Location', ''))
                     continue
@@ -113,14 +116,15 @@ class Client:
                 return response
         except requests.RequestException as exc:
             self.last_failure = {'kind': type(exc).__name__,
-                                 'stage': self.request_stage,
+                                 'stage': request_stage,
                                  'host': urlsplit(url).hostname,
                                  'url': self._log_url(url),
                                  'http_status': exc.response.status_code if exc.response is not None else None}
             LOGGER.warning(
-                'Fetch failed stage=%s host=%s url=%s exception=%s',
-                self.request_stage, self.last_failure['host'],
-                self.last_failure['url'], type(exc).__name__,
+                'source=%s stage=%s host=%s error=%s: %s url=%s',
+                getattr(self, 'source', 'unknown'), request_stage,
+                self.last_failure['host'], type(exc).__name__, exc,
+                self.last_failure['url'],
             )
         if self.last_failure is None:
             self.last_failure = {'kind': 'redirect_limit'}

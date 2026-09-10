@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlsplit
 
 from scripts import collect_monthly as monthly
-from scrapers import citizen, nation, standard, star
+from scrapers import citizen
 from storage.persistence import CollectionPersistence
 from tests.storage_fakes import FakeArticles, FakeObjects, FakeRuns, FakeScans
 
@@ -36,18 +36,18 @@ class MonthlyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             monthly.parse_index({"error": "denied"})
 
-    def test_monthly_index_scopes_mirror_working_trial_listing_urls(self):
-        expected = {
-            nation: ("nation.africa/kenya/", "prefix"),
-            standard: ("standardmedia.co.ke/", "prefix"),
-            star: ("www.the-star.co.ke/", "prefix"),
-            citizen: ("citizen.digital", "domain"),
-        }
-        for publisher, (target, match_type) in expected.items():
-            with self.subTest(source=publisher.SOURCE):
-                query = parse_qs(urlsplit(monthly.index_url(publisher, "2026-08")).query)
-                self.assertEqual(query["url"], [target])
-                self.assertEqual(query["matchType"], [match_type])
+    def test_citizen_known_good_monthly_cdx_query_is_preserved(self):
+        query = parse_qs(urlsplit(monthly.index_url(citizen, "2026-08")).query)
+        self.assertEqual(query["url"], ["citizen.digital"])
+        self.assertEqual(query["matchType"], ["domain"])
+        self.assertEqual(query["from"], ["20260801"])
+        self.assertEqual(query["to"], ["20260831"])
+        self.assertEqual(query["output"], ["json"])
+        self.assertEqual(query["fl"], ["timestamp,original"])
+        self.assertEqual(query["filter"], ["statuscode:200", "mimetype:text/html"])
+        self.assertEqual(query["collapse"], ["urlkey"])
+        self.assertEqual(query["limit"], ["1000"])
+        self.assertEqual(query["showResumeKey"], ["true"])
 
     def test_reports_cache_and_resume_are_gcs_backed(self):
         objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()
@@ -111,7 +111,7 @@ class MonthlyTests(unittest.TestCase):
                   "sources": ["nation"], "delay": 2.0,
                   "max_index_pages": 0, "max_fetches_per_month": 0}
         index_client = Mock(last_request=0, user_agent="Test", last_failure={
-            "kind": "ReadTimeout", "stage": "cdx_index",
+            "kind": "ReadTimeout", "stage": "CDX_INDEX",
             "host": "web.archive.org", "url": monthly.CDX,
             "http_status": None,
         })
@@ -121,12 +121,12 @@ class MonthlyTests(unittest.TestCase):
             result = monthly.run(config, "failure-run", services)
         requested = index_client.fetch.call_args.args[0]
         query = parse_qs(urlsplit(requested).query)
-        self.assertEqual(query["url"], ["nation.africa/kenya/"])
-        self.assertEqual(query["matchType"], ["prefix"])
+        self.assertEqual(query["url"], ["nation.africa"])
+        self.assertEqual(query["matchType"], ["domain"])
         self.assertEqual(result["status"], "paused_index_unavailable")
         self.assertEqual(result["scans"]["nation/2026-08"]["status"], "index_failed")
         self.assertEqual(result["scans"]["nation/2026-08"]["error"]["stage"],
-                         "cdx_index")
+                         "CDX_INDEX")
         self.assertEqual(result["scans"]["nation/2026-08"]["failed"], 1)
         self.assertEqual(result["scans"]["nation/2026-01"]["status"], "pending")
 

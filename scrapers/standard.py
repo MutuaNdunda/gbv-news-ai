@@ -15,7 +15,6 @@ HOSTS = ('web.archive.org',)
 PUBLISHER_HOSTS = ('standardmedia.co.ke', 'www.standardmedia.co.ke')
 CAPTURE = '20200812220501'
 LISTINGS = (f'https://web.archive.org/web/{CAPTURE}/https://standardmedia.co.ke/',)
-CDX_INDEX_SCOPE = ('standardmedia.co.ke/', 'prefix')
 FEEDS = ()
 BODY_SELECTORS = ('.standard-archive-body', '.article-body', '.story-content', '[itemprop="articleBody"]')
 
@@ -68,7 +67,7 @@ def expanded_candidates(client, max_pages):
             continue
         visited.add(parts[1])
         attempted += 1
-        response = client.fetch(listing)
+        response = client.fetch(listing, stage='LISTING')
         if response is None:
             continue
         actual = archive_parts(response.url)

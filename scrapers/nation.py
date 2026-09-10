@@ -13,9 +13,6 @@ CAPTURE = '20240616131714'
 LISTINGS = (
     f'https://web.archive.org/web/{CAPTURE}/https://nation.africa/kenya/',
 )
-# Monthly CDX discovery mirrors the publisher URL scope proven by LISTINGS while
-# supplying the requested month separately.
-CDX_INDEX_SCOPE = ('nation.africa/kenya/', 'prefix')
 FEEDS = ()
 BODY_SELECTORS = ('.nation-archive-body',)
 
