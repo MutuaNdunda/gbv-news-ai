@@ -150,6 +150,82 @@ python3 scripts/trial_scraper.py \
   --source standard --max-pages 3 --limit 5
 ```
 
+#### Per-publisher trial commands
+
+Use these commands to collect a small, two-article trial from each configured
+publisher snapshot:
+
+```bash
+python3 scripts/trial_scraper.py --source nation --limit 2
+python3 scripts/trial_scraper.py --source citizen --limit 2
+python3 scripts/trial_scraper.py --source standard --limit 2
+python3 scripts/trial_scraper.py --source star --limit 2
+```
+
+#### Per-publisher monthly smoke tests
+
+The following bounded commands test January 2026 archive collection. Run all four
+publishers sequentially from the repository root with:
+
+```bash
+cd /Users/mutua/Documents/Projects/gbv-news-ai
+source .venv/bin/activate
+
+for source in nation citizen standard star; do
+  python3 scripts/collect_monthly.py \
+    --start-month 2026-01 \
+    --end-month 2026-01 \
+    --source "$source" \
+    --max-index-pages 1 \
+    --max-fetches-per-month 2 \
+    --run-name "${source}-jan-2026-smoke"
+done
+```
+
+To run or repeat publishers individually, use:
+
+```bash
+# Nation
+python3 scripts/collect_monthly.py \
+  --start-month 2026-01 \
+  --end-month 2026-01 \
+  --source nation \
+  --max-index-pages 1 \
+  --max-fetches-per-month 2 \
+  --run-name nation-jan-2026-smoke
+
+# Citizen
+python3 scripts/collect_monthly.py \
+  --start-month 2026-01 \
+  --end-month 2026-01 \
+  --source citizen \
+  --max-index-pages 1 \
+  --max-fetches-per-month 2 \
+  --run-name citizen-jan-2026-smoke
+
+# Standard
+python3 scripts/collect_monthly.py \
+  --start-month 2026-01 \
+  --end-month 2026-01 \
+  --source standard \
+  --max-index-pages 1 \
+  --max-fetches-per-month 2 \
+  --run-name standard-jan-2026-smoke
+
+# Star
+python3 scripts/collect_monthly.py \
+  --start-month 2026-01 \
+  --end-month 2026-01 \
+  --source star \
+  --max-index-pages 1 \
+  --max-fetches-per-month 2 \
+  --run-name star-jan-2026-smoke
+```
+
+These are smoke tests, not complete monthly collection runs. The index-page and
+article-fetch limits intentionally produce incomplete coverage. Use new run names if
+you later remove either limit for complete January collection.
+
 Before starting the full monthly collection, run a bounded smoke test with a new,
 descriptive run name:
 
