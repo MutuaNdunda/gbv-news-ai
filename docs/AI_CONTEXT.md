@@ -461,6 +461,27 @@ JSON is UTF-8 and pretty-printed. Timestamps use ISO 8601 where parsing succeeds
 timezone-naive source dates remain timezone-naive and are explicitly marked unknown.
 The monthly collector does not save records without a usable publication date.
 
+### 5.1 Planned Layered Annotation Schema
+
+Annotation is not a single classification task. The planned human-review system must
+support distinct, traceable layers that match the research goals and keep extraction
+quality, relevance decisions, semantic labels, locations, and privacy review separate.
+
+| Layer | Task | Label type | Example labels/output |
+|---|---|---|---|
+| **L0 – Extraction Quality** | Is the parsed article valid? | Binary decision + reason | `valid`, `bad_date`, `truncated_body`, `wrong_canonical` |
+| **L1 – Kenya Relevance** | Is the article about Kenya? | Categorical decision + evidence | `kenya`, `not_kenya`, `ambiguous` |
+| **L2 – GBV Relevance** | Is the article about GBV? | Categorical decision + confidence | `gbv`, `not_gbv`, `borderline` |
+| **L3 – GBV Type** | What kind of GBV is reported? | Multi-label | `physical`, `sexual`, `emotional`, `economic`, `harmful_practice`, `online` |
+| **L4 – Location** | Where did the incident happen? | Text spans + NER labels + normalized geocode | `["Nairobi", "Kibera"]` mapped to the appropriate county/ward |
+| **L5 – Privacy Risk** | Does the article contain personally identifiable or sensitive information? | Multi-label | `victim_name`, `exact_address`, `photo`, `none` |
+
+The current `kenya_relevance` field deliberately starts as `needs_review`; the L1
+annotation workflow is the planned mechanism for resolving it. Publisher origin alone
+must not be treated as evidence that an article concerns Kenya. Annotation records
+should preserve reviewer evidence, confidence where applicable, timestamps, schema
+version, and history rather than silently overwriting source records or model outputs.
+
 ## 6. Data Collection Flow
 
 ```text
