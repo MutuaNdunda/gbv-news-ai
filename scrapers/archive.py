@@ -9,7 +9,8 @@ def archive_parts(url, publisher_hosts):
     """Validate a dated HTML replay and its embedded publisher URL."""
     if not allowed_url(url, ('web.archive.org',)):
         return None
-    match = re.fullmatch(r'/web/(\d{14})/(https?://.+)', urlsplit(url).path)
+    # id_ replays return original HTML; other asset/replay modifiers are excluded.
+    match = re.fullmatch(r'/web/(\d{14})(?:id_)?/(https?://.+)', urlsplit(url).path)
     if not match:
         return None
     timestamp, original = match.groups()

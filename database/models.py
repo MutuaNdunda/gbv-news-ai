@@ -36,7 +36,7 @@ class Article(Base):
     __table_args__ = (
         UniqueConstraint("source", "canonical_url"),
         CheckConstraint(
-            "source IN ('nation','citizen','standard','star','tuko','kenyans')",
+            "source IN ('nation','citizen','standard','star','tuko','kenyans','taifaleo')",
             name="articles_source_check",
         ),
         {"schema": "public"},
@@ -108,7 +108,7 @@ class CollectionRunScan(Base):
     __table_args__ = (
         UniqueConstraint("collection_run_id", "source", "capture_month"),
         CheckConstraint(
-            "source IN ('nation','citizen','standard','star','tuko','kenyans')",
+            "source IN ('nation','citizen','standard','star','tuko','kenyans','taifaleo')",
             name="collection_run_scans_source_check",
         ),
         CheckConstraint("status IN ('pending','running','index_exhausted','index_exhausted_with_gaps','fetch_limit','index_page_limit','index_failed')", name="collection_run_scans_status_check"),

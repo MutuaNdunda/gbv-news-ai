@@ -47,3 +47,14 @@ class CollectionRunScanModelTests(unittest.TestCase):
                 checks = " ".join(str(item.sqltext) for item in table.constraints
                                   if hasattr(item, "sqltext"))
                 self.assertIn(source, checks)
+
+    def test_taifaleo_migration_expands_both_source_constraints_atomically(self):
+        sql = Path("migrations/20261003_add_taifaleo_source.sql").read_text()
+        self.assertTrue(sql.startswith("BEGIN;"))
+        self.assertTrue(sql.rstrip().endswith("COMMIT;"))
+        for name in ("articles_source_check", "collection_run_scans_source_check"):
+            self.assertIn(f"ADD CONSTRAINT {name}", sql)
+        self.assertEqual(sql.count("'taifaleo'"), 2)
+        for table in (Article.__table__, CollectionRunScan.__table__):
+            self.assertTrue(any("'taifaleo'" in str(item.sqltext)
+                                for item in table.constraints if hasattr(item, "sqltext")))

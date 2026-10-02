@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from database.repositories.articles import ArticleRepository
 from database.repositories.collection_runs import CollectionRunRepository
 from database.session import create_session_factory, load_environment
-from scrapers import citizen, kenyans, nation, standard, star, tuko
+from scrapers import citizen, kenyans, nation, standard, star, taifaleo, tuko
 from scrapers.common import Client, discover, normalize_url
 from storage import GCSStorage
 from storage.logging import GCSRunLogHandler
@@ -26,7 +26,7 @@ from storage.persistence import CollectionPersistence, IndexingError
 
 SOURCES = {
     module.SOURCE: module
-    for module in (nation, citizen, standard, star, tuko, kenyans)
+    for module in (nation, citizen, standard, star, tuko, kenyans, taifaleo)
 }
 LOGGER = logging.getLogger(__name__)
 

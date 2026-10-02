@@ -54,16 +54,22 @@ def publication_month(value):
         return None
 
 
-def index_url(publisher, month, resume=None):
+def index_url(publisher, month, resume=None, match="domain"):
+    """Keep domain discovery by default; prefix mirrors wayback.py's host/* query."""
+    if match not in ("domain", "prefix"):
+        raise ValueError("Unsupported CDX match scope")
     year, number = map(int, month.split("-"))
     host = publisher.PUBLISHER_HOSTS[0].removeprefix("www.")
-    query = [("url", host), ("matchType", "domain"),
+    query = [("url", host if match == "domain" else host + "/*")]
+    if match == "domain":
+        query.append(("matchType", "domain"))
+    query.extend([
              ("from", f"{year}{number:02d}01"),
              ("to", f"{year}{number:02d}{calendar.monthrange(year, number)[1]}"),
              ("output", "json"), ("fl", "timestamp,original"),
              ("filter", "statuscode:200"), ("filter", "mimetype:text/html"),
              ("collapse", "urlkey"), ("limit", "1000"),
-             ("showResumeKey", "true")]
+             ("showResumeKey", "true")])
     if resume:
         query.append(("resumeKey", unquote_plus(resume)))
     return CDX + "?" + urlencode(query)
@@ -182,7 +188,8 @@ def run(config, run_name, services=None):
                 attempts_this_scan = pages_this_scan = 0
                 LOG.info("Starting %s capture month %s", name, month)
                 while True:
-                    query = index_url(publisher, month, resume)
+                    query = index_url(publisher, month, resume,
+                                      config.get("index_match", "domain"))
                     digest = hashlib.sha256(query.encode()).hexdigest()
                     cache_name = f"runs/{run_name}/cdx-cache/{digest}.cdx.json"
                     index_client.last_request = max(index_client.last_request, article_client.last_request)
@@ -223,7 +230,8 @@ def run(config, run_name, services=None):
                         if config["max_fetches_per_month"] and attempts_this_scan >= config["max_fetches_per_month"]:
                             scan["status"] = "fetch_limit"
                             break
-                        replay = f"https://web.archive.org/web/{timestamp}/{original}"
+                        modifier = "id_" if config.get("replay_mode") == "original" else ""
+                        replay = f"https://web.archive.org/web/{timestamp}{modifier}/{original}"
                         attempts_this_scan += 1
                         scan["attempted"] += 1
                         article_client.last_request = max(article_client.last_request, index_client.last_request)
@@ -328,6 +336,10 @@ def main():
     parser.add_argument("--delay", type=float, default=2.0)
     parser.add_argument("--max-index-pages", type=int, default=0)
     parser.add_argument("--max-fetches-per-month", type=int, default=0)
+    parser.add_argument("--index-match", choices=("domain", "prefix"),
+                        help="CDX scope: domain (default) or wayback.py-style host/* prefix")
+    parser.add_argument("--replay-mode", choices=("rewritten", "original"),
+                        help="HTML replay: rewritten (default) or original via Wayback id_")
     parser.add_argument("--run-name")
     args = parser.parse_args()
     try:
@@ -341,6 +353,11 @@ def main():
               "sources": list(dict.fromkeys(args.source or SOURCES)),
               "delay": args.delay, "max_index_pages": args.max_index_pages,
               "max_fetches_per_month": args.max_fetches_per_month}
+    # Omitted options must preserve the exact configuration of existing runs.
+    if args.index_match is not None:
+        config["index_match"] = args.index_match
+    if args.replay_mode is not None:
+        config["replay_mode"] = args.replay_mode
     run_name = args.run_name or datetime.now(timezone.utc).strftime("monthly-%Y%m%dT%H%M%S%fZ")
     services = build_services()
     log_handler = GCSRunLogHandler(services[0].objects, f"runs/{run_name}/collection.log")

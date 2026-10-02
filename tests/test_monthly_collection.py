@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 import hashlib
+from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlsplit
@@ -48,6 +49,83 @@ class MonthlyTests(unittest.TestCase):
         self.assertEqual(query["collapse"], ["urlkey"])
         self.assertEqual(query["limit"], ["1000"])
         self.assertEqual(query["showResumeKey"], ["true"])
+
+    def test_prefix_query_keeps_calendar_filters_and_continuation(self):
+        query = parse_qs(urlsplit(monthly.index_url(
+            citizen, "2026-01", "token%21", match="prefix"
+        )).query)
+        self.assertEqual(query["url"], ["citizen.digital/*"])
+        self.assertNotIn("matchType", query)
+        self.assertEqual(query["from"], ["20260101"])
+        self.assertEqual(query["to"], ["20260131"])
+        self.assertEqual(query["filter"], ["statuscode:200", "mimetype:text/html"])
+        self.assertEqual(query["showResumeKey"], ["true"])
+        self.assertEqual(query["resumeKey"], ["token!"])
+        with self.assertRaises(ValueError):
+            monthly.index_url(citizen, "2026-01", match="unsupported")
+
+    def test_wayback_modes_preserve_publication_filter_limits_and_provenance(self):
+        objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()
+        services = (CollectionPersistence(objects, articles), articles, runs, FakeScans())
+        config = {"kind": "monthly", "start_month": "2026-01", "end_month": "2026-01",
+                  "sources": ["citizen"], "delay": 2.0,
+                  "max_index_pages": 1, "max_fetches_per_month": 2,
+                  "index_match": "prefix", "replay_mode": "original"}
+        originals = [f"https://citizen.digital/article/story-n{i}" for i in range(1, 4)]
+        payload = [["timestamp", "original"],
+                   *[["20260115000000", url] for url in originals], [], ["next%21"]]
+        index_client = Mock(last_request=0, user_agent="Test", last_failure=None)
+        index_client.fetch.return_value = Mock(json=lambda: payload)
+        html = (Path(__file__).parent / "fixtures/citizen_archive_article.html").read_text()
+
+        def fetch(url):
+            original = citizen.archive_parts(url)[1]
+            publication = "2026-01-03" if original == originals[0] else "2025-12-03"
+            body = html.replace(
+                "https://web.archive.org/web/20260309182207/https://www.citizen.digital/business/sample-news-n12345",
+                original,
+            ).replace("2026-03-03", publication)
+            return Mock(url=url.replace("20260115000000", "20260120000000"),
+                        content=body.encode(), headers={"Content-Type": "text/html"}, status_code=200)
+
+        article_client = Mock(last_request=0, last_failure=None)
+        article_client.fetch.side_effect = fetch
+        with patch.object(monthly, "Client", side_effect=[index_client, article_client]):
+            result = monthly.run(config, "wayback-smoke", services)
+        query = parse_qs(urlsplit(index_client.fetch.call_args.args[0]).query)
+        self.assertEqual(query["url"], ["citizen.digital/*"])
+        self.assertEqual(article_client.fetch.call_count, 2)
+        self.assertEqual(result["status"], "finished_with_gaps")
+        scan = result["scans"]["citizen/2026-01"]
+        self.assertEqual(scan["status"], "fetch_limit")
+        self.assertEqual(scan["saved"], 1)
+        self.assertEqual(scan["outside_period"], 1)
+        stored = articles.items[0][0]
+        self.assertEqual(stored["publication_month"], "2026-01")
+        self.assertIn("20260115000000id_/", stored["requested_url"])
+        self.assertIn("20260120000000id_/", stored["archive_url"])
+        self.assertEqual(stored["archive_capture_timestamp"], "20260120000000")
+        self.assertEqual(stored["canonical_url"], originals[0])
+        self.assertTrue(any("cdx-cache" in name for role, name in objects.data if role == "runs"))
+
+    def test_cli_omitted_modes_preserve_legacy_resume_configuration(self):
+        services = (CollectionPersistence(FakeObjects(), FakeArticles()), FakeArticles(), FakeRuns())
+        for options in ([], ["--index-match", "prefix", "--replay-mode", "original"]):
+            with self.subTest(options=options), \
+                    patch.object(monthly.sys, "argv", ["collect_monthly.py", "--source", "citizen", *options]), \
+                    patch.object(monthly, "build_services", return_value=services), \
+                    patch.object(monthly, "GCSRunLogHandler"), \
+                    patch.object(monthly.logging, "basicConfig"), \
+                    patch.object(monthly, "run", return_value={"status": "index_scans_finished"}) as run:
+                self.assertEqual(monthly.main(), 0)
+            config = run.call_args.args[0]
+            if options:
+                self.assertEqual(config["index_match"], "prefix")
+                self.assertEqual(config["replay_mode"], "original")
+            else:
+                self.assertEqual(config, {"kind": "monthly", "start_month": "2026-01",
+                    "end_month": "2026-08", "sources": ["citizen"], "delay": 2.0,
+                    "max_index_pages": 0, "max_fetches_per_month": 0})
 
     def test_reports_cache_and_resume_are_gcs_backed(self):
         objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()

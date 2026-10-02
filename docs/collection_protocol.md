@@ -2,14 +2,14 @@
 
 The collection window is **1 January–31 August 2026, inclusive**. Discovery scans
 archive capture months from August backwards to January, for Nation, Citizen,
-Standard, Star, Tuko, and Kenyans.co.ke in each month. Publication metadata, rather than capture or
+Standard, Star, Tuko, Kenyans.co.ke, and Taifa Leo in each month. Publication metadata, rather than capture or
 retrieval time, determines whether an article belongs in this corpus and which
 monthly count it contributes to. The stated publication calendar date is retained;
 unknown timezones are not silently converted to UTC.
 
 ## Sampling and scope
 
-Collect broad reporting candidates from the six publishers, without gender or
+Collect broad reporting candidates from the seven registered publishers, without gender or
 GBV keyword selection. Every record still needs Kenya-relevance and extraction
 quality review. The 5,000 target in the proposal is a minimum **annotated** corpus,
 including GBV and non-GBV reporting; it is not an ingestion stopping rule.
@@ -36,9 +36,33 @@ against the same run name; Supabase advisory locking rejects concurrent use. Add
 publisher/capture-month scan and are recorded as incomplete coverage, not success.
 
 `--source citizen` (repeatable) restricts publishers. Valid keys are `nation`,
-`citizen`, `standard`, `star`, `tuko`, and `kenyans`. Resume requires the same
+`citizen`, `standard`, `star`, `tuko`, `kenyans`, and `taifaleo`. Resume requires the same
 configuration; choose a new run name to change limits or dates. Existing articles
 and extraction versions remain deduplicated across runs.
+
+Taifa Leo support requires `migrations/20261003_add_taifaleo_source.sql` before
+cloud indexing. Older all-source runs had six publishers; explicitly select those
+original sources to retain their saved configuration when resuming. Taifa Leo's
+local/CDX smoke trial scans at most 500 all-date results and is separate from the
+monthly window. Its dated URLs and capture dates never substitute for publication
+metadata. The legacy `en-US` template language is preserved as raw metadata and
+flagged for review rather than treated as an article language label.
+
+The default CDX query uses domain matching and ordinary rewritten HTML replay.
+To compare the standalone Wayback trial's approach, add `--index-match prefix
+--replay-mode original` with a new run name. Prefix mode queries `<domain>/*`
+instead of including all subdomains; this is a change in discovery scope, not a
+demonstrated performance improvement. Original mode requests the `id_` replay,
+which avoids Wayback URL rewriting. Both modes retain publisher parsing, access
+checks, publication filtering, cached paginated CDX discovery, and actual replay
+capture provenance. Omitted options preserve legacy saved configurations; explicit
+mode settings are recorded in the configuration and must match on resume.
+
+HTTP 429 and transient server errors have at most three attempts, honoring valid
+`Retry-After` seconds or dates. Waits above 60 seconds defer the request as a failure
+without an early retry. Access denials are not retried. Smoke tests may exit with
+code `2` because their configured limits intentionally leave incomplete coverage;
+inspect scan states and logs to distinguish limits from retrieval failures.
 
 ## Outputs
 
@@ -46,7 +70,7 @@ and extraction versions remain deduplicated across runs.
   persisted before parsing.
 - `gs://<GCS_PROCESSED_BUCKET>/<parser-version>/<publisher>/<year>/<month>/<article-id>/<content-hash>.json`:
   normalized JSON with dates and provenance.
-- `gs://<GCS_RUNS_BUCKET>/runs/<run-name>/monthly_counts.csv`: 32 rows, ordered August to January, containing
+- `gs://<GCS_RUNS_BUCKET>/runs/<run-name>/monthly_counts.csv`: 56 rows for seven publishers across eight months, ordered August to January, containing
   publisher, publication month, newly saved articles for the run, and total stored
   articles for the requested window. Counts include unreviewed candidates, not
   confirmed GBV articles or incidents.

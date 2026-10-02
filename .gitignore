@@ -36,6 +36,12 @@ coverage.xml
 !/data/**/.gitkeep
 !/data/**/README.md
 
+# Legacy Wayback trials run from the scrapers directory (local-only content).
+/scrapers/data/**
+!/scrapers/data/**/
+!/scrapers/data/**/.gitkeep
+!/scrapers/data/**/README.md
+
 # Model weights and training artifacts (keep model code/configuration trackable)
 *.pt
 *.pth

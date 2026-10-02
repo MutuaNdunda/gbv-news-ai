@@ -2,7 +2,7 @@
 
 GBV News AI is a postgraduate research project that aims to develop an ethical, human-supervised system for identifying, classifying, geotagging, and mapping gender-based violence (GBV) reporting in Kenyan digital news. The planned system will investigate multilingual approaches for English, Swahili, Sheng, and code-switched content, where available.
 
-The project is in its initial development stage. Trial collection has begun, but no validated research dataset is available yet. The immediate priority is to validate reliable news scrapers and review extraction quality before building the research corpus. Reporting sources include Daily Nation, Citizen Digital, The Standard, The Star Kenya, Tuko, and Kenyans.co.ke, with collection intended to include both GBV-related and non-GBV reporting. The current trials use archived publisher reporting, as described below.
+The project is in its initial development stage. Trial collection has begun, but no validated research dataset is available yet. The immediate priority is to validate reliable news scrapers and review extraction quality before building the research corpus. Reporting sources include Daily Nation, Citizen Digital, The Standard, The Star Kenya, Tuko, Kenyans.co.ke, and Taifa Leo, with collection intended to include both GBV-related and non-GBV reporting. The current trials use archived publisher reporting, as described below.
 
 The repository includes a read-only Flask monitor for collection operations. Future
 work will include annotation, task-specific fine-tuning and evaluation of multilingual
@@ -46,6 +46,7 @@ applied:
 ```bash
 psql "$DIRECT_DATABASE_URL" -f migrations/20260909_add_collection_run_scans.sql
 psql "$DIRECT_DATABASE_URL" -f migrations/20260910_expand_collection_sources.sql
+psql "$DIRECT_DATABASE_URL" -f migrations/20261003_add_taifaleo_source.sql
 ```
 
 Start the application with Gunicorn:
@@ -119,17 +120,18 @@ python3 -m unittest discover -s tests -v
 ### 3. Choose the appropriate collector
 
 Use `scripts/trial_scraper.py` for a quick, bounded extraction-quality sample from
-the configured publisher snapshots. Use `scripts/collect_monthly.py` for the
+the configured publisher snapshots or Taifa Leo's supplied CDX query. Use `scripts/collect_monthly.py` for the
 January–August 2026 retrospective corpus. Neither collector applies GBV keywords or
 produces GBV labels.
 
-For the quickest end-to-end check, collect up to two Citizen articles:
+For a local Taifa Leo archive trial without cloud/database writes, use the command
+in the Taifa Leo subsection below. For a cloud end-to-end check, collect up to two Citizen articles:
 
 ```bash
 python3 scripts/trial_scraper.py --source citizen --limit 2 --run-name trial-citizen-smoke
 ```
 
-To sample all six publishers, omit `--source`:
+To sample all seven publishers, omit `--source`:
 
 ```bash
 python3 scripts/trial_scraper.py --limit 5
@@ -163,7 +165,76 @@ python3 scripts/trial_scraper.py --source standard --limit 2
 python3 scripts/trial_scraper.py --source star --limit 2
 python3 scripts/trial_scraper.py --source tuko --limit 2
 python3 scripts/trial_scraper.py --source kenyans --limit 2
+python3 scripts/trial_scraper.py --source taifaleo --limit 2
 ```
+
+#### Taifa Leo CDX trial (local output)
+
+The `taifaleo` source uses the supplied bounded [Taifa Leo CDX query](https://web.archive.org/cdx/search/cdx?url=taifaleo.nation.co.ke/*&output=json&fl=timestamp,original,statuscode,mimetype&filter=statuscode:200&filter=mimetype:text/html&collapse=urlkey&limit=500).
+It discovers successful HTML captures across all available years, without GBV
+keywords. The first 500 results are a deterministic archive sample, not a random
+sample, a complete archive, or a January 2026 publication dataset.
+
+Run the local two-article trial from any working directory using the script path:
+
+```bash
+cd /Users/mutua/Documents/Projects/gbv-news-ai
+source .venv/bin/activate
+python3 scrapers/wayback.py \
+  --sources taifaleo \
+  --all-dates \
+  --limit 500 \
+  --max-articles 2 \
+  --max-fetches 2
+```
+
+`--all-dates` omits CDX capture-date bounds and cannot be combined with `--end`.
+`--limit` caps CDX rows; `--max-articles` caps new saved articles per publisher;
+`--max-fetches` caps snapshot retrieval attempts per publisher (each may retry up
+to three times). Cached snapshots do not consume retrieval attempts. Fewer than
+two articles may be saved. The default output roots are anchored to the repository:
+
+```text
+data/trials/raw/taifaleo/<snapshot-hash>.html
+data/trials/raw/taifaleo/<snapshot-hash>.meta.json
+data/trials/processed/taifaleo.jsonl
+data/trials/processed/taifaleo.manifest.json
+```
+
+The JSON sidecar retains the requested and actual replay URLs, HTTP status, and
+retrieval time. Records retain the publisher parser version, capture timestamp,
+publication date, source URLs, content hash, and raw snapshot path. Repeat the
+command to skip stored canonical URLs/content and reuse raw snapshots with
+metadata. The manifest records new saves and stop/failure counters for the latest
+invocation; the JSONL may also contain earlier trial records. Index failures exit
+`2` and are not reported as successful empty coverage. All local output is ignored
+by Git and requires quality review before research use.
+
+Taifa Leo has root-level WordPress story slugs and `/YYYY/MM/DD/<slug>/` stories.
+The publisher parser supports the inspected legacy `.news-details-layout1` body,
+visible date and reporter byline, `.entry-content`/structured article metadata, and
+the newer `.article-content__content` layout with publisher date metadata. The
+current parser version is `taifaleo-archive-1.1`.
+Day-only dates retain unknown timezones and day precision. The legacy template
+reports `en-US` despite Swahili prose: that metadata is preserved separately,
+article language remains unknown, and language review is required. No language
+label or Kenya relevance is inferred solely from the publisher.
+
+Taifa Leo uses the shared robots-aware, redirect-restricted client and its own
+parser in this local helper. The older six helper paths retain their generic
+experimental parser and are not the recommended cloud/monthly collection route.
+
+For GCS/Supabase storage, apply the Taifa Leo migration above before running:
+
+```bash
+python3 scripts/trial_scraper.py --source taifaleo --limit 2 --run-name taifaleo-cdx-smoke
+```
+
+This cloud trial uses one 500-row CDX batch too; `--max-pages` does not expand it.
+Monthly collection also accepts `--source taifaleo` and uses that collector's
+capture-month and publication-date filters. New default all-source runs include
+Taifa Leo. To resume older six-source runs, explicitly select the original six
+sources so the saved configuration continues to match.
 
 #### Per-publisher monthly smoke tests
 
@@ -184,6 +255,69 @@ for source in nation citizen standard star tuko kenyans; do
     --run-name "${source}-jan-2026-smoke"
 done
 ```
+
+#### Try the Wayback helper's discovery and original HTML approach
+
+The monthly collector already uses CDX discovery. Two optional settings adopt the
+useful parts of the standalone `scrapers/wayback.py` experiment while retaining
+publisher-specific parsing, publication-date filtering, robots checks, private GCS
+storage, and Supabase lineage:
+
+- `--index-match prefix` queries `<publisher-domain>/*`, as the helper does.
+  [CDX documents this as prefix matching](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server#url-match-scope),
+  whereas the existing domain query also includes subdomains. This changes discovery
+  scope; faster responses or better coverage have not been established by a live test.
+- `--replay-mode original` requests `.../<timestamp>id_/<original-url>` for original
+  HTML without Wayback's URL rewriting. Publisher parsers accept both replay formats
+  and retain the actual replay URL and capture timestamp if Wayback redirects.
+
+To try these settings for the four original publishers, use a new run name:
+
+```bash
+cd /Users/mutua/Documents/Projects/gbv-news-ai
+source .venv/bin/activate
+
+for source in nation citizen standard star; do
+  python3 scripts/collect_monthly.py \
+    --start-month 2026-01 \
+    --end-month 2026-01 \
+    --source "$source" \
+    --index-match prefix \
+    --replay-mode original \
+    --max-index-pages 1 \
+    --max-fetches-per-month 2 \
+    --run-name "${source}-jan-2026-wayback-smoke"
+done
+```
+
+The limit is two article retrieval attempts per source, not two guaranteed saved
+articles. CDX returns at most 1,000 rows per index request; a single page may contain
+no supported article candidates. January captures are scanned, and only articles
+with January publication metadata are saved. Articles published in January but
+first captured later require a wider capture window.
+
+Omitting the new options preserves the existing domain/rewritten replay settings
+and allows old commands to resume. Repeat all options exactly to resume a new run;
+changing either option requires a different run name. Stored articles remain
+deduplicated across runs, so an already stored article may be skipped in this trial.
+The loop is sequential and intentionally continues when an incomplete smoke test
+exits with code `2`. Inspect the scan status and log to distinguish configured limits
+from retrieval failures. Infrastructure setup above is still required; these runs
+write to GCS and Supabase.
+
+The shared HTTP client now retries HTTP 429 and transient server errors up to three
+attempts. It honors valid `Retry-After` seconds or dates. A requested wait exceeding
+60 seconds defers that request as a failure instead of retrying early; resume later.
+
+The standalone helper remains exploratory: its date bounds concern archive capture
+dates, `--months` approximates months as 30 days, and its single capped CDX query does
+not paginate. CDX failures become empty result lists and the helper exits `0`, so
+zero output cannot be interpreted as successful empty coverage. Its generic
+whole-page paragraph fallback can include unrelated text,
+and its HTTP helper lacks the main collector's robots and redirect validation.
+It writes relative local paths, which explains the existing `scrapers/data/` output
+when launched from that directory. That legacy output is now ignored by Git; the
+monthly collector continues to use private GCS and Supabase.
 
 To run or repeat publishers individually, use:
 
@@ -322,7 +456,7 @@ undated pages are not stored as valid article records.
 
 ## January–August 2026 collection
 
-The monthly collector scans all six publishers from August back to January 2026,
+The monthly collector scans all seven registered publishers from August back to January 2026,
 without GBV keyword filtering. It filters by article publication date and writes
 per-publisher, per-month counts, including explicit failed and pending scan states.
 
@@ -357,7 +491,7 @@ may remain tracked; they are not collected research data.
 ## Single-snapshot trial data collection
 
 The trial scraper discovers news candidates from Daily Nation, Citizen Digital,
-The Standard, The Star, Tuko, and Kenyans.co.ke. It does not filter by GBV keywords
+The Standard, The Star, Tuko, Kenyans.co.ke, and Taifa Leo. It does not filter by GBV keywords
 or assign GBV labels.
 Publisher-specific URL rules and body selectors live in `scrapers/`; shared HTTP
 and metadata handling lives in `scrapers/common.py`.
@@ -366,7 +500,7 @@ and metadata handling lives in `scrapers/common.py`.
 python3 scripts/trial_scraper.py --source standard --limit 5
 ```
 
-Repeat `--source` to select multiple publishers, or omit it to try all six.
+Repeat `--source` to select multiple publishers, or omit it to try all seven.
 `--limit` caps new records per publisher; retrieval attempts are capped at five
 times that limit. `--delay` defaults to two seconds and cannot be below 1.5 seconds.
 Optionally set `SCRAPER_USER_AGENT` to an honest research-bot identity with your
@@ -466,7 +600,7 @@ python3 scripts/trial_scraper.py --source kenyans --limit 2
 
 Discovery is a bounded sample of configured listings/feeds, not a complete archive.
 The parser uses structured article metadata or publisher body containers.
-The supplied homepages for all six publishers and linked archived articles were checked
+The supplied homepages for the original six publishers and linked archived articles were checked
 successfully during development. Other pages and publishers still require live quality
 review; the offline fixtures are synthetic and do not establish complete compatibility.
 

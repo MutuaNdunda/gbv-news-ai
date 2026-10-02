@@ -4,6 +4,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
 
@@ -50,6 +51,24 @@ class Client:
         parts = urlsplit(url)
         return urlunsplit((parts.scheme, parts.netloc, parts.path, '', ''))
 
+    def _retry_wait(self, response, attempt):
+        """Honor Retry-After; defer rather than shorten waits longer than a minute."""
+        wait = max(self.delay, 2 ** attempt)
+        retry_after = response.headers.get('Retry-After', '')
+        if retry_after:
+            try:
+                if retry_after.strip().isdigit():
+                    seconds = int(retry_after)
+                else:
+                    retry_at = parsedate_to_datetime(retry_after)
+                    if retry_at.tzinfo is None:
+                        retry_at = retry_at.replace(tzinfo=timezone.utc)
+                    seconds = (retry_at - datetime.now(timezone.utc)).total_seconds()
+                wait = max(wait, seconds)
+            except (ValueError, TypeError, OverflowError):
+                pass
+        return wait if wait <= 60 else None
+
     def _request(self, url, stage=None):
         stage = stage or self.request_stage
         safe_url = self._log_url(url)
@@ -69,14 +88,19 @@ class Client:
                 )
                 time.sleep(2 ** attempt)
                 continue
-            if response.status_code not in (500, 502, 503, 504) or attempt == 2:
+            if response.status_code not in (429, 500, 502, 503, 504) or attempt == 2:
+                return response
+            wait = self._retry_wait(response, attempt)
+            if wait is None:
+                LOGGER.warning('Deferring HTTP %s retry; Retry-After exceeds 60s url=%s',
+                               response.status_code, safe_url)
                 return response
             LOGGER.info(
-                'source=%s stage=%s host=%s attempt=%d/3 error=HTTP %s url=%s',
+                'source=%s stage=%s host=%s attempt=%d/3 error=HTTP %s retry_in=%.1fs url=%s',
                 getattr(self, 'source', 'unknown'), stage, host, attempt + 1,
-                response.status_code, safe_url,
+                response.status_code, wait, safe_url,
             )
-            time.sleep(2 ** attempt)
+            time.sleep(wait)
 
     def permitted(self, url):
         parts = urlsplit(url)
