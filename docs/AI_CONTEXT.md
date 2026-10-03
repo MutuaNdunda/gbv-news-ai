@@ -7,15 +7,23 @@
 GBV News AI is a postgraduate research project for an ethical, human-supervised,
 near-real-time multilingual system that will identify, classify, geotag, and map
 gender-based violence (GBV) reporting in Kenyan digital news. The repository is in
-the **data-collection MVP** phase. Its current objective is reliable, reproducible
-collection and manual validation of broad news samples from Daily Nation, Citizen
-Digital, The Standard, The Star Kenya, Tuko, and Kenyans.co.ke.
+the **Automated Annotation Pipeline — L0 and L1** milestone, following
+the implemented collection MVP. Current State identifies a 407-record planning
+corpus; Supabase contained 536 article versions on 3 October 2026. Neither count
+establishes a validated final corpus. Broad
+news sources are Daily Nation, Citizen Digital, The Standard, The Star Kenya, Tuko,
+Kenyans.co.ke, and Taifa Leo. Automated L0/L1 engines are implemented, with human
+validation and research exit-gate evidence still pending.
 
 Implemented technologies are Python, Requests, Beautiful Soup, lxml, Google Cloud
 Storage, Supabase PostgreSQL, SQLAlchemy/psycopg, the Internet Archive CDX API/Wayback
 replay service, Flask/Jinja, Gunicorn, and `unittest`. The implemented Flask UI is a
-read-only collection monitor. AfroXLMR/PyTorch, NER, geocoding, annotation, mapping,
-and public/reviewer workflows remain future research work.
+collection and annotation monitor with optional protected bounded execution.
+AfroXLMR/PyTorch, NER, geocoding, human validation, mapping,
+and public/reviewer workflows remain future research work. Before roadmap-related
+implementation, run `python3 scripts/sync_roadmap.py` and read all four snapshots
+plus `docs/roadmap/IMPLEMENTATION_STATUS.md`. The public Sheet controls planning;
+the existing architecture remains the technical baseline.
 
 ```text
 Publisher archive/listing
@@ -24,8 +32,9 @@ Publisher archive/listing
         -> raw response persisted to GCS
         -> shared normalization + source-specific parsing
         -> normalized object in GCS + lineage in Supabase
-        -> read-only Flask collection monitor
-        -> manual quality/relevance review (current manual responsibility)
+        -> shared annotation runner: L0 -> persist -> valid L0 -> L1 -> persist
+        -> Flask collection/annotation monitor
+        -> sampled human validation (next; not implemented)
         -> ML/NER/geocoding/review/map workflows (future)
 ```
 
@@ -42,20 +51,26 @@ gbv-news-ai/
 ├── .env.example
 ├── .gitignore
 ├── app/                         # Flask factory, routes, services, templates, static
+├── annotations/                 # shared runner, pure L0/L1 rules, config, gazetteer
 ├── database/
 │   ├── models.py                # existing Supabase schema mappings
 │   ├── session.py               # environment and SQLAlchemy engine/session setup
 │   └── repositories/
 │       ├── articles.py          # article/version upsert, deduplication, counts
+│       ├── annotations.py       # append-only outputs, current queries, run lifecycle
 │       ├── collection_runs.py   # run lifecycle and advisory locking
 │       └── collection_run_scans.py # idempotent per-source/month progress
 ├── docs/
 │   ├── AI_CONTEXT.md
 │   ├── app_engine_deployment.md
-│   └── collection_protocol.md
+│   ├── collection_protocol.md
+│   ├── annotations.md           # rule/specification, schema and operator guide
+│   └── roadmap/                 # public planning snapshots/config + engineering log
 ├── migrations/
 │   ├── 20260909_add_collection_run_scans.sql
-│   └── 20260910_expand_collection_sources.sql
+│   ├── 20260910_expand_collection_sources.sql
+│   ├── 20261003_add_taifaleo_source.sql
+│   └── 20261003_add_automated_annotations.sql
 ├── models/
 │   ├── classification/          # empty placeholder
 │   └── ner/                     # empty placeholder
@@ -69,11 +84,16 @@ gbv-news-ai/
 │   ├── nation.py
 │   ├── standard.py
 │   ├── star.py
-│   └── tuko.py
+│   ├── tuko.py
+│   ├── taifaleo.py
+│   └── wayback.py
 ├── scripts/
 │   ├── collect_monthly.py
 │   ├── test_infrastructure_connections.py
-│   └── trial_scraper.py
+│   ├── trial_scraper.py
+│   ├── import_local_trials.py
+│   ├── run_annotations.py
+│   └── sync_roadmap.py
 ├── main.py                      # App Engine/Gunicorn Flask entrypoint
 ├── app.yaml                     # App Engine Python 3.14 configuration
 ├── storage/
@@ -106,7 +126,7 @@ gbv-news-ai/
 
 The initial Supabase article/run schema is mapped by the repository. Versioned SQL
 migrations add `collection_run_scans` and expand article/scan source constraints for
-Tuko and Kenyans.co.ke. Apply migrations in filename order to each database.
+Tuko, Kenyans.co.ke, and Taifa Leo. Apply migrations in filename order to each database.
 
 ## 3. Root Files
 
@@ -149,6 +169,9 @@ Never force-add collected research data.
 `.env.example` lists the Supabase fields, GCS bucket names, GCP project, and optional
 crawler user agent. Real values live only in ignored `.env`. Local GCS access uses ADC;
 service-account JSON keys must not be stored in the repository.
+Optional annotation UI execution uses `ANNOTATION_UI_ENABLED=1`,
+`ANNOTATION_UI_TOKEN` and `FLASK_SECRET_KEY`; distinct random secrets of at least
+32 characters are required. Mutation is disabled by default.
 
 ## 4. Directory and File Map
 
@@ -493,26 +516,29 @@ JSON is UTF-8 and pretty-printed. Timestamps use ISO 8601 where parsing succeeds
 timezone-naive source dates remain timezone-naive and are explicitly marked unknown.
 The monthly collector does not save records without a usable publication date.
 
-### 5.1 Planned Layered Annotation Schema
+### 5.1 Layered Annotation Schema
 
-Annotation is not a single classification task. The planned human-review system must
-support distinct, traceable layers that match the research goals and keep extraction
+Annotation is not a single classification task. Automated L0/L1 and planned later
+layers support distinct, traceable tasks that match the research goals and keep extraction
 quality, relevance decisions, semantic labels, locations, and privacy review separate.
 
 | Layer | Task | Label type | Example labels/output |
 |---|---|---|---|
-| **L0 – Extraction Quality** | Is the parsed article valid? | Binary decision + reason | `valid`, `bad_date`, `truncated_body`, `wrong_canonical` |
+| **L0 – Extraction Quality** | Is the parsed article valid? | Three-way gate + reasons | `valid`, `needs_review`, `invalid` |
 | **L1 – Kenya Relevance** | Is the article about Kenya? | Categorical decision + evidence | `kenya`, `not_kenya`, `ambiguous` |
 | **L2 – GBV Relevance** | Is the article about GBV? | Categorical decision + confidence | `gbv`, `not_gbv`, `borderline` |
 | **L3 – GBV Type** | What kind of GBV is reported? | Multi-label | `physical`, `sexual`, `emotional`, `economic`, `harmful_practice`, `online` |
 | **L4 – Location** | Where did the incident happen? | Text spans + NER labels + normalized geocode | `["Nairobi", "Kibera"]` mapped to the appropriate county/ward |
 | **L5 – Privacy Risk** | Does the article contain personally identifiable or sensitive information? | Multi-label | `victim_name`, `exact_address`, `photo`, `none` |
 
-The current `kenya_relevance` field deliberately starts as `needs_review`; the L1
-annotation workflow is the planned mechanism for resolving it. Publisher origin alone
-must not be treated as evidence that an article concerns Kenya. Annotation records
-should preserve reviewer evidence, confidence where applicable, timestamps, schema
-version, and history rather than silently overwriting source records or model outputs.
+The collection-era `articles.kenya_relevance` field remains `needs_review`;
+automated L1 decisions live separately in `automated_annotations`. Publisher origin
+supplies no relevance score. `annotation_runs` stores lifecycle, trigger, counters,
+method versions, configuration, selected-version IDs, summaries and safe errors.
+`automated_annotations` stores append-only layer/label/confidence/evidence/reasons
+with article, article-version, run, method/version and timestamp lineage. L1 links
+to the exact current valid compatible L0. Future human validation and reference
+labels require separate storage and must not overwrite automated outputs.
 
 ## 6. Data Collection Flow
 
@@ -552,6 +578,7 @@ then lets publication metadata determine the record's actual corpus month.
 - Create-only raw and processed writes with GCS URI/generation capture.
 - Supabase `collection_runs`, logical `articles`, and extraction `article_versions`.
 - Supabase `collection_run_scans` for queryable source/capture-month counters/status.
+- Supabase `annotation_runs` and `automated_annotations` for versioned automated outputs.
 - GCS-backed progress, CSV reports, collection logs, and CDX caches.
 - PostgreSQL advisory locks for same-run concurrency safety.
 - Pending-index checkpoints that recover a processed-object/database failure without
@@ -607,13 +634,40 @@ The same command and run name resume it.
 
 ## 11. Application Architecture
 
-The architecture remains a sequential collection pipeline plus a read-only Flask
-monitor, not a microservice topology. Publisher modules own discovery/parsing rules; shared scraper
+The architecture uses sequential collection and annotation pipelines with a Flask
+monitor. Publisher modules own discovery/parsing rules; shared scraper
 modules own safe retrieval and normalization; scripts orchestrate dedicated GCS and
 database layers. Classification is not a scraper responsibility. Structured lineage
 stays outside publisher parsing. Flask services reuse those layers and issue grouped
 queries without listing GCS for counts. ML/NER/geocoding and review interfaces remain
-downstream future stages.
+downstream future stages. `annotations/service.py` is the sole L0/L1 orchestrator
+for CLI, bounded UI and future automation. It uses an advisory lock, stable selection,
+generation-pinned processed GCS reads, per-version persistence/checkpoints, secret-safe
+logs, continuation after individual failures, and pending-only method-aware selection.
+Annotation locking uses a dedicated autocommit direct/session-pooler connection with
+backend-identity checks before writes; a lost lease stops further processing.
+Transaction-pooler connections are rejected. Disconnected cleanup does not mask
+completed checkpoints. Collection locking remains unchanged.
+Current compatible prerequisite/results are fetched once per locked cohort, avoiding
+per-article lookup queries while preserving forced-L0/L1 dependency checks.
+L1 refuses missing/mismatched processed input or a body hash inconsistent with the
+version accepted by L0; fallback metadata alone cannot produce a semantic label.
+`--force` appends history; current queries resolve compatible L0/L1 dependencies.
+
+L0 uses deterministic hard/soft extraction and provenance rules, minimum 200
+characters/35 words (under 60 characters is unusable), labels valid/review/invalid,
+and NULL confidence (`extraction_quality_rules`, `l0-v1.0`). L1 uses a versioned
+47-county gazetteer with city/institution/demonym/foreign evidence from title/body,
+conservative mixed/ambiguous handling and centralized scoring
+(`kenya_relevance_hybrid`, `l1-v1.0`). Its normalized confidence is not a calibrated
+probability. Config changes get distinct method identities. See `docs/annotations.md`.
+
+Flask routes are `/annotations`, `/annotations/runs`, `/annotations/runs/<uuid>`,
+`/annotations/l0`, `/annotations/l1` and protected `POST /annotations/run`.
+Article detail includes annotation history. The opt-in trigger shares the same
+runner, requires execution-token and rotating signed-session CSRF validation,
+caps batches at 20, and requires HTTPS for remote clients. No queue or reviewer
+authentication system is introduced.
 
 ## 12. Machine Learning State
 
@@ -628,7 +682,7 @@ downstream future stages.
 
 ### Planned
 
-- Annotation and weak-supervision workflows with independent human validation.
+- GBV weak-supervision workflows with independent human validation.
 - Baseline and AfroXLMR task-specific GBV classification.
 - English, Swahili, Sheng, and code-switched evaluation for accuracy, fairness,
   robustness, and latency.
@@ -663,6 +717,18 @@ gcloud auth application-default login
 python3 scripts/test_infrastructure_connections.py
 python3 -m unittest discover -s tests -v
 ```
+
+Automated annotation (after applying the additive annotation migration):
+
+```bash
+python3 scripts/run_annotations.py --layer l0,l1 --limit 20
+python3 scripts/run_annotations.py --layer l0
+python3 scripts/run_annotations.py --layer l1
+gunicorn -b 127.0.0.1:8080 main:app
+```
+
+Use UUID membership filters before wider pilot execution. Inspect `/annotations`
+and the stored run summary. L1-only never silently runs L0; invalid/review L0 blocks L1.
 
 Small single-snapshot trial:
 
@@ -702,7 +768,12 @@ configuration. Do not run two processes against the same run. See README.md and
 
 ## 15. Source of Truth
 
-Use this priority:
+For implementation sequencing and readiness, the public Google Sheet is the
+planning source of truth. Sync first, then use Roadmap, Current State, Stage Gates
+and Annotation Layers alongside the repository engineering log. Report mismatches;
+planning prose does not justify destructive changes or establish code completion.
+
+For actual technical behavior, use this priority:
 
 1. Current executable source code.
 2. Database migrations/schema, when present.
@@ -718,7 +789,7 @@ AI_CONTEXT.md.
 
 ### Implemented
 
-- Source-specific archive URL validation, discovery, and parsing for six publishers.
+- Source-specific archive URL validation, discovery, and parsing for seven publishers.
 - Shared URL normalization, host/port restrictions, robots checks, throttling, retries,
   redirect validation, metadata/body extraction, and content hashing.
 - Bounded single-snapshot trials and retrospective monthly CDX collection.
@@ -729,8 +800,16 @@ AI_CONTEXT.md.
 - An infrastructure connection checker for Supabase tables and GCS permissions.
 - A read-only Flask/Jinja collection monitor with dashboard, run, article, and health
   views. It uses grouped/paginated database queries and bucket metadata checks.
-- 44 offline tests covering parser behavior, orchestration, persistence failures,
-  retry, idempotency, scan persistence, monitor routes, and monitor query shape.
+- Public anonymous roadmap sync with validated/atomic CSV snapshots, read-only
+  `--check`, and public identifier overrides; no Google authentication.
+- Local JSON/JSONL trial import with matching raw evidence and cloud deduplication.
+- Automated extraction-quality and Kenya-relevance layers, additive schema,
+  append-only version lineage, shared CLI/UI runner, protected bounded execution,
+  run/results monitoring and structured safe logs.
+- Offline tests cover parsing, orchestration, persistence/recovery, monitor behavior,
+  local imports, roadmap sync, rules, generation reads, actual SQL current queries,
+  gating, counters, failure isolation, force/idempotency and UI protection. See
+  IMPLEMENTATION_STATUS.md for current executed test count and real-run observations.
 - Git exclusion of collected data.
 
 ### Partially Implemented
@@ -738,17 +817,17 @@ AI_CONTEXT.md.
 - Archive coverage and historical-layout compatibility vary by source/capture.
 - Language is preserved from metadata but not detected or validated.
 - Publication timestamp parsing is source-specific and sometimes timezone-unknown.
-- Kenya relevance is flagged for manual review but no review workflow exists.
-- Manual extraction-quality review is required; no review tooling exists.
+- Automated L0/L1 decisions exist, but extraction quality and Kenya relevance have
+  not passed sampled human validation or calibration. No human-review tooling exists.
 - Near-real-time is an objective, but only retrospective/snapshot collection exists.
 
 ### Planned / Not Implemented
 
-- Annotation, weak-labeling, and human-review persistence.
+- Human-validation/reference-label persistence and GBV weak-labeling.
 - GBV classification, AfroXLMR fine-tuning, datasets, evaluation, inference, and model
   lineage.
 - NER, location-role reasoning, geocoding, maps, and privacy-aware presentation.
-- Administrative, annotation, reviewer, map, and public-user workflows.
+- Administrative, human-review, map, and public-user workflows.
 - Prospective continuous or near-real-time scheduling and latency measurement.
 
 ## 17. Known Limitations / Technical Debt
@@ -759,12 +838,12 @@ AI_CONTEXT.md.
   not prove compatibility with every archive page.
 - Missing or unparseable publication dates exclude records from monthly storage/counts;
   some valid dates have unknown timezone.
-- Language and Kenya relevance require manual verification.
+- Language and automated Kenya relevance require sampled validation.
 - Raw HTML may be incomplete, restricted, malformed, or unavailable; these attempts
   are logged and skipped.
-- Only `collection_run_scans` and the source-constraint expansion currently have
-  checked-in migrations; the initial Supabase tables predate repository migration
-  history. There is no annotation UI, ML layer,
+- Scan tracking, source expansion and automated annotations have versioned SQL
+  migrations; the initial Supabase ingestion tables predate repository migration
+  history. There is no human-review UI or ML layer,
   prospective scheduler, or end-to-end latency instrumentation.
 - Tests cover important deterministic behavior but do not perform live archive
   compatibility checks or broad extraction-quality evaluation.
@@ -773,21 +852,30 @@ AI_CONTEXT.md.
 
 ## 18. Immediate Next Steps
 
-Aligned with the current data-collection MVP:
+Pull the roadmap first; do not use this orientation file as a competing task list.
+The inspected roadmap currently prioritizes:
 
-1. Run and manually audit bounded samples for each publisher against raw HTML.
-2. Record extraction-quality results and add regression fixtures for observed failures.
-3. Complete/resume the January–August monthly scans and document per-source archive
-   gaps without claiming exhaustive coverage.
-4. Add a repeatable validation/report script for missing fields, body length, dates,
-   language metadata, and Kenya-relevance review queues.
-5. Define versioned promotion criteria from trial data to a reviewed research corpus.
-6. Manually validate GCS/Supabase trial outputs and their lineage joins.
-7. Add versioned migrations matching the existing Supabase ingestion schema.
-8. Exercise failure recovery and operational monitoring on bounded live trials.
-9. Design the human annotation/review data model before introducing weak labels or ML.
-10. Begin baseline/model work only after collection quality and reviewed dataset
-    procedures are reproducible.
+1. Reconcile the roadmap's 407-record planning count with the 536 observed versions.
+2. Inspect L0 flags and resolve parser defects through versioned reprocessing.
+3. Review initial annotation specification, thresholds and gazetteer with domain experts.
+4. Inspect L1 uncertainty and subgroup coverage; all 519 L0-valid versions now
+   have L1 decisions following the authorized full run.
+5. Create a small stratified/uncertainty-focused human reference sample and metrics.
+6. Satisfy documented gates before L2–L5, corpus freeze, final models or dashboard.
+
+See `docs/roadmap/IMPLEMENTATION_STATUS.md` for the inspected L0/L1 implementation
+status, required decisions and actual validation evidence. The real 20-version
+trial completed with L0 valid 20 and L1 Kenya 14 / non-Kenya 3 / ambiguous 3,
+zero failures. L0 subsequently covered all 536 versions: valid 519, needs_review 17,
+invalid 0, with no processing failures. Missing dates (12) and short bodies (5)
+require inspection. The initial full-run CLI had a post-completion lock-release
+error; annotation-specific autocommit/heartbeat/cleanup handling now addresses it.
+155 offline tests pass. Automated execution does not establish human-validated reference labels.
+Full L1 completed with 499 new decisions and 17 gated skips, no failures and exit 0.
+Across 519 eligible versions, current totals are Kenya 307 / non-Kenya 73 / ambiguous
+139; both L0 and eligible L1 pending are zero. The pending-only combined repeat
+selected zero records and added no duplicate decisions; Supabase holds 1,055
+automated rows (536 L0 + 519 L1). See IMPLEMENTATION_STATUS.md for run lineage.
 
 GCS and Supabase are the accepted implemented persistence providers. Do not introduce
 another object store or database provider without a new architecture decision.
@@ -796,6 +884,7 @@ another object store or database provider without a new architecture decision.
 
 | Task | Read first |
 |---|---|
+| Roadmap-driven implementation | Run `scripts/sync_roadmap.py`; read all four `docs/roadmap/*.csv` snapshots, `IMPLEMENTATION_STATUS.md`, `AGENTS.md`, and this file |
 | Scraper/parser | `AGENTS.md`, `README.md`, `scrapers/common.py`, `scrapers/archive.py`, relevant publisher module, collection scripts, relevant tests/fixture |
 | Monthly collection | `README.md`, `docs/collection_protocol.md`, `scripts/collect_monthly.py`, `scripts/trial_scraper.py`, `tests/test_monthly_collection.py` |
 | Storage | `AGENTS.md`, this file, `storage/gcs.py`, and `storage/persistence.py` |

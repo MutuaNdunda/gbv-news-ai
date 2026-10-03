@@ -50,7 +50,8 @@ class CollectionPersistence:
         article["article_id"] = article_identifier(article["source"], article["canonical_url"])
         article["raw_object_uri"] = raw.uri
         article["raw_object_generation"] = raw.generation
-        month = article.get("publication_month") or article.get("published_at")
+        month = (article.get("publication_month") or article.get("published_at")
+                 or article.get("scraped_at"))
         year, number = object_month(month).split("-")
         name = (f"{article['parser_version']}/{article['source']}/{year}/{number}/"
                 f"{article['article_id']}/{article['content_hash']}.json")

@@ -22,4 +22,6 @@ def detail(article_id: UUID):
     data = current_app.extensions["monitor_services"]["articles"].detail(article_id)
     if data is None:
         abort(404)
+    annotations = current_app.extensions["monitor_services"].get("annotations")
+    data["annotations"] = annotations.article_results(article_id) if annotations else []
     return render_template("articles/detail.html", **data)

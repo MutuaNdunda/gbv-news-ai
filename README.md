@@ -2,18 +2,41 @@
 
 GBV News AI is a postgraduate research project that aims to develop an ethical, human-supervised system for identifying, classifying, geotagging, and mapping gender-based violence (GBV) reporting in Kenyan digital news. The planned system will investigate multilingual approaches for English, Swahili, Sheng, and code-switched content, where available.
 
-The project is in its initial development stage. Trial collection has begun, but no validated research dataset is available yet. The immediate priority is to validate reliable news scrapers and review extraction quality before building the research corpus. Reporting sources include Daily Nation, Citizen Digital, The Standard, The Star Kenya, Tuko, Kenyans.co.ke, and Taifa Leo, with collection intended to include both GBV-related and non-GBV reporting. The current trials use archived publisher reporting, as described below.
+The collection pipeline and automated L0 extraction-quality / L1 Kenya-relevance
+layers are operational. No validated final research dataset is available yet.
+The roadmap's 407-record planning corpus differs from the 536 article versions
+observed in Supabase on 3 October 2026. Automated results still require sampled
+human validation. Reporting sources include Daily Nation, Citizen Digital, The
+Standard, The Star Kenya, Tuko, Kenyans.co.ke, and Taifa Leo, with collection
+intended to include both GBV-related and non-GBV reporting. Current trials use
+archived publisher reporting, as described below.
 
-The repository includes a read-only Flask monitor for collection operations. Future
-work will include annotation, task-specific fine-tuning and evaluation of multilingual
+The repository includes a Flask monitor for collection and automated annotations,
+with an optional protected, bounded annotation trigger. Future
+work will include human validation, task-specific fine-tuning and evaluation of multilingual
 models such as AfroXLMR, location extraction, geocoding, and human-review and mapping
 interfaces. These remain planned research capabilities; data collection and validation
 come first. Privacy, provenance, reproducibility, and human oversight will guide
 development throughout.
 
+## Sync project roadmap
+
+The public Google Sheet is the planning source of truth. Sync its four tabs into
+`docs/roadmap/` before roadmap-driven implementation:
+
+```bash
+python3 scripts/sync_roadmap.py
+python3 scripts/sync_roadmap.py --check
+```
+
+No Google credentials are needed for roadmap synchronization. L0 and L1 are
+implemented; sampled human validation and roadmap exit-gate evidence remain pending.
+See [the roadmap workflow](docs/roadmap/README.md) and
+[implementation status](docs/roadmap/IMPLEMENTATION_STATUS.md).
+
 ## Corpus Collection Monitor
 
-The implemented Flask monitor is a read-only operational view of collection state.
+The implemented Flask monitor provides a read-only operational view of collection state.
 It provides corpus totals, grouped source/month counts, run and source/month scan
 progress, searchable article metadata, complete extraction lineage, and infrastructure
 health. Counts come from Supabase; GCS is consulted only for read-only bucket health.
@@ -61,6 +84,7 @@ Open `http://127.0.0.1:8080/`. Available pages are:
 - Collection runs: `http://127.0.0.1:8080/runs`
 - Articles and extraction lineage: `http://127.0.0.1:8080/articles`
 - Infrastructure health: `http://127.0.0.1:8080/health`
+- Automated annotation counts and runs: `http://127.0.0.1:8080/annotations`
 
 For local development with debug mode and automatic reload, use:
 
@@ -68,10 +92,70 @@ For local development with debug mode and automatic reload, use:
 flask --app main:app run --debug --port 8080
 ```
 
-Stop either server with Ctrl-C. The monitor has no collection controls or destructive
-actions. If startup or `/health` fails, rerun
+Stop either server with Ctrl-C. The monitor has no collection controls; annotation
+execution is disabled by default. If startup or `/health` fails, rerun
 `python3 scripts/test_infrastructure_connections.py` and verify the configured database,
 bucket, and ADC access before changing application code.
+
+## Automated L0 and L1
+
+Apply the additive annotation migration once per database, after the ingestion
+migrations above. It has already been applied to the development Supabase database:
+
+```bash
+psql "$DIRECT_DATABASE_URL" -f migrations/20261003_add_automated_annotations.sql
+```
+
+Use the existing Supabase/GCS configuration and ADC credentials. Run a bounded
+batch first, then use the appropriate scope:
+
+```bash
+python3 scripts/run_annotations.py --layer l0,l1 --limit 20
+python3 scripts/run_annotations.py --layer l0
+python3 scripts/run_annotations.py --layer l1
+```
+
+Annotation advisory locking requires direct PostgreSQL or the Supabase session
+pooler (port 5432). Use that connection for `DATABASE_URL` / `DB_PORT`; the
+transaction pooler (6543) is incompatible with session-level locks.
+
+Without a limit, the command considers all matching article versions. By default
+it processes only missing current-method results; repeating a completed run adds
+no duplicate decisions. L0 uses `valid`, `needs_review`, and `invalid`. L1 runs
+only after a current valid L0 and stores `kenya`, `not_kenya`, or `ambiguous` with
+evidence and normalized support scores. L1-only execution skips versions without
+valid L0 rather than running L0 implicitly. JSON summaries and structured logs
+include counts and safe error types, never full article content.
+
+Narrow a run to its recorded collection membership or one article, or explicitly
+append a fresh historical decision:
+
+```bash
+python3 scripts/run_annotations.py --layer l0,l1 --collection-run-id <uuid> --limit 20
+python3 scripts/run_annotations.py --layer l0,l1 --article-id <uuid>
+python3 scripts/run_annotations.py --layer l0,l1 --article-id <uuid> --force
+```
+
+Open `/annotations`, `/annotations/runs`, `/annotations/l0`, and `/annotations/l1`
+to inspect counts, run summaries, source/label-filtered results, and failures.
+Article detail pages show historical automated outputs. Full article text is not
+displayed. CLI and UI share one annotation service and preserve all earlier rows.
+
+Optional local UI execution requires `ANNOTATION_UI_ENABLED=1`,
+`ANNOTATION_UI_TOKEN`, and a distinct `FLASK_SECRET_KEY`, with each secret at least
+32 random characters in the ignored `.env`. Restart the app and enter the execution
+token in the form. The trigger requires a session CSRF token, accepts only L0/L1,
+caps synchronous batches at 20, and requires HTTPS for remote clients. Keep this
+disabled on a public deployment until its secrets and trusted HTTPS handling are
+configured. For local synchronous UI runs, start Gunicorn with enough time for
+the bounded batch:
+
+```bash
+gunicorn --timeout 600 -b 127.0.0.1:8080 main:app
+```
+
+Use the CLI for full-corpus annotation. See [annotation rules, versioning, and security](docs/annotations.md)
+and [actual trial results](docs/roadmap/IMPLEMENTATION_STATUS.md).
 
 App Engine uses `app.yaml`; required secret/configuration handling is documented in
 [`docs/app_engine_deployment.md`](docs/app_engine_deployment.md).
@@ -487,6 +571,69 @@ git ls-files data
 The second command should list only intentional `README.md` and `.gitkeep` files, if
 any. Test fixtures under `tests/fixtures/` are small, synthetic regression inputs and
 may remain tracked; they are not collected research data.
+
+## Upload existing local trials to GCS and Supabase
+
+`scripts/import_local_trials.py` imports publisher JSONL files and individual article
+JSON files with their raw HTML, without fetching publishers again or deleting local
+files. It uses the
+same GCS/Supabase configuration as the cloud collectors. Apply the source migrations
+above before uploading, including the Taifa Leo migration where applicable.
+
+Preview local files without cloud access:
+
+```bash
+python3 scripts/import_local_trials.py --run-name all-local-trials --dry-run
+```
+
+Upload from the default `data/trials/processed/` and `data/trials/raw/` roots:
+
+```bash
+python3 scripts/import_local_trials.py --run-name all-local-trials
+```
+
+For legacy trials saved beneath `scrapers/data/`, use a separate run name:
+
+```bash
+python3 scripts/import_local_trials.py \
+  --processed-root scrapers/data/trials/processed \
+  --raw-root scrapers/data/trials/raw \
+  --run-name legacy-local-import-v2 --dry-run
+```
+
+Remove `--dry-run` from that command to upload. Repeat `--source citizen` or another
+registered source to select publishers; otherwise all supported article records
+in the selected processed root are imported. JSONL files use publisher filenames;
+individual JSON articles declare their `source` inside the record. Both formats
+are read directly from the processed root. Manifests and non-article JSON are
+excluded. Raw paths may use either `raw_snapshot_path` or the older `raw_snapshot`
+field. Run from the repository root when supplying relative paths.
+
+The importer verifies publisher URLs, required fields, collection timestamps,
+article-text hashes, and raw snapshots before writing. Raw files must resolve
+inside the selected raw root. Older generic Wayback records without a raw path
+are matched using their original replay filename. They retain their experimental
+parser version; importing does not reparse or validate extraction quality.
+
+Uploads skip stored URLs and within-publisher content hashes, including duplicates
+in the input. Create-only, content-addressed GCS objects and transactional database
+constraints protect identical retries. Existing URLs are skipped rather than used
+to replace cloud records. A local-import advisory lock prevents simultaneous imports;
+avoid concurrent collection while migrating local trials.
+
+Rerun the same command after a partial failure. Durable objects are reused and
+database indexing is retried; local input must remain unchanged for identical
+retries. Changing roots, source selections, or supported input formats requires a
+new run name. Older JSONL-only importer runs therefore need a new run name such as
+`all-local-trials` with this version. A dry run
+checks only local files and local duplicates; it does not check cloud duplicates.
+
+The terminal summary reports checked, ready (preview only), saved, duplicate, and
+failed records, with source/file/line/error-type references. Exit code `2` indicates
+failures. Cloud uploads save the latest summary at
+`gs://<GCS_RUNS_BUCKET>/runs/<run-name>/import_summary.json` and update the run status
+in Supabase. Uploaded metadata appears in the read-only monitor. Imported articles
+remain unreviewed trials, and missing/uncertain publication dates remain flagged.
 
 ## Single-snapshot trial data collection
 

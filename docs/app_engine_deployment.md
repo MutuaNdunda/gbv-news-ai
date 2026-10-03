@@ -27,3 +27,11 @@ gcloud app deploy app.deploy.yaml
 Do not commit `app.deploy.yaml`, database credentials, service-account keys, ADC
 files, tokens, or connection strings. Prefer the organization's approved secret
 injection process when one is available.
+
+The annotation migration must be applied separately before the deployed monitor
+can query `/annotations`; see `docs/annotations.md`. UI annotation execution is
+disabled by default. Do not enable it by merely adding the three opt-in environment
+variables: first configure trusted HTTPS handling and hosting/worker deadlines.
+The observed 20-version synchronous trial exceeded the current 30-second Gunicorn
+worker timeout. Use the CLI for large runs, and keep the existing App Engine
+deployment read-only until bounded execution is configured deliberately.

@@ -72,14 +72,16 @@ class GCSStorage:
             role, name, payload, "application/json; charset=utf-8", create_only=create_only
         )
 
-    def read_bytes(self, role: str, name: str) -> bytes | None:
+    def read_bytes(self, role: str, name: str, generation: str | None = None) -> bytes | None:
         try:
-            return self.client.bucket(self.buckets[role]).blob(name).download_as_bytes()
+            bucket = self.client.bucket(self.buckets[role])
+            blob = bucket.blob(name, generation=int(generation)) if generation else bucket.blob(name)
+            return blob.download_as_bytes(timeout=30)
         except NotFound:
             return None
 
-    def read_json(self, role: str, name: str) -> Any | None:
-        payload = self.read_bytes(role, name)
+    def read_json(self, role: str, name: str, generation: str | None = None) -> Any | None:
+        payload = self.read_bytes(role, name, generation)
         return json.loads(payload) if payload is not None else None
 
     def bucket_accessible(self, role: str) -> bool:

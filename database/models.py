@@ -1,11 +1,11 @@
-"""SQLAlchemy mappings for the existing Supabase ingestion schema."""
+"""SQLAlchemy mappings for Supabase collection and automated annotation lineage."""
 
 from __future__ import annotations
 
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Index, Integer, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -138,3 +138,51 @@ class CollectionRunScan(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AnnotationRun(Base):
+    __tablename__ = "annotation_runs"
+    __table_args__ = (Index("idx_annotation_runs_started_at", "started_at"), {"schema": "public"})
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    collection_run_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.collection_runs.id"))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(Text, server_default="running")
+    requested_layers: Mapped[list] = mapped_column(JSONB)
+    trigger_type: Mapped[str] = mapped_column(Text)
+    requested_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    processed_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    success_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    failed_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    skipped_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    method_versions: Mapped[dict] = mapped_column(JSONB)
+    configuration: Mapped[dict] = mapped_column(JSONB)
+    error_summary: Mapped[dict | None] = mapped_column(JSONB)
+    summary: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class AutomatedAnnotation(Base):
+    __tablename__ = "automated_annotations"
+    __table_args__ = (
+        Index("idx_auto_annotations_version_layer_method", "article_version_id", "layer", "method_version", "created_at"),
+        Index("idx_auto_annotations_article_id", "article_id"),
+        Index("idx_auto_annotations_run_id", "annotation_run_id"),
+        Index("idx_auto_annotations_layer_label", "layer", "label"),
+        Index("idx_auto_annotations_method_version", "method_version"),
+        {"schema": "public"},
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    article_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.articles.id"))
+    article_version_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.article_versions.id"))
+    annotation_run_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.annotation_runs.id"))
+    prerequisite_annotation_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.automated_annotations.id"))
+    layer: Mapped[str] = mapped_column(Text)
+    label: Mapped[str] = mapped_column(Text)
+    confidence: Mapped[float | None] = mapped_column(Float)
+    evidence: Mapped[dict | None] = mapped_column(JSONB)
+    reason_codes: Mapped[list | None] = mapped_column(JSONB)
+    method_name: Mapped[str] = mapped_column(Text)
+    method_version: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))

@@ -1,0 +1,14 @@
+{
+  "version": "kenya-gazetteer-v1.0",
+  "county_source": "https://www.devolution.go.ke/county-information/",
+  "counties": ["Mombasa", "Kwale", "Kilifi", "Tana River", "Lamu", "Taita Taveta", "Garissa", "Wajir", "Mandera", "Marsabit", "Isiolo", "Meru", "Tharaka Nithi", "Embu", "Kitui", "Machakos", "Makueni", "Nyandarua", "Nyeri", "Kirinyaga", "Murang'a", "Kiambu", "Turkana", "West Pokot", "Samburu", "Trans Nzoia", "Uasin Gishu", "Elgeyo Marakwet", "Nandi", "Baringo", "Laikipia", "Nakuru", "Narok", "Kajiado", "Kericho", "Bomet", "Kakamega", "Vihiga", "Bungoma", "Busia", "Siaya", "Kisumu", "Homa Bay", "Migori", "Kisii", "Nyamira", "Nairobi"],
+  "county_variants": {"Taita-Taveta": "Taita Taveta", "Tharaka-Nithi": "Tharaka Nithi", "Tharaka Nthi": "Tharaka Nithi", "Trans-Nzoia": "Trans Nzoia", "Elgeyo-Marakwet": "Elgeyo Marakwet", "Muranga": "Murang'a", "Murang’a": "Murang'a", "Homabay": "Homa Bay", "Garisa": "Garissa"},
+  "towns": ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika", "Naivasha", "Nanyuki", "Nyahururu", "Malindi", "Diani", "Kitale", "Kapenguria", "Lodwar", "Maralal", "Iten", "Kapsabet", "Kerugoya", "Kutus", "Wote", "Hola", "Voi", "Mwatate", "Taveta", "Ol Kalou", "Kabarnet", "Kathwana", "Limuru", "Ruiru", "Kikuyu", "Athi River", "Kitengela", "Ongata Rongai", "Kibera", "Mathare", "Eastleigh"],
+  "place_variants": {"Nairobi City": "Nairobi", "Nairobi County": "Nairobi", "Mombasa City": "Mombasa"},
+  "ambiguous_places": ["Busia", "Meru", "Nandi", "Kikuyu", "Eastleigh"],
+  "country_terms": ["Kenya", "Kenyan", "Kenyans", "Mkenya", "Wakenya"],
+  "institutions": ["Kenya Police", "Kenya Police Service", "National Police Service of Kenya", "Directorate of Criminal Investigations", "DCI", "Office of the Director of Public Prosecutions", "ODPP", "Supreme Court of Kenya", "High Court of Kenya", "Kenya National Assembly", "Kenya Revenue Authority", "KRA", "Independent Electoral and Boundaries Commission", "IEBC", "Ethics and Anti-Corruption Commission", "EACC", "Kenya Defence Forces", "KDF", "Ministry of Health Kenya"],
+  "ambiguous_institutions": ["DCI", "ODPP", "KRA", "IEBC", "EACC", "KDF", "Office of the Director of Public Prosecutions"],
+  "admin_terms": ["county", "counties", "sub-county", "ward", "kaunti", "kata"],
+  "foreign_places": ["Uganda", "Tanzania", "Rwanda", "Burundi", "Ethiopia", "Somalia", "South Sudan", "Sudan", "Nigeria", "South Africa", "Ghana", "Egypt", "Democratic Republic of Congo", "United States", "USA", "United Kingdom", "Britain", "England", "India", "China", "Pakistan", "France", "Germany", "Russia", "Ukraine", "Israel", "Gaza", "Palestine", "Kampala", "Dar es Salaam", "Arusha", "Kigali", "Addis Ababa", "Mogadishu", "Lagos", "Johannesburg", "Cape Town", "London", "Washington", "New York", "Paris", "Mumbai", "Delhi", "Moscow"]
+}
