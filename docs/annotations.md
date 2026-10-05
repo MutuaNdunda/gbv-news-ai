@@ -1509,6 +1509,175 @@ under the study definition. It emits `gbv`, `not_gbv` or intentional uncertainty
 L0/L1 sampled-validation gates remain open. That authorization does not establish
 research readiness, acceptable labels, calibrated thresholds or a completed L2 gate.
 
+### Trained transformer architecture — `l2-afroxlmr-dev-v1`
+
+The implemented L2 development model is **AfroXLMR-base fine-tuned for binary
+article-level sequence classification**. Its Transformers implementation is
+`XLMRobertaForSequenceClassification`: an XLM-RoBERTa encoder initialized from
+`Davlan/afro-xlmr-base`, followed by a task-specific two-output classification
+head. Both base and tokenizer are pinned to revision
+`25f27299c247a6b73a767bd82d12444138b19337`. The pretrained checkpoint supplies
+language representations; the GBV task is learned by fine-tuning on the private
+development dataset. Multilingual architecture does not establish validated
+performance in Swahili, Sheng or code-switched reporting.
+
+The dimensions below were verified against the saved artifact's `config.json`,
+its safetensors tensor shapes, installed Transformers 4.57.6 implementation,
+and the repository trainer/predictor. They describe the actual saved model.
+
+| Architectural component | Implemented configuration |
+| --- | --- |
+| Backbone | XLM-RoBERTa bidirectional encoder; no separate pooler |
+| Transformer encoder layers | 12 |
+| Hidden representation | 768 dimensions |
+| Self-attention heads per layer | 12; 64 dimensions per head |
+| Feed-forward intermediate size / activation | 3,072 / GELU |
+| Token vocabulary | 250,002 subword IDs |
+| Position embeddings | Learned absolute positions; 514 configured slots |
+| Effective input limit | 512 tokens including tokenizer-added special tokens |
+| Hidden / attention dropout | 0.1 / 0.1 |
+| Classification representation | Final encoder state of the first `<s>` token |
+| Classification head | Dropout 0.1 → Linear 768→768 → tanh → Dropout 0.1 → Linear 768→2 |
+| Saved parameters | 278,045,186 total, including 592,130 classification-head parameters |
+| Saved tensor precision | float32 |
+| Fine-tuning scope | Encoder and classification head; no layers frozen |
+| Output label order | `not_gbv=0`, `gbv=1` |
+
+The encoder uses self-attention over the retained input sequence. The head consumes
+the first-token representation directly rather than mean-pooling all tokens or
+using a separate XLM-R pooler. Softmax transforms the two logits into class
+probabilities; the GBV component becomes `p_gbv`.
+
+```mermaid
+flowchart TD
+    A[Exact current L0 valid and L1 Kenya prerequisite] --> B[Verified stored title and article body]
+    B --> C[TITLE / ARTICLE deterministic input]
+    C --> D[Multilingual subword tokenization and head truncation to 512 tokens]
+    D --> E[12-layer XLM-RoBERTa encoder: hidden size 768]
+    E --> F[First-token representation and binary classification head]
+    F --> G[Two logits: not_GBV and GBV]
+    G --> H[Softmax GBV probability]
+    H --> I[Threshold mapping: GBV / not_GBV / borderline]
+    I --> J[Append-only prediction with model and prerequisite lineage]
+```
+
+The tokenizer is the saved XLM-RoBERTa tokenizer with SentencePiece subword assets.
+The pipeline formats one sequence as `TITLE:\n<title>\n\nARTICLE:\n<body>`,
+dynamically pads each batch and truncates from the right, preserving the beginning.
+Long articles can therefore lose relevant GBV evidence located after the retained
+512-token input. The 514 position slots are an architectural detail, not permission
+to exceed the pipeline's 512-token limit. No summarization, retrieval, sliding
+windows or hierarchical article aggregation is implemented.
+
+The model is **binary**, while the application presents three outcomes:
+
+| Probability rule | Application label |
+| --- | --- |
+| `p_gbv >= 0.8` | `gbv` |
+| `p_gbv <= 0.2` | `not_gbv` |
+| `0.2 < p_gbv < 0.8` | `borderline` |
+
+`borderline` is an application uncertainty interval, not a learned third class.
+The thresholds are **unvalidated engineering thresholds**, and probabilities are
+`uncalibrated_softmax_probability`. The persisted confidence field stores `p_gbv`
+even for negative predictions; it is not always the probability of the assigned
+application label. Human decisions remain separately stored and do not change the
+model probability or historical machine output.
+
+### Training procedure and measured performance
+
+This subsection contains the executed results directly in the annotation
+specification. Its latest persisted-run observation is **5 October 2026,
+22:43 EAT**; it does not claim a later rerun or completed independent evaluation.
+
+Fine-tuning used all **322 mixed-effective binary development records**:
+**10 gbv / 312 not_gbv**. Provenance is 300 human corrections and 22 unreviewed
+weak labels; only **three of the ten positive records are human-reviewed**.
+The two confirmed borderline records were excluded. Exact duplicate/unresolved
+exclusions were zero, but near-duplicate grouping remains pending. No independent
+held-out reference set was frozen, and no small arbitrary validation split was made.
+
+During training, `model.train()` enables dropout, seeded shuffling orders records,
+and AdamW updates all model parameters. Class-weighted loss is:
+
+```text
+weight_c = N / (2 * n_c)
+loss_batch = mean(weight_label * cross_entropy_per_example)
+```
+
+| Training setting | Executed value |
+| --- | --- |
+| Device | Apple MPS; CUDA unavailable |
+| Libraries | PyTorch 2.14.1; Transformers 4.57.6; safetensors 0.8.0 |
+| Epochs / optimizer steps | 3 / 483 |
+| Batch size / effective maximum length | 2 / 512 tokens |
+| Learning rate / weight decay / seed | 2e-5 / 0.01 / 42 |
+| GBV / not-GBV class weights | 16.1 / 0.5160256410256411 |
+| Training duration | 622.895 seconds (10m23s) |
+| Mean weighted training loss | 0.5048725078 |
+| Epoch mean losses | 0.7354258622; 0.5244470051; 0.2547446561 |
+| Peak memory | not measured |
+
+These losses describe optimization on the training data, not generalization.
+With GBV comprising **3.11%** of training records and only three reviewed positives,
+class weighting does not establish adequate positive support or validated recall.
+No accuracy/F1 against the training labels is reported as model performance.
+
+Inference reloads only the immutable local artifact, checks manifest/file hashes
+and label order, and runs `model.eval()` with `torch.inference_mode()`;
+`local_files_only=True`, `trust_remote_code=False` and safetensors prevent a Hub
+fallback or remote-code dependency. The earlier bounded single-record check and
+later batched persisted run measure different aspects of operation:
+
+| Engineering result | Verified measurement |
+| --- | --- |
+| Bounded offline-reload check | 20 real versions across seven publishers; zero failures |
+| Bounded labels | 0 gbv / 19 not_gbv / 1 borderline |
+| Bounded mean / median inference | 120.482 / 81.057 ms per record |
+| Artifact load time in bounded check | 3.449 seconds |
+| Current L1-Kenya eligible versions | 324 |
+| Persisted compatible transformer results | 300 (92.59% coverage) |
+| Persisted labels | 10 gbv / 284 not_gbv / 6 borderline |
+| Remaining eligible pending versions | 24 |
+| Latest persisted-run status | failed; partial results retained |
+| Selected / processed / saved / skipped / recorded article failures | 536 / 489 / 300 / 188 / 1 |
+| Recorded batched article-loading and inference stage | 227.627 seconds |
+| Stored total duration | 1,093.565 seconds (18m13.565s) |
+| Start-to-completion timestamp span | 1,542.706 seconds (25m42.706s) |
+| Full engineering suite including installed-model integration | 264 passed; zero skips |
+
+The persisted run terminated after an `OperationalError` and then
+`AnnotationLockLost`. Prerequisite skips encountered before termination were
+139 L1-ambiguous, 32 L1-not-Kenya and 17 missing compatible L1; these are partial-run
+skip totals, not a replacement for current corpus eligibility. The 24 pending
+records are not 24 recorded model failures. The discrepancy between stored duration
+and timestamp span remains unexplained. Batched stage timing includes verified
+article loading and is not pure model latency; the bounded per-record latency
+must not be treated as directly comparable whole-corpus throughput.
+
+Saved-result coverage by publisher: Citizen 118, Kenyans.co.ke 2, Nation 16,
+Standard 13, Star 14, Taifa Leo 89, Tuko 48. These sum to 300 article versions.
+Output label counts describe model decisions, not verified GBV incidents or
+accuracy against human labels. Existing human decisions on the mixed training
+pool are not an independent evaluation set.
+
+At the readback, all four required L2 schema objects remained absent despite the
+300 existing predictions: the label constraint, prerequisite constraint,
+method/dependency index and L1-Kenya prerequisite trigger. Saved rows alone do not
+prove `20261005_add_l2_annotations.sql` installation. Resolve schema readiness
+before further writes, investigate the connection/lock interruption and resume
+pending-only inference without overwriting historical results.
+
+**Independent performance is not established:** accuracy, precision, recall, F1,
+AUC and calibration have not been measured on an independent held-out human
+reference set. Before thesis evaluation, approve the codebook, expand independently
+reviewed positives and language/source coverage, validate L0/L1, group near
+duplicates, freeze protected reference membership and agree evaluation/acceptance
+criteria. Threshold tuning must use development validation only. The L2 research
+gate remains open. The [separate performance report](l2_model_performance.md)
+provides an additional operational audit; the architecture and results above are
+self-contained in this annotation document.
+
 ### Entry, lineage and current results
 
 L2 requires the **exact current compatible L1 `kenya` annotation**, itself linked
