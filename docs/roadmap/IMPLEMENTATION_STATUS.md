@@ -8,9 +8,206 @@ No private article content, victim information or reference labels belong here.
 
 **L0/L1 implemented and executed; L2 weak bootstrap covers the current eligible
 corpus; training/inference infrastructure and local L0/L1/L2 Human Review implemented.
-A primary trained L2 model and completed sampled validation remain pending.**
+Human review is recorded for all 302 originally borderline L2 weak results.
+The first real AfroXLMR development artifact is trained/configured locally;
+300 transformer results are persisted; 24 eligible versions remain pending after
+a failed run. Independent validation and required L2 schema installation remain pending.**
+
+### Latest L2 persisted-run audit — 5 October 2026, 22:43 EAT
+
+Read-only verification found **300 / 324 eligible transformer results (92.59%)**:
+**10 gbv / 284 not_gbv / 6 borderline**, with **24 pending**. The recorded run
+failed after one `OperationalError` and then `AnnotationLockLost`; it selected
+536 versions, processed 489, saved 300 and skipped 188 on prerequisite gates.
+These are partial-run counts. Stored duration is 1,093.565 seconds; timestamps
+span 1,542.706 seconds, an unresolved discrepancy. Batched article-loading and
+inference time is 227.627 seconds, not pure model latency.
+
+The required four L2 schema objects remain absent despite existing model rows.
+No migration, retry or prediction write was performed by this documentation audit.
+Training diagnostics, the bounded 20-record check, publisher coverage, schema
+limits and evaluation requirements are documented in [L2 model performance](../l2_model_performance.md).
+No independent held-out accuracy/F1 or calibration is established.
+
+### Initial real AfroXLMR development model — 5 October 2026, 15:41 EAT
+
+The updated roadmap was synchronized anonymously before implementation. Reviewed-only
+and mixed-effective private exporters now resolve the latest exact-compatible human
+revision before machine fallback. Unresolved reviews block fallback; human-confirmed
+borderline remains excluded. Original annotations and reviews were not rewritten.
+Explicit frozen-reference membership can exclude article/version IDs and historical
+content hashes. No designated frozen human reference set was found or created.
+
+Read-only final verification found 324 L1-Kenya eligible versions: original weak
+labels **7 gbv / 15 not_gbv / 302 borderline**, current human overlay
+**10 / 312 / 2**. Reviews comprise 300 corrections and two confirmed borderline;
+22 binary weak results remain unreviewed. Counts describe article versions.
+
+| Export | Pre-dedup binary | Post-dedup binary | gbv | not_gbv | Human confirmed binary | Human corrected | Weak unreviewed |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| reviewed-only | 300 | 300 | 3 | 297 | 0 | 300 | 0 |
+| mixed-effective | 322 | 322 | 10 | 312 | 0 | 300 | 22 |
+
+Both exports exclude two confirmed borderline, zero unresolved reviews and zero
+exact duplicate records. Reviewed-only additionally excludes 22 unreviewed records.
+Exact duplicate conflicts are excluded; near-duplicate/syndication grouping remains
+pending. Neither export is gold or a final evaluation corpus.
+
+| Publisher | Reviewed-only | Mixed-effective |
+| --- | ---: | ---: |
+| Citizen | 137 | 141 |
+| Kenyans.co.ke | 2 | 2 |
+| Nation | 15 | 16 |
+| Standard | 13 | 13 |
+| Star | 10 | 14 |
+| Taifa Leo | 76 | 89 |
+| Tuko | 47 | 47 |
+
+Language **metadata**, not independently validated language detection: reviewed-only
+`en=87, en-KE=137, unknown=76`; mixed `en=92, en-KE=141, unknown=89`.
+Private immutable JSONL/manifests are under `data/l2/reviewed-dev-v1/` and
+`data/l2/mixed-dev-v1/`. Versions and record SHA-256s:
+
+- `l2-reviewed-development-v1-c9ca121a586e68e1fab19ef2`:
+  `c9ca121a586e68e1fab19ef2a5263aed38bbec85df5f4826a12b88db26e772cd`.
+- `l2-mixed-development-v1-0bf75464737ca7d7816cbf86`:
+  `0bf75464737ca7d7816cbf86cba7913360af57d35dcf18fa8d1a665ae2f0d32b`.
+
+Lineage: L0 `l0-v1.0`, L1 `kenya_relevance_hybrid` /
+`l1-v2.0-a39ff87099ee`, weak L2 `gbv_relevance_weak_supervision` /
+`l2-ws-v1.0-32d7cc08144ebae3`. One historical review guideline is represented:
+`docs/annotations.md-sha256:5db3e6322e7b722ca5c09a52e19e28a4fab05acdc02b062f320d3c81b81b0fa0`.
+Later documentation edits do not change saved guideline lineage.
+
+**Executed training:** `l2-afroxlmr-dev-v1` used all 322 mixed records, binary
+`not_gbv=0, gbv=1`, deterministic TITLE/ARTICLE input and head truncation.
+Base/tokenizer: [Davlan/afro-xlmr-base](https://huggingface.co/Davlan/afro-xlmr-base),
+both pinned to `25f27299c247a6b73a767bd82d12444138b19337`.
+Apple MPS was available/used; CUDA unavailable. Libraries: PyTorch 2.14.1,
+Transformers 4.57.6, safetensors 0.8.0. AdamW, learning rate `2e-5`, three epochs,
+batch two, 512 tokens, seed 42, weight decay 0.01; 483 optimizer steps.
+Balanced cross entropy uses `weight_c=N/(2*n_c)`: gbv **16.1**, not_gbv
+**0.5160256410256411**. Weighted per-example losses are summed and divided by
+batch example count, preserving weighting in single-class/singleton minibatches.
+`--class-weighting none` is supported; no oversampling/augmentation was used.
+
+Training lasted **622.895 seconds** (10m23s), mean weighted loss
+**0.5048725078**; epoch means **0.7354258622, 0.5244470051, 0.2547446561**.
+Peak memory was not measured. These are training diagnostics, not accuracy.
+Only **10 positives (3 human-reviewed)** exist: severe imbalance. No arbitrary
+validation split was created. **NO RELIABLE INDEPENDENT DEVELOPMENT VALIDATION
+METRICS DUE TO LIMITED POSITIVE CLASS SUPPORT. NO FINAL HELD-OUT HUMAN REFERENCE
+SET IS CURRENTLY FROZEN.** No precision/recall/F1/AUC or calibration was reported.
+
+Private ignored artifact: `models/artifacts/l2-afroxlmr-dev-v1/`, containing
+safetensors, configuration, tokenizer and `model_manifest.json`. Its manifest
+records all training/provenance counts, library versions and individual file hashes.
+Code commit `0fdb389e67e9e9d1601ff2bb8cd435f667a78d7e`, dirty worktree true;
+commit alone does not reproduce these changes. Manifest SHA-256:
+`c3f63ed005a511bf690b2ec5219976a699d0f15965eadf64d6d97d4fe6ee47d5`.
+Weights SHA-256:
+`657b1aa6dc576c5d9ff9524d1c779836ceb72d226f504cd33d1c493d73e34be7`.
+
+Offline reload validated all checksums and binary order with Hub access disabled,
+`local_files_only=True`, `trust_remote_code=False`, safetensors, `eval()` and
+`inference_mode()`. Existing **unvalidated engineering thresholds** remain
+positive 0.8 / negative 0.2; confidence is `uncalibrated_softmax_probability`.
+A read-only bounded engineering check processed **20 real versions across seven
+publishers**, failed **0**, output **gbv 0 / not_gbv 19 / borderline 1**.
+Mean inference 120.482 ms, median 81.057 ms; load 3.449 s. This is not evaluation.
+Private reports and 20 review-priority rows are under
+`data/l2/afroxlmr-dev-v1-check/`; no automatic human corrections were made.
+
+Ignored local `.env` now configures this artifact and batch two. Method identity
+is `l2-47035d92f81cd5240062610d`; final local readback reports model ready.
+The database still lacks all four required L2 schema objects: label constraint,
+prerequisite constraint, method/dependency index and L1-Kenya prerequisite trigger
+from `20261005_add_l2_annotations.sql`. The migration was **not installed** by
+this task. **Zero model predictions were written; all 324 remain DB-pending.**
+No production configuration or public Sheet was changed.
+
+Full suite including explicit installed-model integration: **264 tests passed,
+zero failures/skips**. Ordinary unit tests use fakes and do not download AfroXLMR.
+New tests cover latest revisions/provenance, unresolved exclusion, compatible
+prerequisites, reference/historical-hash protection, duplicates, manifest checks,
+weighted training and schema readiness. `git diff --check` passed; datasets,
+caches, weights and `.env` remain ignored and untracked.
+
+Before thesis evaluation: approve the versioned codebook, expand independently
+reviewed positives/source-language coverage, validate L0/L1, group near duplicates,
+freeze independent reference membership, agree defensible evaluation/calibration
+protocols and acceptance thresholds, and resolve the DB migration through the
+operator workflow before prediction writes. L2 research gates remain open.
+
+### Historical human-review and initial-model readiness — 5 October 2026, 14:52 EAT
+
+Read-only development Supabase verification after the user-authorized review writes:
+
+| Current compatible L2 weak view | gbv | not_gbv | borderline | Total |
+| --- | ---: | ---: | ---: | ---: |
+| Original machine labels | 7 | 15 | 302 | 324 |
+| Latest human decisions overlaid on machine labels | 10 | 312 | 2 | 324 |
+| Human-reviewed records only | 3 | 297 | 2 | 302 |
+| Not reviewed | 7 | 15 | 0 | 22 |
+
+All 302 originally machine-borderline results have saved human reviews: 300
+corrected and 2 confirmed borderline. The user reported completing human review.
+The requested bulk decisions were appended as 74 Taifa Leo borderline → `not_gbv`
+corrections, followed by 223 remaining borderline → `not_gbv` corrections, excluding
+latest human-confirmed borderline. Three other current corrections are to `gbv`.
+Machine outputs, exact extraction/prerequisite lineage and prior review history
+were preserved. Bulk recording is not an automatic negative rule for future
+borderline results, and the audit did not independently assess article content.
+
+The result-count fix is implemented locally: current L2 labels/counts/filters and
+cohort navigation use the latest human decisions; original automation remains
+inspectable with `label_basis=machine`. Weak/model methods stay separate. Counts
+honor review-status filters; `not_reviewed` hides saved corrections, and the page
+now explains that filter scope. No machine probability is recalculated.
+
+**Historical training handoff (superseded by the executed model above).** At this audit the exporter in
+`annotations/l2_training.py` reads original weak labels, ignores human corrections
+and excludes machine-borderline rows. The trainer accepts weak-bootstrap manifests
+only. Add explicit reviewed/mixed label export and compatible manifest validation
+before using the saved decisions for fitting. The two confirmed borderline records
+remain excluded from binary development data. Choose and record reviewed-only
+(at most 3 positive/297 negative) or mixed development membership (at most
+10 positive/312 negative) before deduplication and splitting. Mark machine-only
+labels explicitly; do not describe the combined 322 binary labels as all reviewed.
+
+The [annotation specification](../annotations.md) now documents review evidence,
+working label meanings, unresolved codebook approval, export provenance,
+duplicate grouping, independent held-out membership and evaluation requirements.
+A final approved inclusion/exclusion codebook, dataset freeze/splits, numeric
+acceptance thresholds and independently measured performance remain outstanding.
+Only 10 positives exist in the mixed pool, and only 3 are human-reviewed; class
+support after splitting requires explicit assessment before training/evaluation.
+L0/L1 validation gates remain open. The earlier L2 annotation-migration gap is
+historical inspection evidence; this earlier count audit did not install or recheck schema.
+The primary L2 method was verified as `l2-model-unconfigured`; no training or
+inference run was initiated by this documentation update.
+
+**Planning synchronization:** `python3 scripts/sync_roadmap.py` could not run with
+the system Python because `requests` was unavailable. The project-venv run then
+encountered sandbox network restrictions; an approved network-enabled rerun
+succeeded and refreshed all four CSV snapshots anonymously, without Google
+credentials. The refreshed Sheet now records L1 v2/L2 infrastructure and supports
+an initial AfroXLMR on current usable data, iterative corpus growth toward ≥5,000,
+and an independent held-out human reference subset. Its original weak counts
+7/15/302 remain consistent with preserved machine outputs. No Sheet rows or CSV
+values were manually edited, and research exit gates were not declared complete.
+
+**Engineering validation:** the earlier result-count change passed the full offline
+suite: 251 tests run, 250 passed, one optional installed-model test skipped. The
+subsequent review-filter notice passed 19 targeted L2 UI/review tests. Those tests
+use synthetic data and do not validate research labels. This documentation-only
+update checks Markdown structure/local links and `git diff --check`; it does not
+rerun model or collection workflows. Private article content, reviewer identities,
+review-row identifiers and credentials are omitted from this log.
 
 ### Latest verified development state — 5 October 2026, 12:44 EAT
+
+**Historical pre-review audit; use the 14:52 EAT snapshot above for current L2 review state and planning alignment.**
 
 Read-only aggregate queries found:
 
@@ -88,9 +285,11 @@ in each run's configuration.
 
 ## In Progress
 
-Automated implementation and authorized L0/L1 execution are complete. Sampled
-human validation remains incomplete; one current L1 review is recorded. Readiness
-gates have not been passed through automated execution alone.
+Automated implementation and authorized L0/L1 execution are complete. Human
+review of all 302 originally borderline L2 weak results is recorded; 22 originally
+binary weak results remain unreviewed. Independent sampled validation, codebook
+finalization and reviewed-label training export remain pending. Readiness gates
+have not been passed through automation or review coverage alone.
 
 ## Next
 

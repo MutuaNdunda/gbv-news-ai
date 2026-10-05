@@ -22,23 +22,30 @@ development throughout.
 
 ## Current progress — verified 5 October 2026
 
-Read-only development Supabase verification at **12:44 EAT** found:
+Latest L2 readback at **15:41 EAT**: 324 eligible versions; original weak labels
+7 gbv / 15 not_gbv / 302 borderline; human overlay **10 / 312 / 2**.
+All 302 originally borderline results have reviews (300 corrections, two confirmed
+borderline); 22 original binary weak results remain unreviewed.
 
-| Stage | Current compatible outputs | Remaining work |
-| --- | --- | --- |
-| Corpus | 536 article versions | Extraction, publication dates and language validation |
-| L0 quality | 519 valid; 17 needs_review; 0 invalid | Review anomalies and validate a sample |
-| L1 v2 Kenya relevance | 324 kenya; 35 not_kenya; 160 ambiguous | Sample validation and uncertainty analysis |
-| L2 weak bootstrap | 324 / 324 eligible: 7 gbv; 15 not_gbv; 302 borderline | Human validation; weak labels are provisional |
-| L2 primary model | 0 current predictions; 324 pending | Train/review a task-specific artifact and configure it |
-| Human Review | L0/L1/L2 workflow implemented; 1 L1 review recorded | Agreed stratified sample, adjudication and independent metrics |
+The first real **`l2-afroxlmr-dev-v1`** development artifact is trained and configured
+locally on 322 mixed-effective records (10 gbv, 312 not_gbv; only three positives
+human-reviewed). Reviewed/mixed exports, weighted training and offline reload are
+implemented. Twenty-record in-memory inference passed: 0 gbv / 19 not_gbv /
+1 borderline, zero failures. **No reliable independent validation metrics exist.**
+No final held-out human reference set is frozen; L2 research gates remain open.
 
-`l2-model-unconfigured` means the primary trained artifact is not configured.
-Weak labels appear under `/annotations/l2?mode=weak`; they do not increase the
-dashboard's primary-model annotated count. Tiny synthetic smoke artifacts do not
-establish a research-trained GBV model. L3–L5, NER, geocoding and mapping remain planned.
-Latest recorded suite: **249 tests run; 248 passed; one optional model test skipped**.
-See [the engineering log](docs/roadmap/IMPLEMENTATION_STATUS.md) for dated evidence.
+Latest readback at **22:43 EAT** found **300 saved transformer predictions**
+(10 gbv / 284 not_gbv / 6 borderline), with **24 eligible pending**. The run
+failed after a database error and loss of its annotation lock. Required L2 schema
+objects remain absent; existing rows do not prove migration readiness. See
+[the L2 performance report](docs/l2_model_performance.md) for measured timing
+and the incomplete-run limits. No migration was automatically installed or production
+configuration changed. Original weak outputs remain separately inspectable at
+`/annotations/l2?mode=weak`. Full suite including installed-model integration:
+**264 tests passed**. See [the engineering log](docs/roadmap/IMPLEMENTATION_STATUS.md)
+for datasets, model revision, parameters, checksums and execution evidence.
+L0 remains 519 valid / 17 needs_review; L1 v2 324 kenya / 35 not_kenya /
+160 ambiguous. L3–L5, NER, geocoding and mapping remain planned.
 
 The L2 Human Review schema extension is installed in development. Schema inspection
 found the earlier `20261005_add_l2_annotations.sql` migration's expected constraints,
@@ -243,8 +250,11 @@ are in `requirements-l2.txt`.
 .venv/bin/python scripts/run_annotations.py --layer l2 --l2-mode weak --limit 10
 # Pending-only bootstrap over an explicitly agreed full eligible scope:
 .venv/bin/python scripts/run_annotations.py --layer l2 --l2-mode weak
-# Private development export of existing compatible binary weak labels:
-.venv/bin/python scripts/prepare_l2_training_data.py --output-dir data/l2/bootstrap-dev-v1 --limit 20
+# Historical engineering export: original binary weak labels only.
+.venv/bin/python scripts/prepare_l2_training_data.py --label-policy weak-only --output-dir data/l2/bootstrap-dev-v1 --limit 20
+# Reviewed-only and mixed development exports use exact latest human reviews:
+.venv/bin/python scripts/prepare_l2_training_data.py --label-policy reviewed-only --output-dir data/l2/new-reviewed-development
+.venv/bin/python scripts/prepare_l2_training_data.py --label-policy mixed-effective --output-dir data/l2/new-mixed-development
 # Model inference requires a trained local artifact; no weak/network fallback:
 .venv/bin/python scripts/run_annotations.py --layer l2 --limit 10
 ```
@@ -259,6 +269,38 @@ Changing an artifact or thresholds changes current compatibility. Model binaries
 belong under ignored `models/artifacts/`; bootstrap text belongs under `data/`.
 Training is a separate explicit `scripts/train_l2_classifier.py` action with
 configurable model/revision, dataset version, seed, device and `--max-steps`.
+The CLI defaults to three epochs and `--class-weighting balanced`; use
+`--class-weighting none` to explicitly disable weighting. Balanced weights are
+`N / (2 * class_count)`, applied to per-example cross entropy and averaged over
+batch examples. `--weight-decay` defaults to 0.01. Reviewed/mixed records retain
+human-validation ID/guideline and controlled label provenance. Latest unresolved
+or borderline reviews are excluded; mixed mode falls back to weak labels only
+for unreviewed binary results. Existing weak-only label selection remains intact; its added `weak_original`
+provenance explicitly distinguishes original machine labels from a verified
+unreviewed fallback.
+
+Keep dataset outputs immutable: choose a new directory for every export. If a
+frozen human reference set is designated, supply `--reference-manifest` to the
+reviewed/mixed exporter and check script. It must identify explicit frozen
+`human_reference_test` membership through article/version IDs and/or body hashes;
+reference records and exact-body duplicates are excluded before storage reads.
+No final held-out human reference set is currently frozen; these exports do not
+create one, and their records are development data.
+
+After a successful trained-artifact save, verify offline reload and at most 20
+real in-memory predictions without inserting annotations:
+
+```bash
+.venv/bin/python scripts/check_l2_model.py \
+  --model-path models/artifacts/l2-afroxlmr-dev-v1 \
+  --output-dir data/l2/new-development-check --limit 20
+```
+
+The check disables Hub fallback, verifies installed L2 schema objects read-only,
+keeps article text out of output, and saves aggregate diagnostics plus private
+review priorities. It never changes human/weak labels or writes predictions.
+Schema readiness must be confirmed separately before automated model writes.
+
 
 The monitor adds `/annotations/l2`, clickable live coverage/labels/pending,
 `?mode=weak` bootstrap inspection and exact-lineage detail/history. L2 results
