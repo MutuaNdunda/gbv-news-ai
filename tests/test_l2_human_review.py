@@ -55,6 +55,62 @@ class L2HumanReviewTests(test_l2_ui.L2ReviewFixture):
         self.assertEqual(self.save(annotation, expected=str(first.id)).status_code, 409)
         self.assertEqual(self.count(), 2)
 
+    def test_correction_updates_counts_filtered_results_and_display(self):
+        annotation = self.weak  # Machine borderline -> human GBV.
+        self.unlock(annotation)
+        response = self.save(annotation, decision='corrected', human_label='gbv',
+                             error_category='rule_false_negative', reason='Synthetic correction')
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(self.service.l2_label_counts({'mode': 'weak'}),
+                         {'gbv': 1, 'not_gbv': 0, 'borderline': 0})
+        self.assertEqual(self.service.l2_label_counts({'mode': 'weak', 'label_basis': 'machine'}),
+                         {'gbv': 0, 'not_gbv': 0, 'borderline': 1})
+        counts = self.service.overview()
+        self.assertEqual(counts['l2_current_counts']['weak']['gbv'], 1)
+        self.assertEqual(counts['counts']['L2']['gbv'], 1)  # Separate model cohort.
+        filters = {'mode': 'weak', 'label': 'gbv', 'source': 'citizen', 'review_status': 'corrected'}
+        rows, total = self.service.results('L2', filters, 1, 20)
+        self.assertEqual((total, rows[0][0].id, rows[0][0].label), (1, annotation.id, 'borderline'))
+        self.assertEqual(self.service.results('L2', {**filters, 'label_basis': 'machine'}, 1, 20)[1], 0)
+        self.assertEqual(self.service.review_detail(annotation.id, filters, 1)['neighbors']['total'], 1)
+        html = self.client.get('/annotations/l2', query_string=filters).get_data(as_text=True)
+        self.assertIn('1 results', html)
+        self.assertIn('Machine: borderline', html)
+        self.assertIn('Current labels after Human Review', html)
+        pending_html = self.client.get('/annotations/l2?mode=weak&review_status=not_reviewed').get_data(as_text=True)
+        self.assertIn('Saved corrections are excluded from this view.', pending_html)
+        self.assertIn('Show all review statuses', pending_html)
+        self.assertEqual(self.service.l2_label_counts({'mode': 'weak', 'review_status': 'not_reviewed'})['gbv'], 0)
+        self.objects.read_json.reset_mock()
+        self.client.get('/annotations')
+        self.client.get('/annotations/l2?mode=weak&label=gbv')
+        self.objects.read_json.assert_not_called()
+
+    def test_latest_revision_moves_count_and_unresolved_review_stays_borderline(self):
+        annotation = self.weak
+        self.unlock(annotation)
+        response = self.save(annotation, decision='corrected', human_label='gbv',
+                             error_category='other', reason='Synthetic first review')
+        self.client.get(response.location)
+        first = self.service.reviews.history(annotation.id)[0]
+        response = self.save(annotation, expected=str(first.id), decision='corrected', human_label='not_gbv',
+                             error_category='other', reason='Synthetic revised review')
+        self.client.get(response.location)
+        self.assertEqual(self.service.l2_label_counts({'mode': 'weak'}),
+                         {'gbv': 0, 'not_gbv': 1, 'borderline': 0})
+        latest = self.service.reviews.history(annotation.id)[0]
+        response = self.save(annotation, expected=str(latest.id), decision='needs_adjudication')
+        self.client.get(response.location)
+        self.assertEqual(self.service.l2_label_counts({'mode': 'weak'}),
+                         {'gbv': 0, 'not_gbv': 0, 'borderline': 1})
+        self.assertEqual(len(self.service.reviews.history(annotation.id)), 3)
+        # An unresolved human decision must also remove a positive machine count.
+        self.unlock(self.l2[0])
+        self.assertEqual(self.save(self.l2[0], decision='unable_to_determine').status_code, 303)
+        self.assertEqual(self.service.l2_label_counts({'mode': 'model'}),
+                         {'gbv': 0, 'not_gbv': 1, 'borderline': 2})
+        self.assertEqual(self.service.l2_label_counts({'mode': 'model', 'label_basis': 'machine'})['gbv'], 1)
+
     def test_unresolved_decisions_and_cross_layer_labels(self):
         for annotation, decision in zip(self.l2, ('unable_to_determine', 'needs_adjudication', 'confirmed')):
             self.unlock(annotation)
@@ -107,6 +163,7 @@ class L2HumanReviewTests(test_l2_ui.L2ReviewFixture):
             session.add(new)
         summary = self.service.overview()['l2_human_review']
         self.assertEqual(summary['weak']['counts']['L2']['reviewed'], 0)
+        self.assertEqual(self.service.l2_label_counts({'mode': 'weak'}), {'gbv': 1, 'not_gbv': 0, 'borderline': 0})
         self.assertEqual(summary['weak']['counts']['L2']['not_reviewed'], 1)
         self.assertEqual(summary['model']['counts']['L2']['reviewed'], 0)
         old = self.service.review_detail(self.weak.id, {'mode': 'weak'}, 1)

@@ -62,7 +62,10 @@ def result_filters(layer):
         abort(400)
     if layer == "L2":
         filters.update({key: request.args.get(key, "").strip() for key in
-                        ("mode", "method_version", "model_version", "pending")})
+                        ("mode", "method_version", "model_version", "pending", "label_basis")})
+        filters["label_basis"] = filters["label_basis"] or "effective"
+        if filters["label_basis"] not in ("effective", "machine"):
+            abort(400)
         if filters["mode"] not in ("", "model", "weak") or filters["pending"] not in ("", "1"):
             abort(400)
         if filters["pending"] and (filters["label"] or filters["method_version"] or filters["model_version"] or filters["review_status"]):
@@ -84,10 +87,11 @@ def results(layer):
         abort(503)
     if layer == "l2":
         label_counts = (service().l2_label_counts(filters)
-                        if filters.get("mode") == "weak" and not filters.get("pending") else None)
+                        if not filters.get("pending") else None)
         return render_template("annotations/l2_results.html", rows=rows, total=total, filters=filters,
                                page=page, per_page=current_app.config["PER_PAGE"], label_counts=label_counts,
                                review_statuses=service().review_statuses(rows) if not filters.get("pending") else {},
+                               result_labels=service().l2_result_labels(rows, filters) if not filters.get("pending") else {},
                                status_labels=STATUSES, review_filter_options=REVIEW_FILTERS)
     statuses = service().review_statuses(rows) if hasattr(service(), "review_statuses") else {}
     return render_template("annotations/results.html", layer=layer.upper(), filters=filters,
@@ -184,10 +188,12 @@ def review(annotation_id):
             error, status = "Human Review is unavailable. Apply the human-validation migration for this layer and restart the app.", 503
         else:
             session.pop("human_review_csrf", None)
-            flash("Human review saved separately; machine annotation is unchanged.", "success")
+            flash("Human review saved. Current GBV counts and results now use your latest decision; the original machine annotation is preserved."
+                  if selected["annotation"].layer == "L2" else
+                  "Human review saved separately; machine annotation is unchanged.", "success")
             neighbor = data["neighbors"]
             if action == "save_next" and neighbor["next_id"]:
-                if filters.get("review_status"):
+                if filters.get("review_status") or (selected["annotation"].layer == "L2" and filters.get("label")):
                     # Saving may remove this item from the pending/status cohort.
                     target = service().review_detail(neighbor["next_id"], filters, current_app.config["PER_PAGE"])
                     position = target["neighbors"]["position"]

@@ -1,9 +1,15 @@
 {% extends 'base.html' %}{% block title %}L2 GBV relevance{% endblock %}{% block content %}
 <h1 class="h3">L2 · {{ 'pending' if filters.pending else 'current' }} {{ 'weak bootstrap' if filters.mode == 'weak' else 'Transformer' }} results</h1>
-<p>{{ total }} results. Automated labels require independent human validation.</p>
+<p>{{ total }} results. {{ 'Current labels include the latest human decisions.' if filters.label_basis == 'effective' else 'Original machine labels are shown.' }} Automated labels require independent human validation.</p>
+{% if not filters.pending %}<p class="small text-muted">Current results use confirmed or corrected human labels, keep unresolved reviews borderline, and retain automated labels for unreviewed articles. Counts combine reviewed and unreviewed results; they are not a validated reference dataset. If review storage is unavailable, machine labels are shown.</p>{% endif %}
 <p><a href="{{ url_for('annotations.index') }}">Back to annotations</a> · <a href="{{ url_for('annotations.results', layer='l2', mode='weak') }}">Inspect weak bootstrap labels</a></p>
 {% if label_counts is not none %}
-<div class="row g-3 mb-4" aria-label="Weak bootstrap label counts">
+{% if filters.review_status %}
+<p class="alert alert-info">Counts are limited to Human Review: <strong>{{ review_filter_options[filters.review_status] }}</strong>.{% if filters.review_status == 'not_reviewed' %} Saved corrections are excluded from this view.{% endif %}
+<a href="{{ url_for('annotations.results', layer='l2', page=1, **dict(filters, review_status='')) }}">Show all review statuses</a></p>
+{% endif %}
+<h2 class="h5">{{ 'Current labels after Human Review' if filters.label_basis == 'effective' else 'Original machine labels' }}</h2>
+<div class="row g-3 mb-4" aria-label="{{ 'Weak bootstrap label counts' if filters.mode == 'weak' else 'Model label counts' }}">
 {% for label, count in label_counts.items() %}
 <div class="col-md-4"><a class="card card-body count-link {{ 'priority-count' if label == 'borderline' }} {{ 'border-primary' if filters.label == label }}"
  href="{{ url_for('annotations.results', layer='l2', page=1, **dict(filters, label=label)) }}"{% if filters.label == label %} aria-current="true"{% endif %}>
@@ -13,15 +19,16 @@
 <form method="get" class="row g-2 mb-3">
 <input type="hidden" name="mode" value="{{ filters.mode }}">
 {% if filters.pending %}<input type="hidden" name="pending" value="1">{% else %}
+<div class="col-sm-3"><label for="label_basis">Label view</label><select class="form-select" name="label_basis" id="label_basis"><option value="effective" {{ 'selected' if filters.label_basis == 'effective' }}>Current after Human Review</option><option value="machine" {{ 'selected' if filters.label_basis == 'machine' }}>Original machine labels</option></select></div>
 <div class="col-sm-2"><label for="label">Label</label><select class="form-select" name="label" id="label"><option value="">All</option>{% for value in ['gbv','not_gbv','borderline'] %}<option {{ 'selected' if filters.label == value }}>{{ value }}</option>{% endfor %}</select></div>
 <div class="col-sm-3"><label for="method_version">Method version</label><input class="form-control" name="method_version" id="method_version" value="{{ filters.method_version }}"></div>
 <div class="col-sm-3"><label for="model_version">Model version</label><input class="form-control" name="model_version" id="model_version" value="{{ filters.model_version }}"></div>{% endif %}
 {% if not filters.pending %}<div class="col-sm-3"><label for="review_status">Human Review</label><select class="form-select" id="review_status" name="review_status"><option value="">All statuses</option>{% for key, label in review_filter_options.items() %}<option value="{{ key }}" {{ 'selected' if filters.review_status == key }}>{{ label }}</option>{% endfor %}</select></div>{% endif %}
 <div class="col-sm-2"><label for="source">Source</label><select class="form-select" id="source" name="source"><option value="">All sources</option>{% for source in ['nation','citizen','standard','star','tuko','kenyans','taifaleo'] %}<option {{ 'selected' if filters.source == source }}>{{ source }}</option>{% endfor %}</select></div><div class="col-sm-2 align-self-end"><button class="btn btn-primary">Filter</button></div></form>
-<div class="table-responsive"><table class="table"><thead><tr><th>Article / source / published</th><th>L2 label</th><th>GBV probability</th><th>Method / model</th><th>L1 prerequisite</th><th>Human Review</th><th>Created</th></tr></thead><tbody>
+<div class="table-responsive"><table class="table"><thead><tr><th>Article / source / published</th><th>{{ 'Current L2 label' if filters.label_basis == 'effective' else 'Machine L2 label' }}</th><th>Machine GBV probability</th><th>Method / model</th><th>L1 prerequisite</th><th>Human Review</th><th>Created</th></tr></thead><tbody>
 {% for result, article in rows %}<tr>
 <td><a href="{{ url_for('articles.detail', article_id=article.id) if filters.pending else url_for('annotations.review', annotation_id=result.id, page=page, **filters) }}">{{ article.title }}</a><div class="small">{{ article.source }} · {{ article.published_at or article.published_at_raw or 'Date unavailable' }}</div>{% if not filters.pending %}<span class="small">Inspect / review L2</span>{% endif %}</td>
-<td>{{ 'pending' if filters.pending else result.label }}</td><td>{{ result.evidence.get('gbv_probability', '—') if not filters.pending else '—' }}</td>
+<td>{{ 'pending' if filters.pending else result_labels.get(result.id, result.label) }}{% if not filters.pending and filters.label_basis == 'effective' %}<div class="small text-muted">Machine: {{ result.label }}</div>{% endif %}</td><td>{{ result.evidence.get('gbv_probability', '—') if not filters.pending else '—' }}</td>
 <td>{{ result.method_name }}<div class="small">{{ result.method_version }}</div>{% if not filters.pending %}<div>{{ result.evidence.get('model_version', '') }}</div>{% endif %}</td>
 <td class="small text-break"><a href="{{ url_for('annotations.review', annotation_id=result.id if filters.pending else result.prerequisite_annotation_id) }}">kenya · {{ result.id if filters.pending else result.prerequisite_annotation_id }}</a></td><td>{{ '—' if filters.pending else status_labels.get(review_statuses.get(result.id, 'not_reviewed'), 'Not reviewed') if review_statuses is not none else 'Storage unavailable' }}</td><td class="small">{{ result.created_at }}</td>
 </tr>{% else %}<tr><td colspan="7">No results match these filters.</td></tr>{% endfor %}</tbody></table></div>

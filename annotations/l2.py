@@ -55,6 +55,25 @@ def read_manifest(path):
             or not isinstance(manifest["training_parameters"].get("completed_steps"), int)
             or manifest["training_parameters"]["completed_steps"] < 1):
         raise ValueError("L2 artifact must record completed task-specific training")
+    if manifest.get("training_dataset_kind") in ("reviewed_development", "mixed_effective_development"):
+        required_development = ("training_record_count", "gbv_count", "not_gbv_count", "human_confirmed_count",
+                                "human_corrected_count", "weak_unreviewed_count", "training_dataset_sha256",
+                                "upstream_methods", "review_guideline_versions", "held_out_reference_status",
+                                "label_provenance_vocabulary", "base_model_revision", "tokenizer_revision")
+        if any(key not in manifest or manifest[key] is None for key in required_development):
+            raise ValueError("Incomplete development model provenance")
+        count_keys = ("gbv_count", "not_gbv_count", "human_confirmed_count", "human_corrected_count", "weak_unreviewed_count")
+        if (any(not isinstance(manifest[key], int) or manifest[key] < 0 for key in count_keys)
+                or manifest["gbv_count"] + manifest["not_gbv_count"] != manifest["training_record_count"]
+                or sum(manifest[key] for key in count_keys[2:]) != manifest["training_record_count"]):
+            raise ValueError("Inconsistent development model provenance counts")
+        parameters = manifest["training_parameters"]
+        if parameters.get("class_weighting") not in ("balanced", "none"):
+            raise ValueError("Missing development class weighting strategy")
+        import math
+        weights = parameters.get("class_weights", {})
+        if set(weights) != set(LABEL_MAPPING) or any(not math.isfinite(value) or value <= 0 for value in weights.values()):
+            raise ValueError("Invalid development class weights")
     if not manifest["files_sha256"] or artifact_files(root) != manifest["files_sha256"]:
         raise ValueError("L2 model artifact checksum mismatch")
     return manifest

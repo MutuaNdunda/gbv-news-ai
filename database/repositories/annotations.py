@@ -194,6 +194,19 @@ class AnnotationRepository:
             rows = session.scalars(query).all()
         return {(row.article_version_id, row.layer): row for row in rows}
 
+    def reference_content_hashes(self, article_ids, article_version_ids):
+        """Protect reference bodies including historical/out-of-cohort versions."""
+        from uuid import UUID
+        conditions = []
+        if article_ids:
+            conditions.append(ArticleVersion.article_id.in_([UUID(value) for value in article_ids]))
+        if article_version_ids:
+            conditions.append(ArticleVersion.id.in_([UUID(value) for value in article_version_ids]))
+        if not conditions:
+            return set()
+        with self.sessions() as session:
+            return set(session.scalars(select(ArticleVersion.content_hash).where(or_(*conditions))))
+
     def persist(self, candidate, run_id, result, prerequisite_id=None):
         row = AutomatedAnnotation(id=uuid4(), article_id=candidate["article_id"],
                                   article_version_id=candidate["id"], annotation_run_id=run_id,

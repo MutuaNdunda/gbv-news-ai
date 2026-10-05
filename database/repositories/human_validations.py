@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, inspect, select
+from sqlalchemy import case, func, inspect, select
 from sqlalchemy.exc import IntegrityError
 
 from annotations.schemas import DEFAULT_CONFIG
@@ -18,6 +18,24 @@ def latest_validations():
         order_by=(HumanValidation.created_at.desc(), HumanValidation.id.desc()),
     ).label("position")).subquery()
     return select(ranked).where(ranked.c.position == 1).subquery()
+
+
+def reviewed_results(current, available, label_basis="effective"):
+    """Overlay latest L2 reviews without mutating machine rows or eligibility.
+
+    Resolved reviews supply their label; unresolved reviews remain borderline.
+    Without review storage, inspection falls back to machine labels.
+    """
+    if not available or label_basis == "machine":
+        return select(current, current.c.label.label("result_label")).subquery()
+    latest = latest_validations()
+    label = case(
+        (latest.c.review_decision.in_(("confirmed", "corrected")), latest.c.human_label),
+        (latest.c.review_decision.in_(("unable_to_determine", "needs_adjudication")), "borderline"),
+        else_=current.c.label,
+    )
+    return select(current, label.label("result_label")).outerjoin(
+        latest, latest.c.automated_annotation_id == current.c.id).subquery()
 
 
 def method_versions():
@@ -74,6 +92,20 @@ class HumanValidationRepository:
                 latest.c.automated_annotation_id.in_(annotation_ids))).all()
         return dict(rows)
 
+    def latest_for_annotations(self, annotation_ids):
+        """Read exact latest review lineage/labels in one query, without private notes."""
+        if not self.l2_available():
+            raise RuntimeError("L2 human-validation schema is required for reviewed export")
+        if not annotation_ids:
+            return {}
+        latest = latest_validations()
+        fields = ("id", "automated_annotation_id", "article_id", "article_version_id", "layer",
+                  "machine_label", "human_label", "review_decision", "guideline_version", "created_at")
+        with self.sessions() as session:
+            rows = session.execute(select(*(latest.c[key] for key in fields)).where(
+                latest.c.automated_annotation_id.in_(annotation_ids))).mappings().all()
+        return {row["automated_annotation_id"]: dict(row) for row in rows}
+
     def summary(self, current, layers=("L0", "L1")):
         if not self.available() or ("L2" in layers and not self.l2_available()):
             return None
@@ -100,9 +132,11 @@ class HumanValidationRepository:
         """Compute navigation inside the same method/layer/label/source cohort."""
         methods = methods or method_versions()
         current = current_annotations(methods)
+        if annotation.layer == "L2":
+            current = reviewed_results(current, self.l2_available(), filters.get("label_basis", "effective"))
         conditions = [current.c.layer == annotation.layer]
         if filters.get("label"):
-            conditions.append(current.c.label == filters["label"])
+            conditions.append((current.c.result_label if annotation.layer == "L2" else current.c.label) == filters["label"])
         if filters.get("source"):
             conditions.append(Article.source == filters["source"])
         if annotation.layer == "L2":

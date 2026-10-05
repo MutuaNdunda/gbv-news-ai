@@ -130,7 +130,7 @@ class L2UITests(L2ReviewFixture):
         self.assertEqual(self.client.get(f"/annotations/l2/{self.l2[0].id}", follow_redirects=True).status_code, 200)
 
     def test_invalid_filters_and_previous_l0_l1_routes(self):
-        for query in ("label=kenya", "source=invalid", "mode=bad", "review_status=bad", "pending=1&label=gbv", "pending=1&review_status=confirmed"):
+        for query in ("label=kenya", "source=invalid", "mode=bad", "review_status=bad", "label_basis=bad", "pending=1&label=gbv", "pending=1&review_status=confirmed"):
             self.assertEqual(self.client.get("/annotations/l2?" + query).status_code, 400)
         for path in ("/annotations/l0", "/annotations/l1"):
             self.assertEqual(self.client.get(path).status_code, 200)

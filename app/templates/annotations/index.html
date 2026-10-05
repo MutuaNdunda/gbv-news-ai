@@ -1,17 +1,23 @@
 {% extends "base.html" %}{% block title %}Annotations{% endblock %}{% block content %}
 <h1 class="h3">Annotations and Human Review</h1>
-<p class="text-muted">Automated outputs require sampled human validation. L1 confidence is evidence support; L2 model probabilities are uncalibrated.</p>
+<p class="text-muted">The automation counts below preserve original machine labels. Current GBV counts after Human Review appear separately below. Automated outputs require sampled human validation. L1 confidence is evidence support; L2 model probabilities are uncalibrated.</p>
 <p><a href="{{ url_for('annotations.runs') }}">Annotation runs</a> · <a href="{{ url_for('annotations.results', layer='l0') }}">L0 results</a> · <a href="{{ url_for('annotations.results', layer='l1') }}">L1 results</a></p>
 <div class="row g-3 mb-4">
 {% for label, count, target in [('Article versions', total_versions, url_for('articles.index')), ('L0 pending automation', pending_l0, url_for('annotations.results', layer='l0')), ('L1 pending automation (L0 valid)', pending_l1, url_for('annotations.results', layer='l1'))] %}
 <div class="col-md-4"><a class="card card-body count-link" href="{{ target }}">{{ label }}<strong class="fs-3">{{ count }}</strong></a></div>
 {% endfor %}</div>
 {% for layer, labels in counts.items() %}
-<h2 class="h5"><a class="count-heading" href="{{ url_for('annotations.results', layer=layer|lower) }}">{{ layer }} · {{ labels.values()|sum }} annotated</a></h2>
+<h2 class="h5"><a class="count-heading" href="{{ url_for('annotations.results', layer=layer|lower, **({'label_basis': 'machine'} if layer == 'L2' else {})) }}">{{ layer }} · {{ labels.values()|sum }} annotated</a></h2>
 {% if layer == 'L2' %}<p>{{ eligible_l2 }} eligible · <a href="{{ url_for('annotations.results', layer='l2', pending='1') }}">{{ pending_l2 }} pending</a> · <a href="{{ url_for('annotations.results', layer='l2', mode='weak') }}">Weak bootstrap results</a></p>{% if not l2_model_ready %}<p class="text-muted">A valid trained L2 model artifact is not configured.</p>{% endif %}{% endif %}
 {% if methods %}<p class="small text-muted">Current method: <code>{{ methods[layer] }}</code></p>{% endif %}
 <div class="row g-3 mb-4">{% for label, count in labels.items() %}
-<div class="col-md-4"><a class="card card-body count-link {{ 'priority-count' if label in ['needs_review', 'ambiguous'] }}" href="{{ url_for('annotations.results', layer=layer|lower, label=label) }}"><span>{{ label }}</span><strong class="fs-4">{{ count }}</strong>{% if label in ['needs_review', 'ambiguous'] %}<span class="small">Open for inspection and review →</span>{% endif %}</a></div>
+<div class="col-md-4"><a class="card card-body count-link {{ 'priority-count' if label in ['needs_review', 'ambiguous'] }}" href="{{ url_for('annotations.results', layer=layer|lower, label=label, **({'label_basis': 'machine'} if layer == 'L2' else {})) }}"><span>{{ label }}</span><strong class="fs-4">{{ count }}</strong>{% if label in ['needs_review', 'ambiguous'] %}<span class="small">Open for inspection and review →</span>{% endif %}</a></div>
+{% endfor %}</div>{% endfor %}
+{% for mode, labels in (l2_current_counts or {}).items() %}
+<h2 class="h5">L2 · {{ 'Weak bootstrap' if mode == 'weak' else 'Model predictions' }} · Current after Human Review</h2>
+<p class="small text-muted">Latest confirmed/corrected human labels take precedence. Unresolved reviews remain borderline; unreviewed results retain machine labels. These totals include automated results and are not reference-label counts.</p>
+<div class="row g-3 mb-4">{% for label, count in labels.items() %}
+<div class="col-md-4"><a class="card card-body count-link" href="{{ url_for('annotations.results', layer='l2', mode=mode, label=label, label_basis='effective') }}"><span>{{ label }}</span><strong class="fs-4">{{ count }}</strong></a></div>
 {% endfor %}</div>{% endfor %}
 <section class="mb-4" aria-labelledby="human-review-heading"><h2 class="h4" id="human-review-heading">Human Review</h2>
 <p class="text-muted">Reviews belong to exact machine results. Recording a review does not change a machine label or establish validation accuracy.</p>
@@ -30,7 +36,7 @@
 <p><a href="{{ url_for('annotations.results', layer='l2', mode=mode, review_status='reviewed') }}">{{ values.reviewed }} reviewed</a> · Reviews are specific to this method and exact annotation.</p>
 <div class="row g-2 mb-3">{% for key, label in [('not_reviewed', 'Pending / not reviewed'), ('confirmed', 'Confirmed'), ('corrected', 'Corrected'), ('unable_to_determine', 'Unable to determine'), ('needs_adjudication', 'Needs adjudication')] %}
 <div class="col-6 col-lg"><a class="card card-body count-link" href="{{ url_for('annotations.results', layer='l2', mode=mode, review_status=key) }}"><span class="small">{{ label }}</span><strong>{{ values[key] }}</strong></a></div>{% endfor %}</div>
-<p><a href="{{ url_for('annotations.results', layer='l2', mode=mode, label='borderline') }}">L2 borderline: {{ summary.progress.L2.reviewed }} / {{ summary.progress.L2.total }} reviewed</a></p>
+<p><a href="{{ url_for('annotations.results', layer='l2', mode=mode, label='borderline', label_basis='machine') }}">L2 borderline: {{ summary.progress.L2.reviewed }} / {{ summary.progress.L2.total }} reviewed</a></p>
 {% else %}<p class="text-muted">Apply the L2 human-validation migration and restart the app to enable L2 review storage.</p><a href="{{ url_for('annotations.results', layer='l2', mode=mode) }}">Inspect L2 results</a>{% endif %}
 {% endfor %}
 </section>

@@ -11,7 +11,7 @@ from annotations.l2_training import bootstrap_methods
 from annotations.service import load_article, run_annotation_pipeline
 from database.models import AnnotationRun, Article, ArticleVersion, AutomatedAnnotation
 from database.repositories.annotations import current_annotations
-from database.repositories.human_validations import HumanValidationRepository, latest_validations, method_versions
+from database.repositories.human_validations import HumanValidationRepository, latest_validations, method_versions, reviewed_results
 
 
 class AnnotationService:
@@ -33,6 +33,17 @@ class AnnotationService:
     def current(self, mode="model"):
         return current_annotations(self.methods(mode))
 
+    def result_current(self, filters):
+        return reviewed_results(self.current(filters.get("mode") or "model"),
+                                self.reviews.l2_available(), filters.get("label_basis", "effective"))
+
+    def l2_result_labels(self, rows, filters):
+        """Return only display labels, without private review text or identities."""
+        current = self.result_current(filters)
+        with self.sessions() as session:
+            return dict(session.execute(select(current.c.id, current.c.result_label).where(
+                current.c.id.in_([row.id for row, _ in rows]))).all())
+
     def overview(self):
         current = self.current()
         with self.sessions() as session:
@@ -50,6 +61,7 @@ class AnnotationService:
                 "eligible_l2": counts["L1"]["kenya"],
                 "l2_model_ready": self.methods()["L2"] not in ("l2-model-unavailable", "l2-model-unconfigured"),
                 "pending_l2": counts["L1"]["kenya"] - sum(counts["L2"].values()),
+                "l2_current_counts": {mode: self.l2_label_counts({"mode": mode}) for mode in ("weak", "model")},
                 "methods": self.methods(), "human_review": self.reviews.summary(
                     current_annotations(method_versions())),
                 "l2_human_review": {mode: self.reviews.summary(self.current(mode), layers=("L2",))
@@ -72,11 +84,15 @@ class AnnotationService:
         return {"run": run, "breakdown": breakdown}
 
     def results(self, layer, filters, page, per_page):
-        current = self.current(filters.get("mode", "model"))
+        current = self.result_current(filters) if layer == "L2" else self.current()
         query = select(AutomatedAnnotation, Article).join(Article, Article.id == AutomatedAnnotation.article_id).where(
             AutomatedAnnotation.id.in_(select(current.c.id)), AutomatedAnnotation.layer == layer)
         query = self.filter_review_status(query, AutomatedAnnotation.id, filters, layer)
-        if filters.get("label"): query = query.where(AutomatedAnnotation.label == filters["label"])
+        if filters.get("label"):
+            label = current.c.result_label if layer == "L2" else AutomatedAnnotation.label
+            if layer == "L2":
+                query = query.join(current, current.c.id == AutomatedAnnotation.id)
+            query = query.where(label == filters["label"])
         if filters.get("source"): query = query.where(Article.source == filters["source"])
         if layer == "L2":
             if filters.get("method_version"):
@@ -116,8 +132,8 @@ class AnnotationService:
 
     def l2_label_counts(self, filters):
         """Count compatible labels across pages, keeping source/version scope."""
-        current = self.current(filters.get("mode", "model"))
-        query = select(current.c.label, func.count()).join(
+        current = self.result_current(filters)
+        query = select(current.c.result_label, func.count()).join(
             Article, Article.id == current.c.article_id).where(current.c.layer == "L2")
         query = self.filter_review_status(query, current.c.id, filters, "L2")
         if filters.get("source"):
@@ -127,7 +143,7 @@ class AnnotationService:
         if filters.get("model_version"):
             query = query.where(current.c.evidence["model_version"].as_string() == filters["model_version"])
         with self.sessions() as session:
-            breakdown = session.execute(query.group_by(current.c.label)).all()
+            breakdown = session.execute(query.group_by(current.c.result_label)).all()
         counts = {"gbv": 0, "not_gbv": 0, "borderline": 0}
         counts.update(dict(breakdown))
         return counts
