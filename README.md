@@ -14,15 +14,16 @@ archived publisher reporting, as described below.
 
 The repository includes a Flask monitor for collection and automated annotations,
 with an optional protected, bounded annotation trigger and a protected local Human
-Review workspace. Sampled human validation remains incomplete. Future work includes
-task-specific fine-tuning and evaluation of multilingual models such as AfroXLMR,
-location extraction, geocoding, and mapping interfaces. These remain planned research capabilities; data collection and validation
+Review workspace. Sampled human validation remains incomplete. The first
+task-specific AfroXLMR development model is trained locally. Future work
+includes larger-corpus retraining, independent multilingual evaluation, location
+extraction, geocoding and mapping interfaces. Data collection and validation
 come first. Privacy, provenance, reproducibility, and human oversight will guide
 development throughout.
 
 ## Current progress — verified 5 October 2026
 
-Latest L2 readback at **15:41 EAT**: 324 eligible versions; original weak labels
+Human-review state, reconfirmed at **22:59 EAT**: 324 eligible versions; original weak labels
 7 gbv / 15 not_gbv / 302 borderline; human overlay **10 / 312 / 2**.
 All 302 originally borderline results have reviews (300 corrections, two confirmed
 borderline); 22 original binary weak results remain unreviewed.
@@ -34,7 +35,7 @@ implemented. Twenty-record in-memory inference passed: 0 gbv / 19 not_gbv /
 1 borderline, zero failures. **No reliable independent validation metrics exist.**
 No final held-out human reference set is frozen; L2 research gates remain open.
 
-Latest readback at **22:43 EAT** found **300 saved transformer predictions**
+Latest progress audit at **22:59 EAT** reconfirmed **300 saved transformer predictions**
 (10 gbv / 284 not_gbv / 6 borderline), with **24 eligible pending**. The run
 failed after a database error and loss of its annotation lock. Required L2 schema
 objects remain absent; existing rows do not prove migration readiness. See
@@ -65,8 +66,10 @@ python3 scripts/sync_roadmap.py --check
 
 No Google credentials are needed for roadmap synchronization. L0/L1 and L2
 infrastructure are implemented; sampled-validation and research exit gates remain open.
-The Sheet still lists L2 as planned and retains historical L1 v1 counts. Repository
-engineering progress is recorded separately; synchronized CSVs are not manually edited.
+The latest sync found all four snapshots current. Their L1 v2/review counts are
+aligned, but their exporter/first-model tasks still lag executed engineering work:
+reviewed/mixed export and `l2-afroxlmr-dev-v1` training are complete. Independent
+evaluation remains pending; synchronized CSVs are not manually edited.
 See [the roadmap workflow](docs/roadmap/README.md) and
 [implementation status](docs/roadmap/IMPLEMENTATION_STATUS.md).
 
@@ -236,8 +239,12 @@ and [actual trial results](docs/roadmap/IMPLEMENTATION_STATUS.md).
 L2 requires the exact current compatible L1 `kenya` result. It has separate
 provisional weak labels and installed-model predictions; neither is a human
 reference label. L0/L1 validation gates and L2 research validation remain open.
-Weak bootstrap currently covers all 324 eligible versions. No primary trained
-research model is configured and no current model predictions exist.
+Weak bootstrap covers all 324 eligible versions. The initial development artifact
+is configured locally; 300 compatible model predictions are saved and 24 eligible
+versions remain pending after an interrupted run. Independent research evaluation
+and installed L2 schema readiness remain open. See Section 21 of
+[the annotation document](docs/annotations.md#21-l2--gbv-relevance-infrastructure-5-october-2026)
+for the model architecture, training procedure and measured operational results.
 
 Apply the new additive migration once to the intended database, after prior
 migrations: `migrations/20261005_add_l2_annotations.sql`. Its expected schema objects

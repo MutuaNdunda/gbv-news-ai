@@ -13,6 +13,33 @@ The first real AfroXLMR development artifact is trained/configured locally;
 300 transformer results are persisted; 24 eligible versions remain pending after
 a failed run. Independent validation and required L2 schema installation remain pending.**
 
+### Project progress and documentation audit — 5 October 2026, 22:59 EAT
+
+Fresh read-only aggregate checks reconfirmed 536 versions, complete L0 (519 valid /
+17 needs_review / 0 invalid), complete eligible L1 v2 (324 kenya / 35 not_kenya /
+160 ambiguous), and 300/324 transformer predictions (10/284/6), 24 pending.
+Reviews: L0 zero, L1 one correction, weak L2 300 corrected + two confirmed
+borderline; model L2 zero. Weak effective labels remain 10/312/2, with 22 unreviewed
+binary machine results. Four required L2 schema objects remain absent.
+No new training/inference, human writes, migration or production change was made.
+
+The project is mapped explicitly in `docs/annotations.md` Section 1; Section 21
+contains the actual model architecture and measured operational results. Review
+found stale unconfigured/zero-prediction/weak-only statements in summary guides.
+Updated README, AGENTS, AI_CONTEXT, annotation test/coverage/provenance sections,
+collection handoff, deployment local-vs-production readiness, roadmap guide and
+this log. Historical dated evidence is retained; current summaries supersede it.
+The separate L2 performance report records reconfirmation without inventing metrics.
+Fresh full-suite verification with the real installed artifact: **264 tests passed**,
+zero failures/skips (9.646 seconds). Link/fence, snapshot hash and Git data-exclusion
+checks passed; no `.env`, private records or model binaries are included.
+
+Anonymous roadmap sync succeeded: all four exports unchanged. Snapshot L1 v2 and
+human-review counts align, while exporter/first-model tasks still lag executed
+code. The Sheet/CSVs were not manually changed. Final research gates remain open;
+location baseline design is allowed by the plan after initial usable L2-positive
+output, but independent final location validation is not established.
+
 ### Latest L2 persisted-run audit — 5 October 2026, 22:43 EAT
 
 Read-only verification found **300 / 324 eligible transformer results (92.59%)**:
@@ -232,7 +259,8 @@ The human-validation table and L2 human-review extension are installed. Apply th
 L2 annotation migration to the intended database before further automated L2 writes; this
 documentation audit performed no schema or annotation mutations.
 
-The public Sheet still describes L2 as planned and records historical L1 v1 outputs.
+At this historical 12:44 EAT audit, the Sheet described L2 as planned and recorded
+historical L1 v1 outputs; the latest synchronized planning mismatch is noted above.
 Repository code implements L2 infrastructure and local review, with current weak
 coverage as above. This mismatch is explicit; public planning rows/CSVs and
 research gates were not manually changed. The older dated sections below remain
@@ -272,10 +300,11 @@ in each run's configuration.
 * Authorized full L1 completed: 499 new decisions, 17 gated review-case skips,
   zero failures and CLI exit 0. All 519 L0-valid versions now have L1 decisions.
 * Authorized v2 reprocessing preserved v1 history; current v2 eligibility is 324 Kenya
-  versions. All 324 now have compatible L2 weak labels; primary-model outputs remain absent.
+  versions. All 324 have compatible L2 weak labels; the later model run saved 300 compatible
+  results, with 24 eligible pending after a failed run.
 * L2 weak supervision, private development export, training CLI, checksummed offline
-  model inference and bounded synthetic smoke are implemented. No research model
-  or independent performance claim is established.
+  model inference and bounded synthetic smoke are implemented. Real initial
+  development fine-tuning is executed; independent performance is not established.
 * Protected local L0/L1/L2 Human Review, direct unlock, separate append-only decisions,
   revisions/conflict handling and method-separated status/filter/navigation are implemented.
 * README, AGENTS, AI_CONTEXT, annotation specification and deployment notes updated.
@@ -288,29 +317,35 @@ in each run's configuration.
 Automated implementation and authorized L0/L1 execution are complete. Human
 review of all 302 originally borderline L2 weak results is recorded; 22 originally
 binary weak results remain unreviewed. Independent sampled validation, codebook
-finalization and reviewed-label training export remain pending. Readiness gates
+finalization and protected independent evaluation remain pending. Reviewed/mixed
+export and first-model weighted training are complete. Readiness gates
 have not been passed through automation or review coverage alone.
 
 ## Next
 
 1. Inspect L0 anomalies by publisher and resolve extraction defects through versioned
    reprocessing, retaining flagged records and original evidence.
-2. Reconcile the 407-record planning count with 536 observed versions; record exact
-   membership for any smaller pilot.
+2. Preserve exact dynamically queried membership for any corpus expansion or pilot;
+   the old 407-record planning snapshot is already superseded by 536 versions.
 3. Review initial rules/gazetteer and agree error thresholds, sample sizes and an
    uncertainty/stratification protocol. Engineering thresholds are not calibrated.
 4. Inspect L1 ambiguity, evidence and source/language coverage over the eligible corpus.
-5. Store sampled human validation and adjudicated reference labels separately;
-   report accuracy/F1, false-pass/false-fail, ambiguity, calibration, subgroup errors
-   and runtime before claiming research exit-gate completion.
+5. Resolve installed L2 schema readiness and the database/lock interruption, then
+   finish pending-only inference without changing human or weak-label history.
+6. Expand independently reviewed positives; store sampled validation and adjudicated
+   reference labels separately, freeze reference membership and report defensible
+   accuracy/F1, false-pass/false-fail, calibration and subgroup evidence before
+   claiming research exit-gate completion.
 
-L2 infrastructure and full current weak coverage are implemented; a reviewed trained
-AfroXLMR GBV model, full L2 inference, L3–L5, NER, geocoding and mapping remain pending. Automated outputs
+L2 infrastructure, reviewed/mixed exports and the initial real development model
+are implemented. Full eligible inference, installed L2 schema readiness, independent
+model validation, L3–L5, NER, geocoding and mapping remain pending. Automated outputs
 are not gold labels; execution alone does not satisfy sampled-validation gates.
 
 ## Blockers / Limitations
 
-* No infrastructure blocker for the bounded trial or larger L0.
+* Historical bounded trial/full L0 had no infrastructure blocker. Current L2 has
+  four missing schema objects plus a connection/lock interruption leaving 24 pending.
 * Human-reference data and agreed numeric acceptance thresholds are absent.
   L0/L1 quality, coverage and confidence have not been independently validated.
 * Raw references are checked without per-version raw-object existence reads.
@@ -331,26 +366,28 @@ are not gold labels; execution alone does not satisfy sampled-validation gates.
 ## Last Roadmap Sync
 
 Latest anonymous synchronization succeeded on **5 October 2026 (Africa/Nairobi)**
-before this documentation audit; all four exports were current. Required headers
+during this progress audit; all four exports were current and unchanged. The
+Sheet still lists reviewed/mixed export and first-model fitting as pending despite
+executed local code; final research validation remains pending in both accounts. Required headers
 matched and no canonical planning rows or synchronized CSVs were manually edited.
 
 | Snapshot | Planning rows | SHA-256 |
 | --- | ---: | --- |
-| `roadmap.csv` | 29 | `3dce0ae1054f89106fb19cb88f2b4a7d8b0db11e53fa734ebe7374da82ea1270` |
-| `current_state.csv` | 9 | `b31cdc3088a80b5a0b44614abaee9763ac5947e4ba9d74a3976c9cde9e3b5141` |
-| `stage_gates.csv` | 12 | `f8cd1d3ea59f3e20d0ba20cd62575a4f783b8b3caa883977e4d9d90804df6770` |
-| `annotation_layers.csv` | 8 | `b4142b6ae3e6638d4e8bc80f2381d51bd8c86631251b88063de8fc4d9f97a3d4` |
+| `roadmap.csv` | 30 | `e196dc7d051d6186e4efb11828aa6622fa93237e188d7f9363a631add13c2b8e` |
+| `current_state.csv` | 9 | `07c56a117ea012ccb3b564f68a121bcd7f3c80ce739fc2a92c4a537dc5702a6e` |
+| `stage_gates.csv` | 12 | `c5448e5d57ae37e4fcf1d76c7cb2b24b35ac122edb2d09a817ec6abe1fc151e1` |
+| `annotation_layers.csv` | 8 | `bef657d033cd7304e6deb0f233ba69babbbad0ecdddfe36e753dc645bd3495a4` |
 
 ## Relevant Code / Migrations
 
 * `annotations/{service,l0,l1,schemas}.py`, `annotations/resources/kenya_v1.json`.
-* `annotations/{geography,l2,l2_config,l2_training,l2_weak_supervision,validation}.py`,
+* `annotations/{geography,l2,l2_config,l2_datasets,l2_training,l2_readiness,l2_weak_supervision,validation}.py`,
   expanded `kenya_v2.json` and provisional `gbv_relevance_v1.json` resources.
 * `database/models.py`, `database/repositories/annotations.py`.
 * `migrations/20261003_add_automated_annotations.sql` — applied to development;
   other deployments must apply it separately.
 * `scripts/run_annotations.py` — layers, limit, UUID filters, force, JSON summary.
-* `scripts/{prepare_l2_training_data,train_l2_classifier,smoke_l2}.py` — private
+* `scripts/{prepare_l2_training_data,train_l2_classifier,check_l2_model,smoke_l2}.py` — private
   development exports, training and synthetic architecture verification.
 * `database/repositories/human_validations.py` and
   `20261004_add_human_validations.sql` / `20261005_add_l2_human_validations.sql`
@@ -365,8 +402,8 @@ matched and no canonical planning rows or synchronized CSVs were manually edited
 
 ## Test Status
 
-Latest recorded full suite on **5 October 2026**: **249 tests run, 248 passed, one
-optional installed-model integration test skipped**. L2 review verification and
+Latest full suite including installed-model integration on **5 October 2026**:
+**264 passed, zero failures/skips**. L2 review verification and
 synthetic smoke details appear in the dated entries below. This documentation audit
 validated links, referenced files, commands and snapshot hashes without rerunning
 collection, training, inference or human decisions.

@@ -40,7 +40,11 @@ deployment read-only until bounded execution is configured deliberately.
 
 The repository now implements L0/L1/L2 monitoring, separate L2 weak/model result
 views and protected local Human Review. Development weak labels cover all 324
-currently eligible versions; the primary L2 trained artifact is unconfigured.
+currently eligible versions. The first real L2 development artifact is configured
+**locally**, with 300 saved predictions and 24 eligible pending (22:59 EAT readback).
+This does not provision that artifact in App Engine or establish production model
+configuration. Local model architecture and measured results are in
+[the annotation document](annotations.md#trained-transformer-architecture--l2-afroxlmr-dev-v1).
 This progress does not establish a deployed production classifier or completed
 validation. See [implementation status](roadmap/IMPLEMENTATION_STATUS.md).
 

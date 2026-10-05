@@ -25,7 +25,7 @@ L2 now has separate provisional weak supervision, private bootstrap exports,
 AfroXLMR-compatible PyTorch training, installed-artifact inference and protected local review.
 The first real AfroXLMR development model, `l2-afroxlmr-dev-v1`, is now trained and
 configured locally; full DB inference and independent L2 evaluation remain pending.
-Final 5 October 15:41 EAT readback: 324 eligible; weak machine 7/15/302,
+Human-review state reconfirmed at 22:59 EAT on 5 October: 324 eligible; weak machine 7/15/302,
 human overlay 10/312/2. Reviews: 300 corrected plus two confirmed borderline;
 22 weak binary labels unreviewed. Reviewed-only export has 300 records (3/297),
 mixed-effective 322 (10/312). `annotations/l2_datasets.py` resolves exact latest
@@ -37,7 +37,7 @@ manifest and `docs/roadmap/IMPLEMENTATION_STATUS.md`. Offline reload and bounded
 20-record inference passed; output 0/19/1, zero failures. Read-only schema checks
 (`annotations/l2_readiness.py`, `scripts/check_l2_model.py`) found four required L2
 objects absent at the initial check; no automatic migration. A later read-only
-22:43 EAT audit found 300 persisted results (10/284/6), 24 pending, and a failed
+22:59 EAT audit reconfirmed 300 persisted results (10/284/6), 24 pending, and a failed
 run with OperationalError followed by AnnotationLockLost. All four required
 schema objects remain absent. See `docs/l2_model_performance.md`; independent
 performance remains unmeasured.
@@ -91,7 +91,8 @@ gbv-news-ai/
 │   ├── AI_CONTEXT.md
 │   ├── app_engine_deployment.md
 │   ├── collection_protocol.md
-│   ├── annotations.md           # rule/specification, schema and operator guide
+│   ├── annotations.md           # rules, architecture, model results and operator guide
+│   ├── l2_model_performance.md  # dated operational evidence and evaluation limits
 │   └── roadmap/                 # public planning snapshots/config + engineering log
 ├── migrations/
 │   ├── 20260909_add_collection_run_scans.sql
@@ -102,6 +103,7 @@ gbv-news-ai/
 │   ├── 20261005_add_l2_annotations.sql
 │   └── 20261005_add_l2_human_validations.sql
 ├── models/
+│   ├── artifacts/               # ignored local trained-model artifacts
 │   ├── classification/          # empty placeholder
 │   └── ner/                     # empty placeholder
 ├── notebooks/
@@ -128,6 +130,7 @@ gbv-news-ai/
 │   ├── prepare_l2_training_data.py
 │   ├── train_l2_classifier.py
 │   ├── smoke_l2.py
+│   ├── check_l2_model.py        # bounded offline reload/in-memory check
 │   └── sync_roadmap.py
 ├── main.py                      # App Engine/Gunicorn Flask entrypoint
 ├── app.yaml                     # App Engine Python 3.14 configuration
@@ -500,12 +503,14 @@ ordering without putting provider details in publisher modules.
 
 ### `models/`
 
-**Status: L2 INFRASTRUCTURE IMPLEMENTED; RESEARCH MODEL PENDING.** `classification/`
+**Status: INITIAL L2 DEVELOPMENT MODEL TRAINED; INDEPENDENT EVALUATION PENDING.** `classification/`
 and `ner/` remain empty placeholders. L2 dataset preparation, task-specific training,
 manifest/checksum handling and offline inference live under `annotations/` and
 `scripts/`. Generated artifacts belong in ignored `models/artifacts/` or private
-`data/l2/`. Tiny synthetic checkpoints demonstrate code execution, not a trained
-research GBV classifier. NER and independent model evaluation remain pending.
+`data/l2/`. The real `l2-afroxlmr-dev-v1` artifact is locally configured, trained on 322 mixed
+records with only 10 positives (three reviewed). Tiny synthetic checkpoints remain
+engineering smoke only. Full compatible prediction coverage, schema readiness,
+NER and independent model evaluation remain pending.
 
 ### `app/`, `main.py`, and `app.yaml`
 
@@ -881,6 +886,10 @@ AI_CONTEXT.md.
   run/results monitoring and structured safe logs.
 - Versioned L1 v2 gazetteer with historical v1 execution preserved; complete current
   L2 weak coverage and separate training/inference infrastructure.
+- Reviewed/mixed immutable development exports with latest-human provenance,
+  reference/hash exclusion and configurable class-weighted training.
+- First real pinned AfroXLMR artifact, offline reload, private review-priority output
+  and read-only installed-schema checks; 300 saved model results, 24 pending.
 - Protected local L0/L1/L2 Human Review, direct unlock, exact lineage, append-only
   decisions/history, method-separated review counts and filtered navigation.
 - Offline tests cover parsing, orchestration, persistence/recovery, monitor behavior,
@@ -897,13 +906,15 @@ AI_CONTEXT.md.
 - Automated L0/L1 decisions exist, but extraction quality and Kenya relevance have
   not passed sampled human validation or calibration. Protected local review tooling
   exists; sample validation remains pending.
+- Full L2 inference is incomplete after a database/lock interruption (24 pending).
+  Required L2 schema objects remain absent despite existing predictions.
 - Near-real-time is an objective, but only retrospective/snapshot collection exists.
 
 ### Planned / Not Implemented
 
 - Independent reference-label datasets, stratified sampling, completed validation/calibration.
-- Research-trained/configured GBV classifier, full primary-model inference, agreed
-  accuracy/fairness metrics and corpus freeze/held-out evaluation.
+- Independently validated research GBV classifier, agreed accuracy/fairness metrics,
+  corpus freeze and protected held-out evaluation. Initial development training exists.
 - NER, location-role reasoning, geocoding, maps, and privacy-aware presentation.
 - Remote authenticated reviewer, administrative, map and public-user workflows.
 - Prospective continuous or near-real-time scheduling and latency measurement.
@@ -935,14 +946,17 @@ AI_CONTEXT.md.
 Pull the roadmap first; do not use this orientation file as a competing task list.
 The inspected roadmap currently prioritizes:
 
-1. Reconcile the roadmap's 407-record planning count with the 536 observed versions.
+1. Preserve dynamically queried corpus membership; the old 407 planning count is
+   already superseded by the synchronized 536-version observation.
 2. Inspect L0 flags and resolve parser defects through versioned reprocessing.
 3. Review initial annotation specification, thresholds and gazetteer with domain experts.
 4. Inspect L1 uncertainty and subgroup coverage; all 519 L0-valid versions now
    have L1 decisions following the authorized full run.
 5. Create a small stratified/uncertainty-focused human reference sample and metrics.
 6. Inspect L2 weak uncertainty, verify schema prerequisites and agree the GBV codebook.
-7. Satisfy documented gates before research L2 training/evaluation, L3–L5 or corpus freeze.
+7. Resolve L2 schema readiness and the connection/lock failure; finish pending-only
+   inference. Expand reviewed positives and freeze independent reference membership
+   before evaluation; later-layer baselines follow the synchronized roadmap.
 
 See `docs/roadmap/IMPLEMENTATION_STATUS.md` for current L0/L1/L2 implementation
 status, required decisions and actual validation evidence. The real 20-version
@@ -951,8 +965,8 @@ zero failures. L0 subsequently covered all 536 versions: valid 519, needs_review
 invalid 0, with no processing failures. Missing dates (12) and short bodies (5)
 require inspection. The initial full-run CLI had a post-completion lock-release
 error; annotation-specific autocommit/heartbeat/cleanup handling now addresses it.
-That historical milestone passed 155 tests; the latest recorded suite ran 249
-(248 passed, one optional integration test skipped). Automated execution does not
+That historical milestone passed 155 tests; the latest installed-model suite
+passed 264 tests with zero failures/skips. Automated execution does not
 establish human-validated reference labels.
 Full L1 completed with 499 new decisions and 17 gated skips, no failures and exit 0.
 Across 519 eligible versions, historical v1 totals were Kenya 307 / non-Kenya 73 / ambiguous
@@ -977,7 +991,7 @@ another object store or database provider without a new architecture decision.
 | Monthly collection | `README.md`, `docs/collection_protocol.md`, `scripts/collect_monthly.py`, `scripts/trial_scraper.py`, `tests/test_monthly_collection.py` |
 | Storage | `AGENTS.md`, this file, `storage/gcs.py`, and `storage/persistence.py` |
 | Database | `AGENTS.md`, this file, `database/models.py`, session setup, and repositories |
-| ML/NER | `AGENTS.md`, this file, normalized article schema; `models/` is currently empty |
+| ML/NER | `AGENTS.md`, this file, `docs/annotations.md` Section 21, `annotations/l2{,_datasets,_training,_readiness}.py`; trained artifacts are private under ignored `models/artifacts/`; NER is unimplemented |
 | Flask collection monitor | `AGENTS.md`, this file, `app/routes/`, `app/services/`, monitor tests, and deployment guide |
 | Tests | Relevant implementation, matching `tests/test_*.py`, and synthetic fixture; run the full offline suite |
 | Documentation/operations | Current CLIs, `README.md`, `docs/collection_protocol.md`, and this file |

@@ -838,7 +838,8 @@ When uncertain about a research assumption, document the uncertainty rather than
 ## 31. Current Development Priority
 
 The roadmap milestone remains **Automated Annotation Pipeline — L0 and L1 validation**;
-user-authorized L2 infrastructure and local review are also implemented. The public
+user-authorized L2 weak supervision, local review, reviewed/mixed export and the
+first real AfroXLMR development artifact are also implemented. The public
 Google Sheet and synchronized snapshots in `docs/roadmap/` govern sequencing and
 stage gates (see Section 34). Current State now records 536 article versions;
 407 was an older planning snapshot. Neither establishes a validated final dataset.
@@ -857,7 +858,9 @@ and monitor (see Section 33). The next priorities are:
 3. Inspect L1 uncertainty and source/language coverage over the agreed eligible corpus.
 4. Validate a stratified/uncertain sample of L0/L1/L2 weak results with separate reviews.
 5. Verify/install required L2 annotation schema; finalize codebook and thresholds.
-6. Train/configure a reviewed L2 artifact and progress to L3–L5 only as gates permit.
+6. Resolve the L2 connection/lock interruption, then complete 24 pending predictions.
+7. Expand reviewed positives and freeze independent reference membership before evaluation.
+8. Design later-layer baselines only as the synchronized roadmap permits; final validation remains gated.
 ```
 
 Do not build advanced model-serving or distributed infrastructure before reliable data collection has been demonstrated.
@@ -951,9 +954,9 @@ relevance, publication dates, and language require human review. Wayback coverag
 is incomplete and does not demonstrate exhaustive or random sampling.
 
 L0/L1/L2 local human-validation workflows, provisional GBV weak supervision and
-training/inference infrastructure are implemented. A research-trained/configured
-AfroXLMR classifier, completed independent evaluation, NER, geocoding and incident
-mapping remain pending. The current
+training/inference infrastructure and the first real AfroXLMR development model
+are implemented. Larger-corpus retraining, independent evaluation, NER, geocoding
+and incident mapping remain pending. The current
 retrospective collectors do not demonstrate prospective near-real-time ingestion
 or end-to-end model latency.
 
@@ -992,26 +995,35 @@ or end-to-end model latency.
 
 ### L2 and Human Review
 
-* Read-only verification on 5 October 2026 at 12:44 EAT found compatible weak
+* Read-only verification on 5 October 2026, reconfirmed at 22:59 EAT, found compatible weak
   bootstrap decisions for all 324 L1-Kenya versions: gbv 7/not_gbv 15/borderline 302.
   These are provisional automated outputs, not reference labels.
 * `annotations/l2.py`, `l2_config.py`, `l2_training.py` and `l2_weak_supervision.py`
   provide separate weak/model identities, private development exports, bounded
   training/synthetic smoke and checksummed offline trained-artifact inference.
-  The primary method remains `l2-model-unconfigured`; model predictions are zero
-  and all 324 eligible versions remain pending for the primary model.
+  `l2_datasets.py` adds latest-human reviewed/mixed development exports, exact
+  deduplication and explicit reference exclusion. The locally configured
+  `l2-afroxlmr-dev-v1` has 300 compatible predictions (10 gbv / 284 not_gbv /
+  6 borderline); 24 eligible versions remain pending after OperationalError and
+  AnnotationLockLost. See `docs/annotations.md` Section 21 for actual architecture
+  and training/operational evidence. No independent accuracy/F1 is established.
 * Local Human Review supports all L0/L1/L2 labels, exact machine/extraction lineage,
   direct L2 unlock, protected verified text, separate append-only decisions/revisions,
   filtered Save & Next and separate weak/model review counts. One current L1 review
-  is recorded; no completed sampled validation is established. No L2 reviews were
-  recorded at the verification above.
+  is recorded; L0 has no saved reviews. L2 weak reviews comprise 300 corrections
+  and two confirmed borderline, producing effective 10/312/2; 22 binary weak
+  results remain unreviewed. All 300 model predictions remain unreviewed. These
+  records do not establish a completed independent validation sample.
 * `20261004_add_human_validations.sql` and the
   `20261005_add_l2_human_validations.sql` extension are installed in development.
   Inspection found expected checks, identity index and prerequisite trigger from
   `20261005_add_l2_annotations.sql` absent. Apply that migration to the intended
   database before further automated L2 writes; never assume file presence means installation.
-* Latest recorded full suite on 5 October: 249 tests run, 248 passed, one optional
-  installed-model test skipped. Synthetic smoke is engineering evidence only.
+* Latest full suite including the real installed-model integration on 5 October:
+  264 passed, zero failures/skips. Synthetic smoke is engineering evidence only.
+* First-model training used 322 mixed records (10/312; only three reviewed positives),
+  class-weighted loss and three epochs. No independent held-out reference set is
+  frozen. Four required L2 schema objects remain absent despite stored model rows.
   Independent GBV accuracy, calibration and research stage-gate completion remain pending.
 
 ---
@@ -1068,9 +1080,13 @@ All layers should produce automated annotations for **100% of their eligible
 records**, retaining gating and uncertainty. L1 runs only on L0-valid records;
 downstream eligibility follows the synchronized Annotation Layers and Stage Gates.
 L0/L1 are implemented and executed. L2 weak supervision, model infrastructure and
-local review are implemented; a primary trained model and independent L2 validation
-remain pending. The Sheet still lists L2 as planned and retains v1 L1 counts; record
-this engineering/planning mismatch without manually rewriting synchronized CSVs.
+local review, reviewed/mixed export and the first real development model are
+implemented. Full eligible prediction coverage, L2 schema installation and independent
+L2 validation remain pending. Latest synchronized Sheet text includes L1 v2 and
+human review, but exporter/first-model tasks lag execution. Record that mismatch
+without manually rewriting synchronized CSVs. The roadmap permits location/NER
+baseline design after initial usable L2-positive output; final evaluation still
+requires validated positives and independently reviewed spans/roles.
 L3–L5 remain planned. Automated execution alone does not
 satisfy the sampled-validation exit gates.
 

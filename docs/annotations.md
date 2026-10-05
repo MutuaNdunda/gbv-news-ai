@@ -38,6 +38,33 @@ corrections are separate and do not rewrite those automated counts. Its L1
 NER/classifier wording remains broader than this explicitly scoped deterministic
 gazetteer enhancement. Sampled-validation exit gates remain open.
 
+### Project progress and documentation map — 5 October 2026, 22:59 EAT
+
+A fresh read-only database audit reconfirmed the following execution state.
+The anonymous roadmap sync succeeded with all four exports unchanged. Planning
+snapshots still describe reviewed/mixed export and the first model as pending;
+those engineering tasks are implemented and executed. This is a planning lag,
+not a reason to rewrite the CSVs or declare independent validation complete.
+
+| Project component | Verified progress | Annotation-document coverage | Related maintained guide |
+| --- | --- | --- | --- |
+| Collection / provenance | Seven publisher parsers; 536 stored extraction versions; private GCS/Supabase lineage. Corpus quality is not independently validated. | Sections 2, 4–5, 14–15 describe input/provenance and corpus limits. | [Collection protocol](collection_protocol.md), [README](../README.md) |
+| L0 extraction quality | 536/536 decisions: 519 valid, 17 needs_review, 0 invalid; 0 human reviews. | Sections 5, 14, 20 cover rules, history and review. | [Implementation status](roadmap/IMPLEMENTATION_STATUS.md), [AI context](AI_CONTEXT.md) |
+| L1 Kenya relevance | 519/519 eligible decisions: 324 kenya, 35 not_kenya, 160 ambiguous; 1 human correction. | Sections 6, 18, 20 cover v1/v2 scoring, evidence, lineage and validation limits. | [Implementation status](roadmap/IMPLEMENTATION_STATUS.md), [Agent guidance](../AGENTS.md) |
+| L2 weak supervision / human overlay | Original 7/15/302 over 324; effective 10/312/2. Reviews: 300 corrected and 2 confirmed borderline; 22 binary weak results unreviewed. | Sections 1, 20–21 distinguish weak/model/human outputs and provenance. | [README](../README.md), [AI context](AI_CONTEXT.md) |
+| Reviewed/mixed datasets | Reviewed 300 (3/297); mixed 322 (10/312). Two borderline excluded, no exact duplicates/unresolved; no frozen independent reference set. | Sections 1, 15, 21 describe label policy, manifest/hash, reference exclusion and imbalance. | [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
+| Real AfroXLMR model | Locally configured `l2-afroxlmr-dev-v1`; 12-layer encoder, binary head; weighted fine-tuning and offline reload executed. | Section 21 contains architecture, diagram, parameters, training and inference behavior. | [L2 performance](l2_model_performance.md), [README](../README.md) |
+| L2 persisted inference | 300/324 compatible results: 10/284/6; 24 pending. Latest run failed with OperationalError then AnnotationLockLost. All 300 model results are unreviewed. | Sections 1, 14, 21 record coverage, timing and incomplete-run limits. | [L2 performance](l2_model_performance.md), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
+| Database readiness | Four required L2 schema objects absent. Review extension installed; saved predictions do not prove migration readiness. | Sections 11, 20–21 distinguish schema contracts from verified installation. | [Deployment guide](app_engine_deployment.md), [README](../README.md) |
+| Research validation / later layers | No independent accuracy/F1/calibration; L3–L5, contextual NER, geocoding, mapping, prospective near-real-time integration remain unimplemented. | Sections 16–17, 21 preserve open gates and future scope. | [Roadmap guide](roadmap/README.md), [Agent guidance](../AGENTS.md) |
+
+Documentation is mapped to implementation and dated evidence, not inferred from
+roadmap task status. The collection protocol's sampling contract, `.env.example`
+placeholders, migrations and model configuration were inspected; no operational
+behavior or schema was changed by this review. The roadmap permits location/NER
+baseline design after initial usable L2-positive output, while final location
+results still require validated positives and independent span/role evaluation.
+
 ### Latest L2 persisted-run audit — 5 October 2026, 22:43 EAT
 
 Read-only verification found **300 / 324 eligible transformer results (92.59%)**:
@@ -224,15 +251,15 @@ reference/test manifests for training, and record separate controlled provenance
 No final held-out set exists. Codebook approval, adequate positive support,
 near-duplicate grouping, independent evaluation and L0/L1 validation remain open.
 
-### Latest verified state — 5 October 2026, 12:44 EAT
+### Historical verified state — 5 October 2026, 12:44 EAT
 
 **Historical pre-review observation; superseded for L2 review counts by the 14:52 EAT snapshot above.**
 
 Read-only development queries found 536 article versions; compatible current L0
 valid 519/needs_review 17/invalid 0 and L1 v2 kenya 324/not_kenya 35/ambiguous 160.
 L2 weak supervision covers **324/324 eligible versions**: **gbv 7, not_gbv 15,
-borderline 302**. The primary model remains `l2-model-unconfigured`: zero current
-model predictions, 324 pending. Weak coverage does not satisfy model coverage or
+borderline 302**. At that historical audit the primary model was
+`l2-model-unconfigured`: zero model predictions, 324 pending. Weak coverage does not satisfy model coverage or
 independent validation gates. One L1 human review is recorded; L0 and L2 weak
 results have no recorded current reviews at this observation.
 
@@ -266,7 +293,8 @@ constructs `AnnotationRepository` and `GCSStorage`.
 | `annotations/resources/kenya_v1.json` | Versioned lexical evidence resource. |
 | `annotations/resources/kenya_v2.json`, `annotations/geography.py` | Current expanded geographic resource and matching. |
 | `annotations/l2_weak_supervision.py`, `l2_config.py`, `l2.py` | Separate weak/model identity, inference and GBV-relevance configuration. |
-| `annotations/l2_training.py`, `scripts/{prepare_l2_training_data,train_l2_classifier,smoke_l2}.py` | Private bootstrap development data, training and synthetic smoke. |
+| `annotations/l2_datasets.py`, `l2_training.py`, `scripts/{prepare_l2_training_data,train_l2_classifier,smoke_l2}.py` | Weak-only, reviewed-only and mixed-effective private exports; provenance/manifest validation, weighted training and synthetic smoke. |
+| `annotations/l2_readiness.py`, `scripts/check_l2_model.py` | Read-only installed-schema checks, offline reload, bounded in-memory inference and private review priorities. |
 | `annotations/validation.py`, `database/repositories/human_validations.py` | Separate local review contracts, append-only revisions and cohort queries. |
 | `database/repositories/annotations.py` | Run/result persistence, compatible-current queries, selection and advisory locking. |
 | `storage/gcs.py` | Processed JSON retrieval, optionally pinned to a recorded generation. |
@@ -979,10 +1007,11 @@ default; leave remote execution disabled until configured deliberately. See
 
 ## 13. Test coverage
 
-The latest recorded full suite on **5 October 2026 (Africa/Nairobi)** ran **249
-tests: 248 passed, one optional installed-model integration test skipped**, using
-`.venv/bin/python -m unittest discover -s tests -q`. The earlier 155-test milestone
-is historical. This documentation-only update did not rerun annotation/training jobs.
+Latest full suite including the explicitly installed development artifact:
+**264 tests passed, zero failures/skips** on 5 October 2026. Run with
+`GBV_L2_INTEGRATION_MODEL=models/artifacts/l2-afroxlmr-dev-v1 .venv/bin/python -m unittest discover -s tests -q`.
+The earlier 249/248/one-skip and 155-test milestones are historical. Ordinary
+unit execution does not download model weights; integration is explicitly selected.
 
 | File | Covered behavior |
 | --- | --- |
@@ -993,6 +1022,7 @@ is historical. This documentation-only update did not rerun annotation/training 
 | `tests/test_annotation_routes.py` | Read pages/detail/404, disabled trigger, execution-token/CSRF validation, updated-session replay, limits, short secrets, Unicode token rejection and remote HTTPS requirement. |
 | `tests/test_kenya_gazetteer.py` | Reproducible v2 resource, matching, ambiguity and provenance. |
 | `tests/test_l2_{weak_supervision,model,training,pipeline,queries,ui}.py` | Weak rules, model manifests/probabilities, private development data, L2 gates/history and result tiles/filters. |
+| `tests/test_l2_development.py`, `tests/test_l2_readiness.py` | Latest human revision, reviewed/mixed provenance, compatible prerequisites, duplicate/reference exclusion, historical reference hashes, manifests, weighted loss and schema/bounded-run checks. |
 | `tests/test_human_review.py`, `tests/test_l2_human_review.py` | Exact-result review lineage, protected text, revisions/conflicts, decisions, weak/model isolation, schema readiness and filtered navigation. |
 
 Tests use synthetic records, mocks/fakes and offline SQL queries; passing them does
@@ -1007,7 +1037,10 @@ it did not repeat collection, inference, training or review-save operations.
 
 The current 5 October readback is summarized in Section 1 and the engineering
 log: L1 v2 324 kenya/35 not_kenya/160 ambiguous; L2 weak 7 gbv/15 not_gbv/302
-borderline over all 324 eligible versions. L2 primary-model coverage is zero.
+borderline over all 324 eligible versions. Current compatible transformer coverage
+is 300/324: 10 gbv, 284 not_gbv, 6 borderline; 24 pending. Weak human overlay
+is 10/312/2. Section 1 records the 22:59 EAT reconfirmation; these are separate
+weak/model cohorts, not independent accuracy measurements.
 The following older table is retained as historical v1 execution evidence.
 
 The following is the **recorded 3 October 2026 verification**, sourced from
@@ -1047,8 +1080,10 @@ and research records out of public planning snapshots.
 Capture the repository commit externally with experiment evidence: there is no
 annotation-run `code_commit`, specification-version or dataset-version column.
 No approved corpus-freeze manifest or independent held-out reference set exists.
-L2 bootstrap preparation provides deterministic development splits; these are not
-the final research/reference split or evidence of independent evaluation.
+L2 preparation provides deterministic versioned development membership, not a
+final research train/validation/test split. All 322 mixed records were used for
+the first model; frozen independent reference membership remains absent. Explicit
+reference exclusion is implemented for later designated reference sets.
 Generation pinning is conditional on stored metadata. V2 method identity hashes
 gazetteer bytes; v1 does not, and neither hashes evaluator source code. A configuration hash therefore cannot alone reproduce
 all semantic changes. Inspect code and preserve/version resources alongside run
@@ -1095,8 +1130,9 @@ Perform stratified/uncertainty-focused human validation, separate reference/adju
 labels, error analysis, calibration and source/language coverage reporting before
 claiming roadmap exit-gate completion.
 
-Subject to those gates, future research execution includes L2 training, independent
-validation and calibrated thresholds using Section 21's infrastructure; L3 multi-label GBV type, L4
+The first L2 development fine-tuning is complete. Further research execution
+includes iterative retraining, independent validation and calibrated thresholds
+using Section 21's infrastructure; L3 multi-label GBV type, L4
 NER/event-location reasoning/geocoding, and L5 privacy/safety detection and output
 controls. Corpus version freeze, duplicate-aware splits and held-out evaluation
 must preserve independent reference evidence. These are planned capabilities, not
@@ -1858,7 +1894,9 @@ pure Transformer latency measurement or the earlier L0/L1 engineering target.
 
 `--layer l0,l1,l2` orders layers semantically; L2 always defaults to model inference.
 `--l2-mode weak` is the explicit bootstrap command and never an automatic fallback.
-Unbounded training/full L2 runs require separate approval under this task's scope.
+Use the CLI for explicitly authorized full pending-only runs; confirm installed
+L2 schema readiness before writing predictions. Local training/inference execution
+does not authorize production deployment or independent research claims.
 
 ### Monitor, protected local review and research status
 

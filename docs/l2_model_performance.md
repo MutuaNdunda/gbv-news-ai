@@ -4,7 +4,8 @@
 
 This report covers `l2-afroxlmr-dev-v1`, method
 `afroxlmr_gbv_relevance` / `l2-47035d92f81cd5240062610d`.
-Read-only development database verification: **5 October 2026, 22:43 EAT**.
+Read-only development database verification: **5 October 2026, 22:43 EAT**;
+coverage, run status and schema gaps reconfirmed at **22:59 EAT** with no change.
 Evidence is the current compatible annotation aggregate, persisted annotation-run
 summary, private training manifest and bounded offline-reload report. No private
 article text, reviewer identities or per-article identifiers are published here.

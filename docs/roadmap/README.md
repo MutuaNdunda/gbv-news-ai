@@ -52,14 +52,18 @@ a validated final corpus, or permission to include every local collection artifa
 ## Engineering progress — checked 5 October 2026
 
 All four anonymous exports synchronized successfully and matched the local files.
-The Sheet retains historical L1 v1 totals and still marks L2 as planned. Repository
-implementation has advanced through user-authorized L1 v2, L2 weak/model
-infrastructure and protected local L0/L1/L2 Human Review. Current weak coverage is
-324/324 eligible versions; a primary research-trained L2 model and completed
-independent validation remain pending. The expected L2 annotation migration
+All four exports were rechecked during the 22:59 EAT progress audit and were
+unchanged. The Sheet includes L1 v2 and human-review counts, but still describes
+reviewed/mixed export and the first real AfroXLMR as pending. Repository execution
+has completed those development tasks: mixed training has 322 records (10/312),
+and the configured artifact has 300 compatible predictions (10/284/6), 24 pending.
+Weak coverage remains 324/324; its human overlay is 10/312/2. Independent evaluation
+and a frozen held-out reference set remain absent. This planning/execution mismatch
+is documented without changing canonical Sheet rows or manually editing snapshots.
+The expected L2 annotation migration
 objects still require installation in development; the review extension is installed.
 
-See [the latest verified state](IMPLEMENTATION_STATUS.md#latest-verified-development-state--5-october-2026-1244-eat)
+See [the progress/documentation audit](IMPLEMENTATION_STATUS.md#project-progress-and-documentation-audit--5-october-2026-2259-eat)
 for coverage, schema readiness, test evidence and limitations, and
 [the operator guide](../../README.md) for commands. Update canonical planning rows
 in the Sheet before syncing changed statuses; this documentation update did not

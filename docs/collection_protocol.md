@@ -14,8 +14,9 @@ GBV keyword selection. Every record still needs Kenya-relevance and extraction
 quality review. The 5,000 target in the proposal is a minimum **annotated** corpus,
 including GBV and non-GBV reporting; it is not an ingestion stopping rule.
 Annotation and validation are separate downstream workflows; automated L0/L1,
-L2 provisional weak supervision and local review now exist. Automated stratified
-sampling and active learning remain later stages.
+L2 weak supervision, local review and the first real AfroXLMR development model
+now exist. A bounded private review-priority report is available; automated
+stratified sampling and an executed active-learning cycle remain later stages.
 
 This is retrospective archive collection. It does not implement prospective
 continuous ingestion or demonstrate near-real-time discovery latency. The archive
@@ -121,8 +122,13 @@ L2 weak bootstrap covers the 324 compatible L1-Kenya versions, with 7 gbv,
 automated labels, not verified incidents, a gold corpus or coverage/accuracy claims.
 
 Protected local Human Review supports L0/L1/L2 and preserves exact extraction,
-machine annotation and human revision lineage. A primary trained L2 model remains
-unconfigured. The L2 annotation migration's expected checks/index/trigger were
+machine annotation and human revision lineage. The first real AfroXLMR development
+artifact is locally configured; 22:59 EAT readback reconfirmed 300 compatible
+predictions (10 gbv / 284 not_gbv / 6 borderline), with 24 eligible pending after
+a failed run. Human overlay on the separate weak cohort is 10/312/2. Mixed training
+uses 322 binary records, only 10 positive (three reviewed), and no frozen independent
+reference set exists. Operational progress is not independent model evaluation.
+The L2 annotation migration's expected checks/index/trigger were
 absent in development at schema inspection; apply that prerequisite before further automated L2 writes. No collector behavior or archive sampling scope changed in this update.
 
 Use [the annotation specification](annotations.md), [operator commands](../README.md)
