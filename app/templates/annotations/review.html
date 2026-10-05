@@ -1,0 +1,78 @@
+{% extends "base.html" %}{% block title %}{{ annotation.layer }} review · {{ article.title }}{% endblock %}{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+<div><h1 class="h3">{{ annotation.layer }} · annotation inspection and Human Review</h1><p class="text-muted mb-0">Machine result: {{ annotation.label }} · {{ annotation.method_version }}</p></div>
+<a class="btn btn-outline-secondary" href="{{ url_for('annotations.results', layer=annotation.layer|lower, **context) }}">Back to Results</a></div>
+{% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
+<nav class="d-flex justify-content-between mb-3" aria-label="Review cohort navigation">
+<span>{% if neighbors.previous_id %}<a class="btn btn-outline-primary" href="{{ url_for('annotations.review', annotation_id=neighbors.previous_id, **dict(context, page=neighbors.previous_page)) }}">Previous</a>{% else %}<span class="text-muted">Previous unavailable</span>{% endif %}</span>
+<span class="align-self-center small">{% if neighbors.position %}{{ neighbors.position }} / {{ neighbors.total }} in this filtered cohort{% else %}This result is outside the current filtered cohort; it remains individually reviewable.{% endif %}</span>
+<span>{% if neighbors.next_id %}<a class="btn btn-outline-primary" href="{{ url_for('annotations.review', annotation_id=neighbors.next_id, **dict(context, page=neighbors.next_page)) }}">Next</a>{% else %}<span class="text-muted">Next unavailable</span>{% endif %}</span>
+</nav>
+<div class="row g-4"><section class="col-lg-7" aria-labelledby="article-heading">
+<div class="card card-body mb-3"><h2 class="h4" id="article-heading">Article</h2><h3 class="h5">{{ content_article.title if content_article is defined else article.title }}</h3>
+<dl class="row small"><dt class="col-sm-4">Source</dt><dd class="col-sm-8">{{ article.source }}</dd>
+<dt class="col-sm-4">Publication date</dt><dd class="col-sm-8">{% if content_article is defined %}{{ content_article.published_at or content_article.published_at_raw or 'Date unavailable' }}{% else %}{{ article.published_at or article.published_at_raw or 'Date unavailable' }}{% endif %}</dd>
+<dt class="col-sm-4">Canonical URL</dt><dd class="col-sm-8 text-break">{% if canonical_link %}<a href="{{ canonical_link }}" rel="noreferrer">{{ article.canonical_url }}</a>{% else %}{{ article.canonical_url }}{% endif %}</dd>
+<dt class="col-sm-4">Article</dt><dd class="col-sm-8 text-break"><a href="{{ url_for('articles.detail', article_id=article.id) }}">{{ article.id }}</a></dd>
+<dt class="col-sm-4">Exact extraction version</dt><dd class="col-sm-8 text-break">{{ version.id }} · {{ version.parser_version }}</dd></dl>
+{% if authorized %}
+{% if content_issue %}<div class="alert alert-warning">{{ content_issue }} Review the available context; use an unresolved decision if evidence is insufficient.</div>{% elif article_text %}<div class="article-text border-top pt-3">{{ article_text }}</div>{% else %}<p>No extracted article text is available.</p>{% endif %}
+{% else %}<p class="text-muted">Full article text is available only after local review access is unlocked.</p>{% endif %}
+</div></section>
+<section class="col-lg-5" aria-labelledby="machine-heading"><div class="card card-body mb-3">
+<h2 class="h4" id="machine-heading">Automated annotation</h2>
+{% set evidence = annotation.evidence or {} %}
+<dl class="row small"><dt class="col-5">Machine label</dt><dd class="col-7"><strong>{{ annotation.label }}</strong></dd>
+<dt class="col-5">Confidence / support</dt><dd class="col-7">{{ annotation.confidence if annotation.confidence is not none else 'Not applicable' }}</dd>
+<dt class="col-5">Method</dt><dd class="col-7 text-break">{{ annotation.method_name }}<br>{{ annotation.method_version }}</dd>
+<dt class="col-5">Annotated at</dt><dd class="col-7">{{ annotation.created_at }}</dd>
+<dt class="col-5">Annotation run</dt><dd class="col-7 text-break"><a href="{{ url_for('annotations.run_detail', run_id=annotation.annotation_run_id) }}">{{ annotation.annotation_run_id }}</a></dd>
+<dt class="col-5">Reason codes</dt><dd class="col-7">{{ (annotation.reason_codes or [])|join(', ') or 'None' }}</dd></dl>
+{% if annotation.layer == 'L0' %}
+<h3 class="h5">Extraction evidence</h3><dl class="row small">
+{% for key, label in [('body_chars', 'Body characters'), ('minimum_body_chars', 'Minimum characters'), ('body_words', 'Body words'), ('minimum_body_words', 'Minimum words'), ('publication_date_flagged', 'Publication date flagged')] %}
+<dt class="col-7">{{ label }}</dt><dd class="col-5">{{ evidence.get(key, 'Not recorded') }}</dd>{% endfor %}
+<dt class="col-7">Hard failures</dt><dd class="col-5">{{ evidence.get('hard_failures', [])|join(', ') or 'None' }}</dd>
+<dt class="col-7">Soft anomalies</dt><dd class="col-5">{{ evidence.get('soft_anomalies', [])|join(', ') or 'None' }}</dd></dl>
+{% elif annotation.layer == 'L2' %}
+{% include 'annotations/l2_evidence.html' %}
+{% else %}
+<p class="small text-muted">Confidence is normalized evidence support, not calibrated probability.</p>
+<dl class="row small">{% for key, label in [('kenya_score', 'Kenya score'), ('foreign_score', 'Foreign score'), ('net_score', 'Net score'), ('kenya_mentions', 'Kenya mentions'), ('decision_threshold', 'Decision threshold'), ('gazetteer_version', 'Gazetteer version')] %}
+<dt class="col-5">{{ label }}</dt><dd class="col-7">{{ evidence.get(key, 'Not recorded') }}</dd>{% endfor %}
+{% for key, label in [('kenyan_places', 'Kenyan places'), ('kenyan_counties', 'Matched counties'), ('kenyan_institutions', 'Institutions'), ('ambiguous_places', 'Ambiguous places'), ('ambiguous_institutions', 'Ambiguous institutions'), ('foreign_places', 'Foreign places'), ('admin_terms', 'Admin terms')] %}
+<dt class="col-5">{{ label }}</dt><dd class="col-7">{{ evidence.get(key, [])|join(', ') or 'None' }}</dd>{% endfor %}</dl>
+{% with result=annotation, geography_open=true %}{% include 'annotations/geography.html' %}{% endwith %}
+{% endif %}</div></section></div>
+<section class="card card-body mb-4" aria-labelledby="human-heading"><h2 class="h4" id="human-heading">Human Review</h2>
+{% if authorized %}
+<p>Reviewer: <strong>{{ reviewer_identity }}</strong> · Guideline version: <code>{{ guideline_version }}</code></p>
+<p>Current review: <strong>{{ status_labels.get(current_review.review_decision, 'Not reviewed') if current_review else 'Not reviewed' }}</strong>. Machine labels are preserved.</p>
+{% if history is none %}<div class="alert alert-warning">Human-validation storage is unavailable. Apply the migration and restart the app before saving.</div>
+{% else %}
+<form method="post" id="human-review-form" data-machine-label="{{ annotation.label }}">
+<input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="expected_current_id" value="{{ current_review.id if current_review else '' }}">
+<div class="row g-3"><div class="col-md-6"><label class="form-label" for="decision">Human decision</label><select class="form-select" id="decision" name="decision" required>
+{% set selected_decision = form.get('decision', current_review.review_decision if current_review else 'confirmed') %}
+{% for key, label in decisions.items() %}<option value="{{ key }}" {{ 'selected' if selected_decision == key }}>{{ label }}</option>{% endfor %}</select></div>
+<div class="col-md-6"><label class="form-label" for="human_label">Human label · {{ annotation.layer }}</label><select class="form-select" id="human_label" name="human_label">
+{% set selected_label = form.get('human_label', current_review.human_label if current_review else annotation.label) %}
+<option value="" {{ 'selected' if not selected_label }}>Unset / unresolved</option>{% for label in labels %}<option value="{{ label }}" {{ 'selected' if selected_label == label }}>{{ label }}</option>{% endfor %}</select></div>
+<div class="col-md-4"><label class="form-label" for="error_category">Reason category</label><select class="form-select" id="error_category" name="error_category">
+{% for key, label in error_categories.items() %}<option value="{{ key }}" {{ 'selected' if form.get('error_category', current_review.error_category if current_review else '') == key }}>{{ label }}</option>{% endfor %}</select></div>
+<div class="col-md-8"><label class="form-label" for="reason">Review reason</label><textarea class="form-control" id="reason" name="reason" rows="2" maxlength="1000">{{ form.get('reason', current_review.review_reason or '' if current_review else '') }}</textarea></div>
+<div class="col-12"><label class="form-label" for="notes">Notes</label><textarea class="form-control" id="notes" name="notes" rows="3" maxlength="4000">{{ form.get('notes', current_review.notes or '' if current_review else '') }}</textarea><p class="small text-muted mt-1">Record rationale without unnecessary victim identifiers or copied article passages.</p></div></div>
+<p class="small mt-3">A correction requires a different layer-appropriate label, a reason category and a reason. Unresolved decisions leave the human label unset.</p>
+<div class="d-flex flex-wrap gap-2"><button class="btn btn-primary" name="action" value="save">Save Review</button><button class="btn btn-success" name="action" value="save_next">Save &amp; Next</button></div>
+</form>{% endif %}
+<form method="post" class="mt-3"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn btn-outline-secondary btn-sm" name="action" value="lock">Lock review access</button></form>
+{% elif access_enabled %}
+<p>Unlock the local workspace to read article text, inspect review history and save a review. The configured reviewer identity is recorded by the server.</p>
+<form method="post" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf }}"><div class="col-md-8"><label class="form-label" for="review_token">Local review token</label><input type="password" class="form-control" id="review_token" name="review_token" autocomplete="off" required minlength="32"></div><div class="col-md-4 align-self-end"><button class="btn btn-primary" name="action" value="unlock">Unlock review</button></div></form>
+{% else %}<p>Human Review access is disabled. Configure protected local review to display full article text and save decisions. Remote review access is unavailable.</p>{% endif %}
+</section>
+{% if authorized and history %}<section aria-labelledby="history-heading"><h2 class="h4" id="history-heading">Review history</h2>
+{% for review in history %}<div class="card card-body mb-3"><h3 class="h6">{{ status_labels[review.review_decision] }} · {{ review.human_label or 'Human label unset' }}{% if loop.first %} · Current{% endif %}</h3>
+<p class="small">{{ review.reviewer_identity }} · {{ review.created_at }} · {{ review.guideline_version }}</p><p>Reason: {{ review.error_category or 'No category' }} · {{ review.review_reason or 'No reason recorded' }}</p>{% if review.notes %}<p class="review-notes">{{ review.notes }}</p>{% endif %}<p class="small text-break mb-0">Review: {{ review.id }}{% if review.supersedes_validation_id %} · Supersedes: {{ review.supersedes_validation_id }}{% endif %}</p></div>{% endfor %}</section>{% endif %}
+<script src="{{ url_for('static', filename='js/review.js') }}" defer></script>
+{% endblock %}

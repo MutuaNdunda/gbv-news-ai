@@ -1,0 +1,8 @@
+<h3 class="h5">{{ 'Weak bootstrap' if annotation.method_name == 'gbv_relevance_weak_supervision' else 'Model prediction' }}</h3>
+<p class="small">Weak labels and model probabilities are automated outputs, not human reference labels. Model GBV probability is uncalibrated; weak support is not a probability.</p>
+<dl class="row small">
+{% for key, label in [('gbv_probability','GBV probability'),('confidence_kind','Confidence kind'),('positive_threshold','Positive threshold'),('negative_threshold','Negative threshold'),('threshold_status','Threshold status'),('model_version','Model version'),('base_model','Base model'),('training_dataset_version','Bootstrap dataset'),('weak_supervision_version','Weak supervision'),('rule_version','Rule version')] %}
+<dt class="col-5">{{ label }}</dt><dd class="col-7 text-break">{{ evidence.get(key, 'Not applicable') }}</dd>{% endfor %}</dl>
+<h3 class="h5">Exact L1 prerequisite</h3>
+{% if prerequisite %}<a href="{{ url_for('annotations.review', annotation_id=prerequisite.id) }}">{{ prerequisite.label }} · {{ prerequisite.method_name }} · {{ prerequisite.method_version }}</a><p class="small text-break">{{ prerequisite.id }}</p>{% else %}<p>Prerequisite unavailable.</p>{% endif %}
+<details><summary>Detailed evidence / labeling-function votes</summary><pre class="text-wrap">{{ evidence|tojson(indent=2) }}</pre></details>

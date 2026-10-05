@@ -48,28 +48,89 @@ def load_article(candidate, objects):
     return item
 
 
+def load_verified_article(candidate, objects):
+    """Semantic layers consume the immutable upstream extraction, never live news."""
+    article = load_article(candidate, objects)
+    body = article.get("article_text")
+    if (article["processed_object_missing"] or article["lineage_errors"] or not isinstance(body, str)
+            or hashlib.sha256(body.encode("utf-8")).hexdigest() != candidate["content_hash"].lower()):
+        raise ValueError("Annotation input no longer matches the accepted article version")
+    return article
+
+
+def batch_l2_results(candidates, current, objects, predictor, batch_size, lease):
+    """Batch eligible L2-only inputs; isolate retrieval and model failures by version."""
+    outcomes = {}
+    for offset in range(0, len(candidates), batch_size):
+        prepared = []
+        for candidate in candidates[offset:offset + batch_size]:
+            version_id = candidate["id"]
+            l0, l1 = current.get((version_id, "L0")), current.get((version_id, "L1"))
+            if (l0 is None or l0.label != "valid" or l1 is None or l1.label != "kenya"
+                    or l1.prerequisite_annotation_id != l0.id):
+                continue
+            if lease is not None:
+                lease.check()
+            try:
+                prepared.append((version_id, load_verified_article(candidate, objects)))
+            except Exception as exc:
+                outcomes[version_id] = exc
+        if not prepared:
+            continue
+        try:
+            results = predictor.predict_batch([article for _, article in prepared])
+            if len(results) != len(prepared):
+                raise ValueError("L2 batch result count mismatch")
+            outcomes.update((version_id, result) for (version_id, _), result in zip(prepared, results))
+        except Exception:
+            # A failed batch must not prevent other individual inputs succeeding.
+            for version_id, article in prepared:
+                try:
+                    outcomes[version_id] = predictor.evaluate(article)
+                except Exception as exc:
+                    outcomes[version_id] = exc
+    return outcomes
+
+
 def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                             collection_run_id=None, only_pending=True, trigger_type="cli",
-                            config=DEFAULT_CONFIG, services=None):
+                            config=DEFAULT_CONFIG, services=None, l2_mode="model", l2_config=None,
+                            l2_predictor=None):
     layers = sorted(set(layer.upper() for layer in layers))
-    if not layers or any(layer not in ("L0", "L1") for layer in layers):
-        raise ValueError("Only L0 and L1 annotation layers are implemented")
+    if not layers or any(layer not in ("L0", "L1", "L2") for layer in layers):
+        raise ValueError("Only L0, L1 and L2 annotation layers are implemented")
     if limit is not None and (isinstance(limit, bool) or limit < 1):
         raise ValueError("Limit must be positive")
     if trigger_type not in ("cli", "manual_ui", "post_collection", "scheduled"):
         raise ValueError("Unsupported annotation trigger")
     article_ids = [UUID(str(value)) for value in article_ids] if article_ids else None
     collection_run_id = UUID(str(collection_run_id)) if collection_run_id else None
+    methods = {layer: config.method_version(layer) for layer in ("L0", "L1")}
+    if "L2" in layers:
+        from annotations.l2 import get_predictor
+        from annotations.l2_config import L1_METHOD, L2Config
+        from database.session import load_environment
+        load_environment()
+        l2_config = l2_config or L2Config.from_env()
+        l2_predictor = l2_predictor or get_predictor(l2_mode, l2_config)
+        methods.update(L2=l2_predictor.method_version, L2_method_name=l2_predictor.method_name,
+                       L1_method_name=L1_METHOD)
     if services is None:
         from database.repositories.annotations import AnnotationRepository
         from database.session import create_session_factory
         from storage import GCSStorage
         services = AnnotationRepository(create_session_factory()), GCSStorage()
     repository, objects = services
-    methods = {layer: config.method_version(layer) for layer in ("L0", "L1")}
     configuration = {"parameters": asdict(config), "limit": limit, "only_pending": only_pending,
                      "article_ids": [str(value) for value in article_ids or []],
                      "collection_run_id": str(collection_run_id) if collection_run_id else None}
+    if "L2" in layers:
+        # Do not publish local artifact paths or credentials in run configuration.
+        configuration["l2"] = {"mode": l2_mode, "method_name": l2_predictor.method_name,
+                               "method_version": l2_predictor.method_version,
+                               "positive_threshold": l2_config.positive_threshold,
+                               "negative_threshold": l2_config.negative_threshold,
+                               "threshold_status": "UNVALIDATED ENGINEERING THRESHOLDS"}
     started = perf_counter()
     summary = {"requested": 0, "processed": 0, "success": 0, "failed": 0, "skipped": 0,
                "layers": {layer: {"eligible": 0, "processed": 0, "skipped": 0, "failed": 0,
@@ -84,6 +145,14 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
             summary["requested"] = len(candidates)
             repository.set_selection(run_id, candidates)
             current = repository.current_for_candidates([item["id"] for item in candidates], methods)
+            l2_outcomes = {}
+            if layers == ["L2"]:
+                tick = perf_counter()
+                pending = [item for item in candidates if not only_pending or
+                           current.get((item["id"], "L2")) is None]
+                l2_outcomes = batch_l2_results(pending, current, objects, l2_predictor,
+                                               l2_config.batch_size, lease)
+                summary["layers"]["L2"]["inference_and_loading_ms"] = round((perf_counter() - tick) * 1000, 2)
             for candidate in candidates:
                 if lease is not None:
                     lease.check()
@@ -93,6 +162,7 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                 input_article = None
                 try:
                     l0 = current.get((candidate["id"], "L0"))
+                    l1 = current.get((candidate["id"], "L1"))
                     for layer in layers:
                         stats = summary["layers"][layer]
                         fields = {"annotation_run_id": run_id, "article_id": candidate["article_id"],
@@ -102,9 +172,20 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                             stats["skipped_l0"] += 1
                             log_event("l1_skipped", **fields, reason="l0_not_valid")
                             continue
+                        if layer == "L2":
+                            reason = ("missing_compatible_l1" if l1 is None or l0 is None
+                                      or l0.label != "valid" or l1.prerequisite_annotation_id != l0.id
+                                      else "l1_" + l1.label if l1.label != "kenya" else None)
+                            if reason:
+                                stats["skipped"] += 1
+                                stats.setdefault("skip_reasons", {})[reason] = stats.get("skip_reasons", {}).get(reason, 0) + 1
+                                log_event("l2_skipped", **fields, reason=reason)
+                                continue
                         stats["eligible"] += 1
-                        previous = l0 if layer == "L0" else current.get((candidate["id"], "L1"))
+                        previous = l0 if layer == "L0" else l1 if layer == "L1" else current.get((candidate["id"], "L2"))
                         if layer == "L1" and previous is not None and previous.prerequisite_annotation_id != l0.id:
+                            previous = None
+                        if layer == "L2" and previous is not None and previous.prerequisite_annotation_id != l1.id:
                             previous = None
                         if only_pending and previous is not None:
                             stats["skipped"] += 1
@@ -112,18 +193,31 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                             continue
                         tick = perf_counter()
                         log_event(f"{layer.lower()}_started", **fields)
-                        if input_article is None: input_article = load_article(candidate, objects)
-                        if layer == "L1":
-                            body = input_article.get("article_text")
-                            if (input_article["processed_object_missing"] or input_article["lineage_errors"]
-                                    or not isinstance(body, str)
-                                    or hashlib.sha256(body.encode("utf-8")).hexdigest() != candidate["content_hash"].lower()):
-                                raise ValueError("L1 input no longer matches the version accepted by L0")
-                        result = evaluate_l0(input_article, config) if layer == "L0" else evaluate_l1(input_article, config)
+                        if layer == "L2" and candidate["id"] in l2_outcomes:
+                            result = l2_outcomes[candidate["id"]]
+                            if isinstance(result, Exception):
+                                raise result
+                        else:
+                            if input_article is None: input_article = load_article(candidate, objects)
+                            if layer in ("L1", "L2"):
+                                body = input_article.get("article_text")
+                                if (input_article["processed_object_missing"] or input_article["lineage_errors"]
+                                        or not isinstance(body, str)
+                                        or hashlib.sha256(body.encode("utf-8")).hexdigest() != candidate["content_hash"].lower()):
+                                    raise ValueError("Annotation input no longer matches the accepted article version")
+                            result = (evaluate_l0(input_article, config) if layer == "L0" else
+                                      evaluate_l1(input_article, config) if layer == "L1" else
+                                      l2_predictor.evaluate(input_article))
+                        if layer == "L2" and (result.layer != "L2" or result.label not in ("gbv", "not_gbv", "borderline")
+                                              or result.method_name != methods["L2_method_name"]
+                                              or result.method_version != methods["L2"]):
+                            raise ValueError("L2 predictor returned an incompatible result identity")
                         if lease is not None:
                             lease.check()
-                        annotation = repository.persist(candidate, run_id, result, l0.id if layer == "L1" else None)
+                        annotation = repository.persist(candidate, run_id, result,
+                                                        l0.id if layer == "L1" else l1.id if layer == "L2" else None)
                         if layer == "L0": l0 = annotation
+                        if layer == "L1": l1 = annotation
                         wrote = True
                         stats["processed"] += 1
                         stats["labels"][result.label] = stats["labels"].get(result.label, 0) + 1

@@ -45,8 +45,26 @@ in place, but they must not be represented as freshly synchronized.
 `IMPLEMENTATION_STATUS.md` is the repository-side engineering log. It records code
 progress and validation evidence; it does not replace or write back to the Sheet.
 Update its last-sync information and completed work after roadmap-driven changes.
-The roadmap's stated 407-record trial corpus is a planning milestone, not a live
-database count or a claim that all local collection artifacts belong to that pilot.
+Current State now records the 536-version observation from 3 October; its earlier
+407-record figure was a planning snapshot. Neither is a fixed eligibility count,
+a validated final corpus, or permission to include every local collection artifact.
+
+## Engineering progress — checked 5 October 2026
+
+All four anonymous exports synchronized successfully and matched the local files.
+The Sheet retains historical L1 v1 totals and still marks L2 as planned. Repository
+implementation has advanced through user-authorized L1 v2, L2 weak/model
+infrastructure and protected local L0/L1/L2 Human Review. Current weak coverage is
+324/324 eligible versions; a primary research-trained L2 model and completed
+independent validation remain pending. The expected L2 annotation migration
+objects still require installation in development; the review extension is installed.
+
+See [the latest verified state](IMPLEMENTATION_STATUS.md#latest-verified-development-state--5-october-2026-1244-eat)
+for coverage, schema readiness, test evidence and limitations, and
+[the operator guide](../../README.md) for commands. Update canonical planning rows
+in the Sheet before syncing changed statuses; this documentation update did not
+change the Sheet or manually rewrite CSVs. Execution coverage and review tooling
+do not satisfy research exit gates.
 
 ## Public source configuration
 

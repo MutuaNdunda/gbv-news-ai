@@ -1,0 +1,16 @@
+{% if result.evidence.get('kenyan_geographic_evidence') %}
+<details class="small mt-2" {{ 'open' if geography_open }}><summary>Matched Kenya geography</summary>
+{% for place in result.evidence.kenyan_geographic_evidence %}
+<dl class="mt-2 mb-2">
+<dt>{{ place.entity_type|replace('_', ' ')|title }}</dt><dd>{{ place.canonical_name }}</dd>
+<dt>Matched term</dt><dd>{{ place.matched_term }}</dd>
+{% for field in ['county', 'sub_county', 'constituency', 'locality', 'code'] %}
+{% if place.get(field) %}<dt>{{ field|replace('_', ' ')|title }}</dt><dd>{{ place[field] }}</dd>{% endif %}
+{% endfor %}
+<dt>Source</dt><dd>{{ place.source }}</dd>
+{% if place.ambiguous %}<dt>Ambiguity</dt><dd>{{ place.ambiguity_reasons|join(', ') }}</dd>{% endif %}
+{% if place.get('candidates') %}<dt>Candidate entities</dt><dd><ul class="mb-0">{% for candidate in place.candidates %}<li>{{ candidate.entity_type|replace('_', ' ') }}: {{ candidate.name }} · {{ candidate.county or 'County not recorded' }}{% if candidate.constituency %} · {{ candidate.constituency }}{% endif %}</li>{% endfor %}</ul></dd>{% endif %}
+</dl>
+{% endfor %}
+</details>
+{% endif %}

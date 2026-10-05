@@ -54,6 +54,8 @@ placeholders for later research stages:
 ├── app/
 │   └── Flask web application and dashboard
 │
+├── annotations/               # L0/L1 rules, L2 weak/model pipeline, review contracts
+│
 ├── scrapers/
 │   ├── nation.py
 │   ├── citizen.py
@@ -539,20 +541,19 @@ Future implementation should distinguish, where possible, between:
 
 ## 19. Application Architecture
 
-The implemented web interface uses Flask. It is a read-only collection monitor
-with dashboard totals, run and source/month scan progress, searchable article
-metadata, extraction lineage, and infrastructure health. It does not display full
-article text or provide collection controls. This operational monitor is separate
-from the planned GBV review and mapping interface.
+The Flask interface provides read-only collection monitoring, automated L0/L1/L2
+results, and optional protected bounded L0/L1 execution. A separate protected local
+Human Review workspace now supports L0/L1/L2 confirmation, correction, uncertainty
+and append-only review history. Only unlocked direct-local sessions retrieve verified
+full article text; remote review is blocked. It provides no collection controls.
+The final analytical GBV dashboard, NER/geocoding and mapping remain planned.
 
-The Flask application may eventually support:
+The Flask application already supports article browsing, automated results and
+local review. Future capabilities include:
 
-* article browsing,
-* model predictions,
-* confidence scores,
 * maps,
-* human review,
-* annotation workflows,
+* remote authenticated review,
+* integrated location review,
 * administrative functionality.
 
 The machine-learning inference layer may later be separated into its own service if deployment requirements justify it.
@@ -836,25 +837,27 @@ When uncertain about a research assumption, document the uncertainty rather than
 
 ## 31. Current Development Priority
 
-The current milestone is **Automated Annotation Pipeline — L0 and L1**. The public
+The roadmap milestone remains **Automated Annotation Pipeline — L0 and L1 validation**;
+user-authorized L2 infrastructure and local review are also implemented. The public
 Google Sheet and synchronized snapshots in `docs/roadmap/` govern sequencing and
-stage gates (see Section 34). Current State identifies a 407-record trial corpus;
-this is not a validated final research dataset or a live database-count assertion.
-Supabase contained 536 article versions when checked on 3 October 2026. The user
+stage gates (see Section 34). Current State now records 536 article versions;
+407 was an older planning snapshot. Neither establishes a validated final dataset.
+Supabase contained 536 article versions when rechecked on 5 October 2026. The user
 authorized L0 over all 536 after a successful 20-version L0/L1 trial, then explicitly
 authorized L1 on the remaining 499 L0-valid versions. All 519 eligible versions now
 have L1 decisions; the 17 L0 review cases remain gated.
 
 Collection, normalization, cloud persistence, and operational monitoring are now
-implemented for seven publishers, and automated L0/L1 now share a versioned service
+implemented for seven publishers, and automated L0/L1/L2 share a versioned service
 and monitor (see Section 33). The next priorities are:
 
 ```text
 1. Inspect automated L0 flags and resolve extraction defects by versioned reprocessing.
 2. Review annotation specification, gazetteer, thresholds and corpus membership.
 3. Inspect L1 uncertainty and source/language coverage over the agreed eligible corpus.
-4. Perform sampled human validation, uncertainty/error analysis and metrics/reporting.
-5. Progress to L2–L5, corpus freeze and model work only as roadmap gates permit.
+4. Validate a stratified/uncertain sample of L0/L1/L2 weak results with separate reviews.
+5. Verify/install required L2 annotation schema; finalize codebook and thresholds.
+6. Train/configure a reviewed L2 artifact and progress to L3–L5 only as gates permit.
 ```
 
 Do not build advanced model-serving or distributed infrastructure before reliable data collection has been demonstrated.
@@ -878,7 +881,7 @@ When several implementations are possible, prefer the simplest approach that sat
 
 ---
 
-## 33. Implemented Progress (Reviewed 3 October 2026)
+## 33. Implemented Progress (Reviewed 5 October 2026)
 
 This summary reflects repository implementation and operator documentation. It does
 not establish production deployment, completed collection, or validated research
@@ -947,8 +950,10 @@ No final research corpus has been validated. Extraction completeness, Kenya
 relevance, publication dates, and language require human review. Wayback coverage
 is incomplete and does not demonstrate exhaustive or random sampling.
 
-Human-validation workflows, GBV weak supervision, AfroXLMR fine-tuning/evaluation, NER,
-geocoding, reviewer corrections, and incident mapping remain planned. The current
+L0/L1/L2 local human-validation workflows, provisional GBV weak supervision and
+training/inference infrastructure are implemented. A research-trained/configured
+AfroXLMR classifier, completed independent evaluation, NER, geocoding and incident
+mapping remain pending. The current
 retrospective collectors do not demonstrate prospective near-real-time ingestion
 or end-to-end model latency.
 
@@ -960,7 +965,9 @@ or end-to-end model latency.
   (`extraction_quality_rules`, `l0-v1.0`); confidence is NULL and invalid/review
   records cannot enter L1.
 * `annotations/l1.py` implements versioned Kenya geographic/institution evidence
-  scoring (`kenya_relevance_hybrid`, `l1-v1.0`). Publisher identity alone supplies
+  scoring (`kenya_relevance_hybrid`, current `l1-v2.0-a39ff87099ee`). V2 uses the
+  reproducible expanded gazetteer; historical v1 remains explicitly executable.
+  Publisher identity alone supplies
   no relevance evidence. Confidence is normalized support, not calibrated probability.
 * `annotation_runs` and append-only `automated_annotations` preserve exact article,
   extraction, run, method and timestamp lineage. L1 links to its prerequisite L0.
@@ -973,13 +980,39 @@ or end-to-end model latency.
   zero failures. Authorized L0 now covers all 536 versions: valid 519, review 17,
   invalid 0. Initial full-run lock-release failure was fixed with autocommit,
   backend heartbeats and safe cleanup. Compatible existing results are read once
-  per locked cohort rather than per article; 155 offline tests pass. Full run evidence belongs in
+  per locked cohort rather than per article; that historical milestone passed 155
+  offline tests. Full run evidence belongs in
   `docs/roadmap/IMPLEMENTATION_STATUS.md`. These are automated outputs, not gold labels.
-* Full L1 completed successfully: 499 new decisions plus 20 preserved trial decisions.
-  Current totals are Kenya 307, non-Kenya 73, ambiguous 139; 17 L0 review cases were
-  skipped. Both eligible pending counts and duplicate method groups are zero.
+* Historical v1 full L1 completed successfully: 499 new decisions plus 20 preserved
+  trial decisions, Kenya 307/non-Kenya 73/ambiguous 139. Authorized v2 reprocessing
+  preserved that history; current v2 totals are Kenya 324/non-Kenya 35/ambiguous 160,
+  with all 519 eligible versions covered. The 17 L0 review cases remain gated.
 * `docs/annotations.md` specifies initial rules, scoring, schema, triggers and
   validation limitations. Human/reference data must remain separately stored.
+
+### L2 and Human Review
+
+* Read-only verification on 5 October 2026 at 12:44 EAT found compatible weak
+  bootstrap decisions for all 324 L1-Kenya versions: gbv 7/not_gbv 15/borderline 302.
+  These are provisional automated outputs, not reference labels.
+* `annotations/l2.py`, `l2_config.py`, `l2_training.py` and `l2_weak_supervision.py`
+  provide separate weak/model identities, private development exports, bounded
+  training/synthetic smoke and checksummed offline trained-artifact inference.
+  The primary method remains `l2-model-unconfigured`; model predictions are zero
+  and all 324 eligible versions remain pending for the primary model.
+* Local Human Review supports all L0/L1/L2 labels, exact machine/extraction lineage,
+  direct L2 unlock, protected verified text, separate append-only decisions/revisions,
+  filtered Save & Next and separate weak/model review counts. One current L1 review
+  is recorded; no completed sampled validation is established. No L2 reviews were
+  recorded at the verification above.
+* `20261004_add_human_validations.sql` and the
+  `20261005_add_l2_human_validations.sql` extension are installed in development.
+  Inspection found expected checks, identity index and prerequisite trigger from
+  `20261005_add_l2_annotations.sql` absent. Apply that migration to the intended
+  database before further automated L2 writes; never assume file presence means installation.
+* Latest recorded full suite on 5 October: 249 tests run, 248 passed, one optional
+  installed-model test skipped. Synthetic smoke is engineering evidence only.
+  Independent GBV accuracy, calibration and research stage-gate completion remain pending.
 
 ---
 
@@ -1034,7 +1067,11 @@ The project uses an **automation-first** annotation pipeline:
 All layers should produce automated annotations for **100% of their eligible
 records**, retaining gating and uncertainty. L1 runs only on L0-valid records;
 downstream eligibility follows the synchronized Annotation Layers and Stage Gates.
-L0 and L1 are implemented; L2–L5 remain planned. Automated execution alone does not
+L0/L1 are implemented and executed. L2 weak supervision, model infrastructure and
+local review are implemented; a primary trained model and independent L2 validation
+remain pending. The Sheet still lists L2 as planned and retains v1 L1 counts; record
+this engineering/planning mismatch without manually rewriting synchronized CSVs.
+L3–L5 remain planned. Automated execution alone does not
 satisfy the sampled-validation exit gates.
 
 Human oversight primarily means stratified validation, low-confidence review,

@@ -1,0 +1,6 @@
+# Optional local training/inference environment; monitor and rules need no ML stack.
+-r requirements.txt
+torch>=2.6,<3.0
+transformers>=4.48,<5.0
+sentencepiece>=0.2,<0.3
+safetensors>=0.5,<1.0

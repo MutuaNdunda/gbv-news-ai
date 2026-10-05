@@ -1,0 +1,51 @@
+{
+  "build_date": "2026-10-04",
+  "sources": [
+    {
+      "repository": "davidamunga/kenya-locations",
+      "url": "https://github.com/davidamunga/kenya-locations",
+      "commit": "4439e9c7f280a78e090124745fdec0ba3554d2e1",
+      "license": "MIT",
+      "upstream_claim": "README attributes data to IEBC and KNBS; underlying editions and code authority not independently verified.",
+      "directory": "david",
+      "files": {
+        "constituencies.json": "61ccf0fd2a4b20a10ee4b10f5adc1e95699cab5917921e942a7e38367c26530d",
+        "counties.json": "868a92fa950da0d1823133f071fdcdc0ad6d52c64bf4ef675fe24e789a969fa7",
+        "wards.json": "871687e91a18363ae4f199e141ee2645eb3dc5bd781c378eac38ba9e961b3b5d",
+        "locality.json": "56b7c680498aa725a0396cd5793d261c16102edc49be153db533ae6d26d8b487",
+        "area.json": "d1c7010e01a07dd7d08d6c7fa9e0b2a499e381dc392b29c02d104304349c36da",
+        "sub-counties.json": "4872266817196d2ad6bc7024aa142fb199a3ae2543b1317d330fb689c2d2c7d6",
+        "LICENSE": "459562a8f87c331bdd21c177e6581fcb61abac4b0c8cedd29befbc3924bcdb89",
+        "README.md": "2397c990b78f84b97d1225c4bf847903dda1c342f1b6a434489be37f1a482c56"
+      }
+    },
+    {
+      "repository": "tigawanna/kenya_wards_geojson_data",
+      "url": "https://github.com/tigawanna/kenya_wards_geojson_data",
+      "commit": "32580eb19fba05bb6421257331e63ef3f8a5dc8e",
+      "license": "MIT",
+      "upstream_claim": "README and download-source.ts identify HDX Kenya Elections shapefiles; underlying data license not independently verified.",
+      "directory": "tiga",
+      "files": {
+        "wards.json": "89dd224c9acaad1cb34a0079a20012ba4f206f8e3893db93e9b2e28e7a8106f3",
+        "constituencies.json": "3630751d8f5d614f5c9aae80056ec9b56ecb200ded6e42b8c21aa582b8526d23",
+        "counties.json": "aff5ea81cd8c3a759d346454b564a4aca3cd4b9a457ad30e9e31f48043395948",
+        "LICENSE": "6d7bae6d3343fe0f19e0caa52802a8e71f2c344b294c7212d23aae24b70263d0",
+        "README.md": "983a404d94174e877a68cf830aff42e38526a7a57cd396ab74434763382c30cc"
+      }
+    },
+    {
+      "repository": "alvinchesaro/Kenya-Counties-SubCounties-and-Wards",
+      "url": "https://github.com/alvinchesaro/Kenya-Counties-SubCounties-and-Wards",
+      "commit": "c30421fefe5be78d798f244ae43ec29e67e93e14",
+      "license": "CC0-1.0",
+      "upstream_claim": "README attributes boundaries to IEBC and conflates sub-counties with constituencies.",
+      "directory": "alvin",
+      "files": {
+        "Kenya-Counties-SubCounties-and-Wards.json": "4421413e17973831f60675b666632d7bf78232d9f2ca3d340cb8f57bbcf3c077",
+        "LICENSE": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+        "README.md": "fec70ef73d08211748cc570ea614466227d4aafe6ce0a0eafb1c5d05198da8c1"
+      }
+    }
+  ]
+}

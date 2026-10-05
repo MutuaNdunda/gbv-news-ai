@@ -1,7 +1,39 @@
 {% extends "base.html" %}{% block title %}Annotations{% endblock %}{% block content %}
-<h1 class="h3">Automated annotations</h1><p class="text-muted">Automated outputs require sampled human validation. Confidence is evidence support, not calibrated probability.</p>
+<h1 class="h3">Annotations and Human Review</h1>
+<p class="text-muted">Automated outputs require sampled human validation. L1 confidence is evidence support; L2 model probabilities are uncalibrated.</p>
 <p><a href="{{ url_for('annotations.runs') }}">Annotation runs</a> · <a href="{{ url_for('annotations.results', layer='l0') }}">L0 results</a> · <a href="{{ url_for('annotations.results', layer='l1') }}">L1 results</a></p>
-<div class="row g-3 mb-4"><div class="col-md-4"><div class="card card-body">Article versions<strong class="fs-3">{{ total_versions }}</strong></div></div><div class="col-md-4"><div class="card card-body">L0 pending<strong class="fs-3">{{ pending_l0 }}</strong></div></div><div class="col-md-4"><div class="card card-body">L1 pending (L0 valid)<strong class="fs-3">{{ pending_l1 }}</strong></div></div></div>
-{% for layer, labels in counts.items() %}<h2 class="h5">{{ layer }} · {{ labels.values()|sum }} annotated</h2><div class="row g-3 mb-4">{% for label, count in labels.items() %}<div class="col-md-4"><div class="card card-body">{{ label }}<strong class="fs-4">{{ count }}</strong></div></div>{% endfor %}</div>{% endfor %}
-{% if execution_enabled %}<div class="card card-body mb-4"><h2 class="h5">Run a bounded annotation batch</h2><form method="post" action="{{ url_for('annotations.run') }}" class="row g-3"><input type="hidden" name="csrf_token" value="{{ csrf }}"><div class="col-sm-3"><label class="form-label" for="layers">Layers</label><select class="form-select" name="layers" id="layers"><option value="l0,l1">L0 + L1</option><option value="l0">L0</option><option value="l1">L1</option></select></div><div class="col-sm-2"><label class="form-label" for="limit">Limit (1–20)</label><input class="form-control" type="number" min="1" max="20" value="20" name="limit" id="limit" required></div><div class="col-sm-5"><label class="form-label" for="execution_token">Execution token</label><input class="form-control" type="password" name="execution_token" id="execution_token" autocomplete="off" required></div><div class="col-sm-2 align-self-end"><button class="btn btn-primary">Run annotations</button></div></form></div>{% else %}<p class="text-muted">UI execution is disabled. Use the annotation CLI or enable protected execution in local configuration.</p>{% endif %}
-<h2 class="h5">Recent runs</h2>{% for run in recent_runs %}<div class="card card-body mb-2"><a href="{{ url_for('annotations.run_detail', run_id=run.id) }}">{{ run.id }}</a><span>{{ run.status }} · {{ run.trigger_type }} · {{ run.started_at }}</span></div>{% else %}<p>No annotation runs.</p>{% endfor %}{% endblock %}
+<div class="row g-3 mb-4">
+{% for label, count, target in [('Article versions', total_versions, url_for('articles.index')), ('L0 pending automation', pending_l0, url_for('annotations.results', layer='l0')), ('L1 pending automation (L0 valid)', pending_l1, url_for('annotations.results', layer='l1'))] %}
+<div class="col-md-4"><a class="card card-body count-link" href="{{ target }}">{{ label }}<strong class="fs-3">{{ count }}</strong></a></div>
+{% endfor %}</div>
+{% for layer, labels in counts.items() %}
+<h2 class="h5"><a class="count-heading" href="{{ url_for('annotations.results', layer=layer|lower) }}">{{ layer }} · {{ labels.values()|sum }} annotated</a></h2>
+{% if layer == 'L2' %}<p>{{ eligible_l2 }} eligible · <a href="{{ url_for('annotations.results', layer='l2', pending='1') }}">{{ pending_l2 }} pending</a> · <a href="{{ url_for('annotations.results', layer='l2', mode='weak') }}">Weak bootstrap results</a></p>{% if not l2_model_ready %}<p class="text-muted">A valid trained L2 model artifact is not configured.</p>{% endif %}{% endif %}
+{% if methods %}<p class="small text-muted">Current method: <code>{{ methods[layer] }}</code></p>{% endif %}
+<div class="row g-3 mb-4">{% for label, count in labels.items() %}
+<div class="col-md-4"><a class="card card-body count-link {{ 'priority-count' if label in ['needs_review', 'ambiguous'] }}" href="{{ url_for('annotations.results', layer=layer|lower, label=label) }}"><span>{{ label }}</span><strong class="fs-4">{{ count }}</strong>{% if label in ['needs_review', 'ambiguous'] %}<span class="small">Open for inspection and review →</span>{% endif %}</a></div>
+{% endfor %}</div>{% endfor %}
+<section class="mb-4" aria-labelledby="human-review-heading"><h2 class="h4" id="human-review-heading">Human Review</h2>
+<p class="text-muted">Reviews belong to exact machine results. Recording a review does not change a machine label or establish validation accuracy.</p>
+{% if human_review %}
+{% for layer, values in human_review.counts.items() %}
+<h3 class="h5"><a href="{{ url_for('annotations.results', layer=layer|lower, review_status='reviewed') }}">{{ layer }} · {{ values.reviewed }} reviewed</a></h3><div class="row g-2 mb-3">
+{% for key, label in [('not_reviewed', 'Pending / not reviewed'), ('confirmed', 'Confirmed'), ('corrected', 'Corrected'), ('unable_to_determine', 'Unable to determine'), ('needs_adjudication', 'Needs adjudication')] %}
+<div class="col-6 col-lg"><a class="card card-body count-link" href="{{ url_for('annotations.results', layer=layer|lower, review_status=key) }}"><span class="small">{{ label }}</span><strong>{{ values[key] }}</strong></a></div>{% endfor %}</div>
+{% set progress = human_review.progress[layer] %}
+<p><a href="{{ url_for('annotations.results', layer=layer|lower, label=progress.label) }}">{{ layer }} {{ progress.label }}: {{ progress.reviewed }} / {{ progress.total }} reviewed</a></p>
+{% endfor %}
+{% else %}<p class="text-muted">Human Review counts are unavailable until the human-validation migration is installed and the application is restarted.</p>{% endif %}
+{% for mode, summary in (l2_human_review or {}).items() %}
+<h3 class="h5">L2 · {{ 'Weak bootstrap' if mode == 'weak' else 'Model predictions' }} Human Review</h3>
+{% if summary %}{% set values = summary.counts.L2 %}
+<p><a href="{{ url_for('annotations.results', layer='l2', mode=mode, review_status='reviewed') }}">{{ values.reviewed }} reviewed</a> · Reviews are specific to this method and exact annotation.</p>
+<div class="row g-2 mb-3">{% for key, label in [('not_reviewed', 'Pending / not reviewed'), ('confirmed', 'Confirmed'), ('corrected', 'Corrected'), ('unable_to_determine', 'Unable to determine'), ('needs_adjudication', 'Needs adjudication')] %}
+<div class="col-6 col-lg"><a class="card card-body count-link" href="{{ url_for('annotations.results', layer='l2', mode=mode, review_status=key) }}"><span class="small">{{ label }}</span><strong>{{ values[key] }}</strong></a></div>{% endfor %}</div>
+<p><a href="{{ url_for('annotations.results', layer='l2', mode=mode, label='borderline') }}">L2 borderline: {{ summary.progress.L2.reviewed }} / {{ summary.progress.L2.total }} reviewed</a></p>
+{% else %}<p class="text-muted">Apply the L2 human-validation migration and restart the app to enable L2 review storage.</p><a href="{{ url_for('annotations.results', layer='l2', mode=mode) }}">Inspect L2 results</a>{% endif %}
+{% endfor %}
+</section>
+{% if execution_enabled %}<div class="card card-body mb-4"><h2 class="h5">Run a bounded annotation batch</h2><form method="post" action="{{ url_for('annotations.run') }}" class="row g-3"><input type="hidden" name="csrf_token" value="{{ csrf }}"><div class="col-sm-3"><label class="form-label" for="layers">Layers</label><select class="form-select" name="layers" id="layers"><option value="l0,l1">L0 + L1</option><option value="l0">L0</option><option value="l1">L1</option></select></div><div class="col-sm-2"><label class="form-label" for="limit">Limit (1–20)</label><input class="form-control" type="number" min="1" max="20" value="20" name="limit" id="limit" required></div><div class="col-sm-5"><label class="form-label" for="execution_token">Execution token</label><input class="form-control" type="password" name="execution_token" id="execution_token" autocomplete="off" required></div><div class="col-sm-2 align-self-end"><button class="btn btn-primary">Run annotations</button></div></form></div>{% else %}<p class="text-muted">Automated execution is disabled in the UI. Use the annotation CLI or configure protected execution.</p>{% endif %}
+<h2 class="h5">Recent runs</h2>{% for run in recent_runs %}<div class="card card-body mb-2"><a href="{{ url_for('annotations.run_detail', run_id=run.id) }}">{{ run.id }}</a><span>{{ run.status }} · {{ run.trigger_type }} · {{ run.started_at }}</span></div>{% else %}<p>No annotation runs.</p>{% endfor %}
+{% endblock %}

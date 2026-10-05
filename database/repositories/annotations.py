@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import logging
 from uuid import uuid4
 
-from sqlalchemy import and_, func, or_, select, text, update
+from sqlalchemy import and_, func, or_, select, text, union_all, update
 from sqlalchemy.exc import DBAPIError
 
 from database.models import Article, ArticleVersion, AnnotationRun, AutomatedAnnotation
@@ -50,9 +50,26 @@ def current_annotations(methods):
     ).outerjoin(l0, l0.c.article_version_id == AutomatedAnnotation.article_version_id).where(
         or_(and_(AutomatedAnnotation.layer == "L0", AutomatedAnnotation.method_version == methods["L0"]),
             and_(AutomatedAnnotation.layer == "L1", AutomatedAnnotation.method_version == methods["L1"],
+                 AutomatedAnnotation.method_name == methods["L1_method_name"] if methods.get("L1_method_name") else True,
                  l0.c.label == "valid", AutomatedAnnotation.prerequisite_annotation_id == l0.c.id)),
     ).subquery()
-    return select(ranked).where(ranked.c.position == 1).subquery()
+    upstream = select(ranked).where(ranked.c.position == 1).subquery()
+    if "L2" not in methods:
+        return upstream
+    # Match identity AND current dependency before ranking. Bootstrap rows and
+    # newer incompatible predictions must never hide a compatible model result.
+    l1 = select(upstream.c.id, upstream.c.article_version_id).where(
+        upstream.c.layer == "L1", upstream.c.label == "kenya").subquery()
+    l2_ranked = select(AutomatedAnnotation, func.row_number().over(
+        partition_by=AutomatedAnnotation.article_version_id,
+        order_by=(AutomatedAnnotation.created_at.desc(), AutomatedAnnotation.id.desc()),
+    ).label("position")).join(l1, and_(
+        l1.c.article_version_id == AutomatedAnnotation.article_version_id,
+        l1.c.id == AutomatedAnnotation.prerequisite_annotation_id,
+    )).where(AutomatedAnnotation.layer == "L2",
+             AutomatedAnnotation.method_name == methods["L2_method_name"],
+             AutomatedAnnotation.method_version == methods["L2"]).subquery()
+    return union_all(select(upstream), select(l2_ranked).where(l2_ranked.c.position == 1)).subquery()
 
 
 class AnnotationRepository:
@@ -97,12 +114,17 @@ class AnnotationRepository:
         return run_id
 
     def select_candidates(self, layers, methods, limit=None, article_ids=None,
-                          collection_run_id=None, only_pending=True):
+                          collection_run_id=None, only_pending=True, eligible_l2_only=False):
         statement = select(ArticleVersion, Article).join(Article, Article.id == ArticleVersion.article_id)
         if article_ids:
             statement = statement.where(Article.id.in_(article_ids))
         if collection_run_id:
             statement = statement.where(ArticleVersion.collection_run_id == collection_run_id)
+        if eligible_l2_only:
+            current = current_annotations(methods)
+            statement = statement.where(select(current.c.id).where(
+                current.c.article_version_id == ArticleVersion.id,
+                current.c.layer == "L1", current.c.label == "kenya").exists())
         if only_pending:
             current = current_annotations(methods)
             l0 = select(current.c.id).where(current.c.article_version_id == ArticleVersion.id,
@@ -114,6 +136,10 @@ class AnnotationRepository:
             conditions = []
             if "L0" in layers: conditions.append(~l0)
             if "L1" in layers: conditions.append(and_(valid_l0, ~l1) if "L0" in layers else ~l1)
+            if "L2" in layers:
+                l2 = select(current.c.id).where(current.c.article_version_id == ArticleVersion.id,
+                                               current.c.layer == "L2").exists()
+                conditions.append(~l2)
             statement = statement.where(or_(*conditions))
         statement = statement.order_by(ArticleVersion.created_at, ArticleVersion.id)
         if limit is not None: statement = statement.limit(limit)
@@ -140,12 +166,17 @@ class AnnotationRepository:
             run.configuration = configuration
             run.requested_count = len(candidates)
 
-    def latest(self, version_id, layer, method_version, prerequisite_id=None):
+    def latest(self, version_id, layer, method_version, prerequisite_id=None, method_name=None):
         query = select(AutomatedAnnotation).where(
             AutomatedAnnotation.article_version_id == version_id,
             AutomatedAnnotation.layer == layer, AutomatedAnnotation.method_version == method_version,
         )
-        if layer == "L1": query = query.where(AutomatedAnnotation.prerequisite_annotation_id == prerequisite_id)
+        if layer in ("L1", "L2"):
+            query = query.where(AutomatedAnnotation.prerequisite_annotation_id == prerequisite_id)
+        if layer == "L2" and not method_name:
+            raise ValueError("L2 lookup requires explicit method_name")
+        if method_name:
+            query = query.where(AutomatedAnnotation.method_name == method_name)
         with self.sessions() as session:
             return session.scalars(query.order_by(AutomatedAnnotation.created_at.desc(),
                                                   AutomatedAnnotation.id.desc()).limit(1)).first()

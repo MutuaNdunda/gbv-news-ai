@@ -7,3 +7,4 @@ google-cloud-storage>=3.0,<4.0
 python-dotenv>=1.0,<2.0
 Flask>=3.1,<4.0
 gunicorn>=23.0,<24.0
+# Optional AfroXLMR training/inference dependencies: requirements-l2.txt

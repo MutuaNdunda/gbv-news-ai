@@ -1,0 +1,190 @@
+[
+  {
+    "county_code": 1,
+    "county_name": "MOMBASA"
+  },
+  {
+    "county_code": 2,
+    "county_name": "KWALE"
+  },
+  {
+    "county_code": 3,
+    "county_name": "KILIFI"
+  },
+  {
+    "county_code": 4,
+    "county_name": "TANA RIVER"
+  },
+  {
+    "county_code": 5,
+    "county_name": "LAMU"
+  },
+  {
+    "county_code": 6,
+    "county_name": "TAITA TAVETA"
+  },
+  {
+    "county_code": 7,
+    "county_name": "GARISSA"
+  },
+  {
+    "county_code": 8,
+    "county_name": "WAJIR"
+  },
+  {
+    "county_code": 9,
+    "county_name": "MANDERA"
+  },
+  {
+    "county_code": 10,
+    "county_name": "MARSABIT"
+  },
+  {
+    "county_code": 11,
+    "county_name": "ISIOLO"
+  },
+  {
+    "county_code": 12,
+    "county_name": "MERU"
+  },
+  {
+    "county_code": 13,
+    "county_name": "THARAKA - NITHI"
+  },
+  {
+    "county_code": 14,
+    "county_name": "EMBU"
+  },
+  {
+    "county_code": 15,
+    "county_name": "KITUI"
+  },
+  {
+    "county_code": 16,
+    "county_name": "MACHAKOS"
+  },
+  {
+    "county_code": 17,
+    "county_name": "MAKUENI"
+  },
+  {
+    "county_code": 18,
+    "county_name": "NYANDARUA"
+  },
+  {
+    "county_code": 19,
+    "county_name": "NYERI"
+  },
+  {
+    "county_code": 20,
+    "county_name": "KIRINYAGA"
+  },
+  {
+    "county_code": 21,
+    "county_name": "MURANG'A"
+  },
+  {
+    "county_code": 22,
+    "county_name": "KIAMBU"
+  },
+  {
+    "county_code": 23,
+    "county_name": "TURKANA"
+  },
+  {
+    "county_code": 24,
+    "county_name": "WEST POKOT"
+  },
+  {
+    "county_code": 25,
+    "county_name": "SAMBURU"
+  },
+  {
+    "county_code": 26,
+    "county_name": "TRANS NZOIA"
+  },
+  {
+    "county_code": 27,
+    "county_name": "UASIN GISHU"
+  },
+  {
+    "county_code": 28,
+    "county_name": "ELEGEYO-MARAKWET"
+  },
+  {
+    "county_code": 29,
+    "county_name": "NANDI"
+  },
+  {
+    "county_code": 30,
+    "county_name": "BARINGO"
+  },
+  {
+    "county_code": 31,
+    "county_name": "LAIKIPIA"
+  },
+  {
+    "county_code": 32,
+    "county_name": "NAKURU"
+  },
+  {
+    "county_code": 33,
+    "county_name": "NAROK"
+  },
+  {
+    "county_code": 34,
+    "county_name": "KAJIADO"
+  },
+  {
+    "county_code": 35,
+    "county_name": "KERICHO"
+  },
+  {
+    "county_code": 36,
+    "county_name": "BOMET"
+  },
+  {
+    "county_code": 37,
+    "county_name": "KAKAMEGA"
+  },
+  {
+    "county_code": 38,
+    "county_name": "VIHIGA"
+  },
+  {
+    "county_code": 39,
+    "county_name": "BUNGOMA"
+  },
+  {
+    "county_code": 40,
+    "county_name": "BUSIA"
+  },
+  {
+    "county_code": 41,
+    "county_name": "SIAYA"
+  },
+  {
+    "county_code": 42,
+    "county_name": "KISUMU"
+  },
+  {
+    "county_code": 43,
+    "county_name": "HOMA BAY"
+  },
+  {
+    "county_code": 44,
+    "county_name": "MIGORI"
+  },
+  {
+    "county_code": 45,
+    "county_name": "KISII"
+  },
+  {
+    "county_code": 46,
+    "county_name": "NYAMIRA"
+  },
+  {
+    "county_code": 47,
+    "county_name": "NAIROBI"
+  }
+]

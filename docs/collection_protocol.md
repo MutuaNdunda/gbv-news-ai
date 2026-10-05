@@ -13,7 +13,9 @@ Collect broad reporting candidates from the seven registered publishers, without
 GBV keyword selection. Every record still needs Kenya-relevance and extraction
 quality review. The 5,000 target in the proposal is a minimum **annotated** corpus,
 including GBV and non-GBV reporting; it is not an ingestion stopping rule.
-Annotation stratification and active learning are separate later stages.
+Annotation and validation are separate downstream workflows; automated L0/L1,
+L2 provisional weak supervision and local review now exist. Automated stratified
+sampling and active learning remain later stages.
 
 This is retrospective archive collection. It does not implement prospective
 continuous ingestion or demonstrate near-real-time discovery latency. The archive
@@ -108,3 +110,22 @@ Missing-date records are logged and excluded from month counts rather than assig
 a month from their URLs or archive timestamps. No claim of exhaustive publisher
 coverage or random sampling is made. The date-window filter is automatic, but
 Kenya relevance and language coverage still require human validation.
+
+## Annotation handoff — current progress, 5 October 2026
+
+Collection remains independent of classification and never selects the corpus
+solely from GBV keywords. The current development readback contains 536 extraction
+versions: L0 valid 519/needs_review 17; L1 v2 kenya 324/not_kenya 35/ambiguous 160.
+L2 weak bootstrap covers the 324 compatible L1-Kenya versions, with 7 gbv,
+15 not_gbv and 302 borderline. These are provisional research candidates and
+automated labels, not verified incidents, a gold corpus or coverage/accuracy claims.
+
+Protected local Human Review supports L0/L1/L2 and preserves exact extraction,
+machine annotation and human revision lineage. A primary trained L2 model remains
+unconfigured. The L2 annotation migration's expected checks/index/trigger were
+absent in development at schema inspection; apply that prerequisite before further automated L2 writes. No collector behavior or archive sampling scope changed in this update.
+
+Use [the annotation specification](annotations.md), [operator commands](../README.md)
+and [dated implementation evidence](roadmap/IMPLEMENTATION_STATUS.md) for downstream
+processing and sample validation. They do not resolve the archive omissions or
+language/publication-date limitations described above.

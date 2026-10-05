@@ -52,6 +52,7 @@ coverage.xml
 /checkpoints/
 /runs/
 /wandb/
+/models/artifacts/**
 
 # Local Flask state, databases, and logs
 instance/

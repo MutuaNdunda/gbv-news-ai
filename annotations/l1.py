@@ -1,50 +1,35 @@
 """Explainable Kenya relevance evidence scoring, not a calibrated classifier."""
 
-from functools import lru_cache
-import json
-from pathlib import Path
-import re
-import unicodedata
-
 from annotations.schemas import AnnotationResult, DEFAULT_CONFIG
 
 
-@lru_cache(maxsize=1)
-def gazetteer():
-    return json.loads((Path(__file__).parent / "resources/kenya_v1.json").read_text(encoding="utf-8"))
+# v1 remains executable for historical comparisons; its resource is unchanged.
+from annotations.l1_v1 import gazetteer, normalized, mentions
+from annotations.geography import geographic_matches, load_index, resource_identity
 
 
-def normalized(text):
-    return unicodedata.normalize("NFKC", text).casefold().replace("’", "'").replace("–", "-").replace("—", "-")
-
-
-def mentions(text, term):
-    parts = re.split(r"[\s-]+", normalized(term))
-    pattern = r"(?<!\w)" + r"[\s-]+".join(re.escape(part) for part in parts) + r"(?!\w)"
-    return len(re.findall(pattern, text))
-
-
-def extract_evidence(title, body):
-    data = gazetteer()
+def extract_evidence(title, body, version="v2"):
+    if version == "v1":
+        from annotations.l1_v1 import extract_evidence as legacy
+        return legacy(title, body)
+    data, _, _ = load_index()
     text = normalized(f"{title or ''}\n{body or ''}")
-    counties = {name for name in data["counties"] if mentions(text, name)}
-    counties.update(name for alias, name in data["county_variants"].items() if mentions(text, alias))
-    towns = {name for name in data["towns"] if mentions(text, name)}
-    towns.update(name for alias, name in data["place_variants"].items() if mentions(text, alias))
+    geography = geographic_matches(text)
     institutions = sorted(name for name in data["institutions"] if mentions(text, name))
-    ambiguous_places = sorted((counties | towns) & set(data["ambiguous_places"]))
-    ambiguous_institutions = sorted(set(institutions) & set(data["ambiguous_institutions"]))
     return {"kenya_mentions": sum(mentions(text, name) for name in data["country_terms"]),
-            "kenyan_places": sorted(counties | towns), "kenyan_counties": sorted(counties),
-            "kenyan_institutions": institutions, "ambiguous_places": ambiguous_places,
-            "ambiguous_institutions": ambiguous_institutions,
+            "kenyan_places": sorted({x["canonical_name"] for x in geography}),
+            "kenyan_counties": sorted({x["canonical_name"] for x in geography if x["entity_type"] == "county"}),
+            "kenyan_geographic_evidence": geography,
+            "kenyan_institutions": institutions,
+            "ambiguous_places": sorted({x["canonical_name"] for x in geography if x["ambiguous"]}),
+            "ambiguous_institutions": sorted(set(institutions) & set(data["ambiguous_institutions"])),
             "foreign_places": sorted(name for name in data["foreign_places"] if mentions(text, name)),
             "admin_terms": sorted(name for name in data["admin_terms"] if mentions(text, name)),
-            "gazetteer_version": data["version"]}
+            "gazetteer_version": data["metadata"]["version"], "gazetteer_sha256": resource_identity()}
 
 
 def evaluate_l1(article, config=DEFAULT_CONFIG):
-    evidence = extract_evidence(article.get("title"), article.get("article_text"))
+    evidence = extract_evidence(article.get("title"), article.get("article_text"), config.l1_gazetteer)
     places = set(evidence["kenyan_places"]) - set(evidence["ambiguous_places"])
     institutions = set(evidence["kenyan_institutions"]) - set(evidence["ambiguous_institutions"])
     country = min(evidence["kenya_mentions"], 3) * config.country_weight

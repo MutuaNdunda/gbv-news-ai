@@ -20,6 +20,10 @@ def create_app(config=None, services=None):
     load_environment()
     app.config.from_mapping(PER_PAGE=25, ANNOTATION_UI_ENABLED=os.environ.get("ANNOTATION_UI_ENABLED") == "1",
                             ANNOTATION_UI_TOKEN=os.environ.get("ANNOTATION_UI_TOKEN", ""),
+                            HUMAN_REVIEW_ENABLED=os.environ.get("HUMAN_REVIEW_ENABLED") == "1",
+                            HUMAN_REVIEW_TOKEN=os.environ.get("HUMAN_REVIEW_TOKEN", ""),
+                            HUMAN_REVIEWER_ID=os.environ.get("HUMAN_REVIEWER_ID", ""),
+                            HUMAN_REVIEW_GUIDELINE_VERSION=os.environ.get("HUMAN_REVIEW_GUIDELINE_VERSION", ""),
                             SECRET_KEY=os.environ.get("FLASK_SECRET_KEY"),
                             SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Strict",
                             SESSION_COOKIE_SECURE=os.environ.get("GAE_ENV") == "standard",

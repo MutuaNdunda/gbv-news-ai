@@ -52,6 +52,18 @@ class CurrentAnnotationQueryTests(unittest.TestCase):
         self.add("L1", "not_kenya", prerequisite=custom_l0)
         self.assertEqual(self.current_ids(), {default_l0, default_l1})
 
+    def test_v2_current_excludes_v1_without_removing_history(self):
+        from annotations.schemas import DEFAULT_CONFIG
+        l0 = self.add("L0", "valid")
+        old = self.add("L1", "kenya", prerequisite=l0)
+        method = DEFAULT_CONFIG.method_version("L1")
+        current = current_annotations({"L0": "l0-v1.0", "L1": method})
+        self.assertEqual(set(self.connection.scalars(select(current.c.id))), {l0})
+        new = self.add("L1", "ambiguous", method, prerequisite=l0)
+        self.assertEqual(set(self.connection.scalars(select(current.c.id))), {l0, new})
+        self.assertEqual(self.current_ids(), {l0, old})
+        self.assertEqual(len(self.connection.execute(select(self.table.c.id)).all()), 3)
+
     def test_latest_l0_gates_l1_and_preserves_all_historical_rows(self):
         old_l0 = self.add("L0", "valid")
         self.add("L1", "kenya", prerequisite=old_l0)

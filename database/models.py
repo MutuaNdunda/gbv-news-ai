@@ -166,6 +166,10 @@ class AnnotationRun(Base):
 class AutomatedAnnotation(Base):
     __tablename__ = "automated_annotations"
     __table_args__ = (
+        CheckConstraint("layer <> 'L2' OR label IN ('gbv','not_gbv','borderline')",
+                        name="automated_annotations_l2_label_check"),
+        CheckConstraint("layer <> 'L2' OR prerequisite_annotation_id IS NOT NULL",
+                        name="automated_annotations_l2_prerequisite_check"),
         Index("idx_auto_annotations_version_layer_method", "article_version_id", "layer", "method_version", "created_at"),
         Index("idx_auto_annotations_article_id", "article_id"),
         Index("idx_auto_annotations_run_id", "annotation_run_id"),
@@ -186,3 +190,60 @@ class AutomatedAnnotation(Base):
     method_name: Mapped[str] = mapped_column(Text)
     method_version: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
+class HumanValidation(Base):
+    """Append-only reviewer decisions linked to an exact immutable machine result."""
+
+    __tablename__ = "human_validations"
+    __table_args__ = (
+        CheckConstraint("layer IN ('L0','L1','L2')", name="human_validation_layer_check"),
+        CheckConstraint("review_decision IN ('confirmed','corrected','unable_to_determine','needs_adjudication')",
+                        name="human_validation_decision_check"),
+        CheckConstraint("(layer = 'L0' AND machine_label IN ('valid','needs_review','invalid')) OR "
+                        "(layer = 'L1' AND machine_label IN ('kenya','not_kenya','ambiguous')) OR "
+                        "(layer = 'L2' AND machine_label IN ('gbv','not_gbv','borderline'))",
+                        name="human_validation_machine_label_check"),
+        CheckConstraint("human_label IS NULL OR (layer = 'L0' AND human_label IN ('valid','needs_review','invalid')) OR "
+                        "(layer = 'L1' AND human_label IN ('kenya','not_kenya','ambiguous')) OR "
+                        "(layer = 'L2' AND human_label IN ('gbv','not_gbv','borderline'))",
+                        name="human_validation_label_check"),
+        CheckConstraint("(review_decision = 'confirmed' AND human_label IS NOT NULL AND human_label = machine_label) OR "
+                        "(review_decision = 'corrected' AND human_label IS NOT NULL AND human_label <> machine_label) OR "
+                        "(review_decision IN ('unable_to_determine','needs_adjudication') AND human_label IS NULL)",
+                        name="human_validation_decision_label_check"),
+        CheckConstraint("length(trim(reviewer_identity)) > 0 AND length(trim(guideline_version)) > 0",
+                        name="human_validation_identity_check"),
+        CheckConstraint("machine_confidence BETWEEN 0 AND 1", name="human_validation_confidence_check"),
+        CheckConstraint("length(review_reason) <= 1000", name="human_validation_reason_length_check"),
+        CheckConstraint("length(notes) <= 4000", name="human_validation_notes_length_check"),
+        CheckConstraint("error_category IN ('extraction_incomplete','publication_date','provenance',"
+                        "'geographic_evidence','ambiguity','rule_false_positive','rule_false_negative','other')",
+                        name="human_validation_error_category_check"),
+        CheckConstraint("review_decision <> 'corrected' OR (error_category IS NOT NULL AND "
+                        "review_reason IS NOT NULL AND length(trim(review_reason)) > 0)",
+                        name="human_validation_correction_reason_check"),
+        UniqueConstraint("supersedes_validation_id", name="uq_human_validation_successor"),
+        Index("idx_human_validation_annotation_time", "automated_annotation_id", "created_at"),
+        Index("idx_human_validation_article_version", "article_version_id"),
+        Index("uq_human_validation_root", "automated_annotation_id", unique=True,
+              postgresql_where=text("supersedes_validation_id IS NULL"),
+              sqlite_where=text("supersedes_validation_id IS NULL")),
+        {"schema": "public"},
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    automated_annotation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.automated_annotations.id"))
+    article_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.articles.id"))
+    article_version_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.article_versions.id"))
+    layer: Mapped[str] = mapped_column(Text)
+    machine_label: Mapped[str] = mapped_column(Text)
+    machine_confidence: Mapped[float | None] = mapped_column(Float)
+    human_label: Mapped[str | None] = mapped_column(Text)
+    review_decision: Mapped[str] = mapped_column(Text)
+    review_reason: Mapped[str | None] = mapped_column(Text)
+    error_category: Mapped[str | None] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
+    reviewer_identity: Mapped[str] = mapped_column(Text)
+    guideline_version: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    supersedes_validation_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.human_validations.id"))

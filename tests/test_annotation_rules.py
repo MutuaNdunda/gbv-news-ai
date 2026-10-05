@@ -105,7 +105,7 @@ class L1Tests(unittest.TestCase):
             with self.subTest(text=text): self.assertEqual(self.evaluate(text).label, "kenya")
 
     def test_foreign_only_and_mixed_reporting(self):
-        self.assertEqual(self.evaluate("Schools in London and Britain reopened").label, "not_kenya")
+        self.assertEqual(self.evaluate("Schools in Paris and Britain reopened").label, "not_kenya")
         result = self.evaluate("Nairobi and Kampala signed a joint programme")
         self.assertEqual(result.label, "ambiguous")
         self.assertIn("mixed_geographic_evidence", result.reason_codes)

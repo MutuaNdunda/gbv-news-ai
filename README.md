@@ -3,21 +3,48 @@
 GBV News AI is a postgraduate research project that aims to develop an ethical, human-supervised system for identifying, classifying, geotagging, and mapping gender-based violence (GBV) reporting in Kenyan digital news. The planned system will investigate multilingual approaches for English, Swahili, Sheng, and code-switched content, where available.
 
 The collection pipeline and automated L0 extraction-quality / L1 Kenya-relevance
-layers are operational. No validated final research dataset is available yet.
-The roadmap's 407-record planning corpus differs from the 536 article versions
-observed in Supabase on 3 October 2026. Automated results still require sampled
+layers are operational. L2 weak supervision, training/inference infrastructure and
+protected local L0/L1/L2 Human Review are implemented. No validated final research
+dataset is available yet. The roadmap now records 536 article versions; its older
+407-record figure was a planning snapshot. Automated results still require sampled
 human validation. Reporting sources include Daily Nation, Citizen Digital, The
 Standard, The Star Kenya, Tuko, Kenyans.co.ke, and Taifa Leo, with collection
 intended to include both GBV-related and non-GBV reporting. Current trials use
 archived publisher reporting, as described below.
 
 The repository includes a Flask monitor for collection and automated annotations,
-with an optional protected, bounded annotation trigger. Future
-work will include human validation, task-specific fine-tuning and evaluation of multilingual
-models such as AfroXLMR, location extraction, geocoding, and human-review and mapping
-interfaces. These remain planned research capabilities; data collection and validation
+with an optional protected, bounded annotation trigger and a protected local Human
+Review workspace. Sampled human validation remains incomplete. Future work includes
+task-specific fine-tuning and evaluation of multilingual models such as AfroXLMR,
+location extraction, geocoding, and mapping interfaces. These remain planned research capabilities; data collection and validation
 come first. Privacy, provenance, reproducibility, and human oversight will guide
 development throughout.
+
+## Current progress — verified 5 October 2026
+
+Read-only development Supabase verification at **12:44 EAT** found:
+
+| Stage | Current compatible outputs | Remaining work |
+| --- | --- | --- |
+| Corpus | 536 article versions | Extraction, publication dates and language validation |
+| L0 quality | 519 valid; 17 needs_review; 0 invalid | Review anomalies and validate a sample |
+| L1 v2 Kenya relevance | 324 kenya; 35 not_kenya; 160 ambiguous | Sample validation and uncertainty analysis |
+| L2 weak bootstrap | 324 / 324 eligible: 7 gbv; 15 not_gbv; 302 borderline | Human validation; weak labels are provisional |
+| L2 primary model | 0 current predictions; 324 pending | Train/review a task-specific artifact and configure it |
+| Human Review | L0/L1/L2 workflow implemented; 1 L1 review recorded | Agreed stratified sample, adjudication and independent metrics |
+
+`l2-model-unconfigured` means the primary trained artifact is not configured.
+Weak labels appear under `/annotations/l2?mode=weak`; they do not increase the
+dashboard's primary-model annotated count. Tiny synthetic smoke artifacts do not
+establish a research-trained GBV model. L3–L5, NER, geocoding and mapping remain planned.
+Latest recorded suite: **249 tests run; 248 passed; one optional model test skipped**.
+See [the engineering log](docs/roadmap/IMPLEMENTATION_STATUS.md) for dated evidence.
+
+The L2 Human Review schema extension is installed in development. Schema inspection
+found the earlier `20261005_add_l2_annotations.sql` migration's expected constraints,
+identity index and prerequisite trigger absent. Apply that migration to the intended
+database before further automated L2 writes; existing weak rows alone do not prove schema readiness.
+This documentation audit was read-only; it did not run annotation or training jobs.
 
 ## Sync project roadmap
 
@@ -29,8 +56,10 @@ python3 scripts/sync_roadmap.py
 python3 scripts/sync_roadmap.py --check
 ```
 
-No Google credentials are needed for roadmap synchronization. L0 and L1 are
-implemented; sampled human validation and roadmap exit-gate evidence remain pending.
+No Google credentials are needed for roadmap synchronization. L0/L1 and L2
+infrastructure are implemented; sampled-validation and research exit gates remain open.
+The Sheet still lists L2 as planned and retains historical L1 v1 counts. Repository
+engineering progress is recorded separately; synchronized CSVs are not manually edited.
 See [the roadmap workflow](docs/roadmap/README.md) and
 [implementation status](docs/roadmap/IMPLEMENTATION_STATUS.md).
 
@@ -40,7 +69,8 @@ The implemented Flask monitor provides a read-only operational view of collectio
 It provides corpus totals, grouped source/month counts, run and source/month scan
 progress, searchable article metadata, complete extraction lineage, and infrastructure
 health. Counts come from Supabase; GCS is consulted only for read-only bucket health.
-Full article text is not displayed.
+Collection pages show metadata. Verified full text is available only in the
+unlocked local Human Review workspace.
 
 ### Run the monitor locally
 
@@ -97,6 +127,24 @@ execution is disabled by default. If startup or `/health` fails, rerun
 `python3 scripts/test_infrastructure_connections.py` and verify the configured database,
 bucket, and ADC access before changing application code.
 
+To stop a detached local server on port 8080 on macOS:
+
+```bash
+lsof -tiTCP:8080 -sTCP:LISTEN | xargs kill
+```
+
+Start the local review workspace without debug mode:
+
+```bash
+.venv/bin/python -m flask --app main:app run --port 8080
+```
+
+Run the offline regression suite with:
+
+```bash
+.venv/bin/python -m unittest discover -s tests -q
+```
+
 ## Automated L0 and L1
 
 Apply the additive annotation migration once per database, after the ingestion
@@ -114,6 +162,24 @@ python3 scripts/run_annotations.py --layer l0,l1 --limit 20
 python3 scripts/run_annotations.py --layer l0
 python3 scripts/run_annotations.py --layer l1
 ```
+
+The default L1 is now `l1-v2.0-<resource-hash>`, using the offline-built expanded
+Kenya gazetteer. Existing v1 results remain historical and do **not** satisfy v2
+pending checks. The user-authorized forced full v2 run completed on 4 October 2026: 519 fresh
+decisions, 17 gated L0 review cases and zero failures. Verified 5 October v2 totals are Kenya
+324, not Kenya 35 and ambiguous 160. Sampled validation remains pending; keep future
+changed-resource trials bounded before approving another full run.
+Select the historical resource explicitly with `--l1-gazetteer v1` when needed.
+Rebuild offline with `python3 scripts/build_kenya_gazetteer.py`; verify with `--check`.
+Compare without writing annotations:
+
+```bash
+python3 scripts/compare_l1_versions.py --limit 20
+```
+
+Comparison details remain in ignored `data/trials/processed/`; stdout contains only
+aggregates and performance. The comparison enforces a maximum of 20 and offers
+`--synthetic` for offline examples. See [v2 specification](docs/annotations.md#18-l1-v2-expanded-offline-geographic-evidence).
 
 Annotation advisory locking requires direct PostgreSQL or the Supabase session
 pooler (port 5432). Use that connection for `DATABASE_URL` / `DB_PORT`; the
@@ -138,8 +204,9 @@ python3 scripts/run_annotations.py --layer l0,l1 --article-id <uuid> --force
 
 Open `/annotations`, `/annotations/runs`, `/annotations/l0`, and `/annotations/l1`
 to inspect counts, run summaries, source/label-filtered results, and failures.
-Article detail pages show historical automated outputs. Full article text is not
-displayed. CLI and UI share one annotation service and preserve all earlier rows.
+Article detail pages link historical automated outputs to individual inspection/review
+pages. Full article text is available only in an unlocked local Human Review session.
+CLI and UI share one annotation service and preserve all earlier rows.
 
 Optional local UI execution requires `ANNOTATION_UI_ENABLED=1`,
 `ANNOTATION_UI_TOKEN`, and a distinct `FLASK_SECRET_KEY`, with each secret at least
@@ -156,6 +223,97 @@ gunicorn --timeout 600 -b 127.0.0.1:8080 main:app
 
 Use the CLI for full-corpus annotation. See [annotation rules, versioning, and security](docs/annotations.md)
 and [actual trial results](docs/roadmap/IMPLEMENTATION_STATUS.md).
+
+## L2 GBV relevance infrastructure
+
+L2 requires the exact current compatible L1 `kenya` result. It has separate
+provisional weak labels and installed-model predictions; neither is a human
+reference label. L0/L1 validation gates and L2 research validation remain open.
+Weak bootstrap currently covers all 324 eligible versions. No primary trained
+research model is configured and no current model predictions exist.
+
+Apply the new additive migration once to the intended database, after prior
+migrations: `migrations/20261005_add_l2_annotations.sql`. Its expected schema objects
+were absent in the 5 October development check, despite stored weak labels.
+This documentation update did not apply migrations. Optional local ML dependencies
+are in `requirements-l2.txt`.
+
+```bash
+# Explicit bounded bootstrap; writes automated weak annotations after migration:
+.venv/bin/python scripts/run_annotations.py --layer l2 --l2-mode weak --limit 10
+# Pending-only bootstrap over an explicitly agreed full eligible scope:
+.venv/bin/python scripts/run_annotations.py --layer l2 --l2-mode weak
+# Private development export of existing compatible binary weak labels:
+.venv/bin/python scripts/prepare_l2_training_data.py --output-dir data/l2/bootstrap-dev-v1 --limit 20
+# Model inference requires a trained local artifact; no weak/network fallback:
+.venv/bin/python scripts/run_annotations.py --layer l2 --limit 10
+```
+
+Pending-only weak execution skips existing compatible results; it does not mean
+"exactly 324 new articles." Eligibility and pending counts are queried dynamically.
+
+Set `L2_MODEL_PATH` to the immutable trained artifact directory and optionally
+`L2_MODEL_VERSION` to enforce its manifest version. `L2_POSITIVE_THRESHOLD=0.8`
+and `L2_NEGATIVE_THRESHOLD=0.2` are **UNVALIDATED ENGINEERING THRESHOLDS**.
+Changing an artifact or thresholds changes current compatibility. Model binaries
+belong under ignored `models/artifacts/`; bootstrap text belongs under `data/`.
+Training is a separate explicit `scripts/train_l2_classifier.py` action with
+configurable model/revision, dataset version, seed, device and `--max-steps`.
+
+The monitor adds `/annotations/l2`, clickable live coverage/labels/pending,
+`?mode=weak` bootstrap inspection and exact-lineage detail/history. L2 results
+open protected Human Review, including direct unlock, full text and separate review
+history. See [L2 specification, commands and limitations](docs/annotations.md#21-l2--gbv-relevance-infrastructure-5-october-2026).
+
+### Local Human Review
+
+Click any L0/L1/L2 count on `/annotations`, filter the result list, then open a row.
+The inspection page shows machine evidence and links back to the article. Human
+reviews append separate records; corrections preserve the original machine label.
+Save & Next stays within the selected layer, label, source and review-status cohort.
+For L2, mode and method/model-version filters are also preserved. Human Review
+shows separate L2 weak-bootstrap and model-prediction counts; neither inherits a
+review from the other. L2 human labels are `gbv`, `not_gbv`, and `borderline`.
+
+Apply the additive migration once, after the earlier migrations:
+
+```bash
+psql "$DIRECT_DATABASE_URL" -f migrations/20261004_add_human_validations.sql
+# Install the L2 annotation constraints before enabling further automated L2 writes:
+psql "$DIRECT_DATABASE_URL" -f migrations/20261005_add_l2_annotations.sql
+# After the L2 automated-annotation migration, extend existing review constraints:
+psql "$DIRECT_DATABASE_URL" -f migrations/20261005_add_l2_human_validations.sql
+```
+
+These commands describe setup for a new database. The human-validation table and
+L2 human-validation extension are already installed in development; do not rerun
+those migrations blindly. The L2 annotation migration remains a separate prerequisite.
+`psql` requires `DIRECT_DATABASE_URL` to be set in the shell environment; Python
+entry points load the ignored `.env` themselves. Keep connection values private.
+
+For local review, configure these values in the ignored `.env`, then restart the app:
+
+```dotenv
+HUMAN_REVIEW_ENABLED=1
+HUMAN_REVIEW_TOKEN=<distinct random secret of at least 32 characters>
+FLASK_SECRET_KEY=<random secret of at least 32 characters>
+HUMAN_REVIEWER_ID=<actual configured reviewer identity>
+HUMAN_REVIEW_GUIDELINE_VERSION=<actual annotation guideline version>
+```
+
+Generate each secret separately with `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`.
+Open the app at `http://127.0.0.1:8080`, select a result and unlock with the review
+token. For bootstrap review, open `/annotations/l2?mode=weak`, select an article,
+and unlock directly on its L2 review page. Choose Confirm, Correct, Unable to determine,
+or Needs adjudication; use Save Review or Save & Next. The server records the configured identity and guideline version; the browser
+cannot choose them. Access lasts 30 minutes and can be locked explicitly. Keep
+notes private and avoid unnecessary victim identifiers. All labels are reviewable.
+
+Human Review is disabled by default. Remote/proxied review is blocked even over
+HTTPS; this local capability token is not multi-user authentication. Authenticated
+reviewer accounts, authorization and trusted HTTPS deployment are required before
+remote review. Creating the UI does not complete sampled human validation or the
+roadmap exit gates. See [Human Review and Validation](docs/annotations.md#20-human-review-and-validation).
 
 App Engine uses `app.yaml`; required secret/configuration handling is documented in
 [`docs/app_engine_deployment.md`](docs/app_engine_deployment.md).

@@ -6,7 +6,40 @@ No private article content, victim information or reference labels belong here.
 
 ## Current Milestone
 
-**Automated Annotation Pipeline — L0 and L1: implemented; sampled validation pending.**
+**L0/L1 implemented and executed; L2 weak bootstrap covers the current eligible
+corpus; training/inference infrastructure and local L0/L1/L2 Human Review implemented.
+A primary trained L2 model and completed sampled validation remain pending.**
+
+### Latest verified development state — 5 October 2026, 12:44 EAT
+
+Read-only aggregate queries found:
+
+| Output | Current compatible coverage | Labels / readiness |
+| --- | ---: | --- |
+| Article versions | 536 | Unvalidated research candidates |
+| L0 | 536 / 536 | valid 519; needs_review 17; invalid 0 |
+| L1 v2 | 519 / 519 L0-valid | kenya 324; not_kenya 35; ambiguous 160 |
+| L2 weak bootstrap | 324 / 324 L1-Kenya | gbv 7; not_gbv 15; borderline 302; weak pending 0 |
+| L2 primary model | 0 / 324 eligible | `l2-model-unconfigured`; model pending 324 |
+| Current human reviews | L0 0; L1 1; L2 weak 0; L2 model 0 | Validation sample/metrics incomplete |
+
+Current L0 identity is `l0-v1.0`; L1 is `l1-v2.0-a39ff87099ee`. Automated
+weak labels are provisional and do not count as model predictions or reference
+labels. Aggregate review counts include genuine saved decisions only; this audit
+created none. The readback establishes coverage, not correctness or calibration.
+
+**Schema prerequisite still missing:** the expected named label/prerequisite checks,
+identity index and enabled prerequisite trigger from `20261005_add_l2_annotations.sql`
+were absent during inspection. Existing weak rows do not establish installation.
+The human-validation table and L2 human-review extension are installed. Apply the
+L2 annotation migration to the intended database before further automated L2 writes; this
+documentation audit performed no schema or annotation mutations.
+
+The public Sheet still describes L2 as planned and records historical L1 v1 outputs.
+Repository code implements L2 infrastructure and local review, with current weak
+coverage as above. This mismatch is explicit; public planning rows/CSVs and
+research gates were not manually changed. The older dated sections below remain
+historical execution evidence.
 
 The Sheet's 407-record trial count is a planning snapshot. Live Supabase queries
 on **3 October 2026 (Africa/Nairobi)** found **536 articles / 536 article versions**.
@@ -27,20 +60,27 @@ in each run's configuration.
 * L0 deterministic quality/provenance rules (`extraction_quality_rules`, `l0-v1.0`),
   hard/soft reasons, valid/review/invalid labels and NULL confidence. Processed JSON
   uses its recorded GCS generation and is compared with extraction lineage.
-* L1 versioned 47-county geographic/institution evidence scorer
-  (`kenya_relevance_hybrid`, `l1-v1.0`), conservative foreign/mixed/ambiguous handling,
+* L1 versioned geographic/institution evidence scorer (current expanded v2 resource,
+  historical v1 retained), conservative foreign/mixed/ambiguous handling,
   structured evidence and normalized confidence. Publisher identity supplies no score.
 * L1 requires the exact current valid compatible L0. Invalid/review L0 cannot enter
   L1; L1-only execution does not implicitly execute L0.
 * Append-only history, pending-only processing, force, parameter method identities,
   latest-compatible queries, advisory locking, failure isolation, per-version
   checkpoints/counters and structured secret-safe logs.
-* Flask summary, run list/detail, filtered L0/L1 results and article history.
+* Flask summary, run list/detail, filtered L0/L1/L2 results and article history.
   Opt-in token/CSRF trigger is disabled by default and capped at 20 versions.
 * Real bounded 20-version trial persisted both layers with zero failures; full L0
   subsequently covered all 536 versions. Default repeats added no duplicate decisions.
 * Authorized full L1 completed: 499 new decisions, 17 gated review-case skips,
   zero failures and CLI exit 0. All 519 L0-valid versions now have L1 decisions.
+* Authorized v2 reprocessing preserved v1 history; current v2 eligibility is 324 Kenya
+  versions. All 324 now have compatible L2 weak labels; primary-model outputs remain absent.
+* L2 weak supervision, private development export, training CLI, checksummed offline
+  model inference and bounded synthetic smoke are implemented. No research model
+  or independent performance claim is established.
+* Protected local L0/L1/L2 Human Review, direct unlock, separate append-only decisions,
+  revisions/conflict handling and method-separated status/filter/navigation are implemented.
 * README, AGENTS, AI_CONTEXT, annotation specification and deployment notes updated.
 * Follow-up roadmap sync found all snapshots current; all 152 existing tests passed.
   Existing-result reads were subsequently batched per locked cohort to remove
@@ -49,7 +89,7 @@ in each run's configuration.
 ## In Progress
 
 Automated implementation and authorized L0/L1 execution are complete. Sampled
-human validation remains pending; no human audit has been performed. Readiness
+human validation remains incomplete; one current L1 review is recorded. Readiness
 gates have not been passed through automated execution alone.
 
 ## Next
@@ -65,7 +105,8 @@ gates have not been passed through automated execution alone.
    report accuracy/F1, false-pass/false-fail, ambiguity, calibration, subgroup errors
    and runtime before claiming research exit-gate completion.
 
-L2–L5, AfroXLMR, NER, geocoding and mapping remain future work. Automated outputs
+L2 infrastructure and full current weak coverage are implemented; a reviewed trained
+AfroXLMR GBV model, full L2 inference, L3–L5, NER, geocoding and mapping remain pending. Automated outputs
 are not gold labels; execution alone does not satisfy sampled-validation gates.
 
 ## Blockers / Limitations
@@ -90,23 +131,33 @@ are not gold labels; execution alone does not satisfy sampled-validation gates.
 
 ## Last Roadmap Sync
 
-Anonymous sync and live `--check` succeeded on **3 October 2026 (Africa/Nairobi)**
-before implementation; required headers matched and extra columns were retained.
+Latest anonymous synchronization succeeded on **5 October 2026 (Africa/Nairobi)**
+before this documentation audit; all four exports were current. Required headers
+matched and no canonical planning rows or synchronized CSVs were manually edited.
 
 | Snapshot | Planning rows | SHA-256 |
 | --- | ---: | --- |
-| `roadmap.csv` | 28 | `b88c01d909de866b70dea695e2d721545be50fcaeefa7aeedaa649a7241d6eac` |
-| `current_state.csv` | 9 | `72fa241a1d9a07db7c6cf1056970308f28e4821bf8827316cdc474abcddf2f36` |
-| `stage_gates.csv` | 12 | `c109802924997ce4fd73244192b00affb39b49de11788bd12b73a69f301229bd` |
+| `roadmap.csv` | 29 | `3dce0ae1054f89106fb19cb88f2b4a7d8b0db11e53fa734ebe7374da82ea1270` |
+| `current_state.csv` | 9 | `b31cdc3088a80b5a0b44614abaee9763ac5947e4ba9d74a3976c9cde9e3b5141` |
+| `stage_gates.csv` | 12 | `f8cd1d3ea59f3e20d0ba20cd62575a4f783b8b3caa883977e4d9d90804df6770` |
 | `annotation_layers.csv` | 8 | `b4142b6ae3e6638d4e8bc80f2381d51bd8c86631251b88063de8fc4d9f97a3d4` |
 
 ## Relevant Code / Migrations
 
 * `annotations/{service,l0,l1,schemas}.py`, `annotations/resources/kenya_v1.json`.
+* `annotations/{geography,l2,l2_config,l2_training,l2_weak_supervision,validation}.py`,
+  expanded `kenya_v2.json` and provisional `gbv_relevance_v1.json` resources.
 * `database/models.py`, `database/repositories/annotations.py`.
 * `migrations/20261003_add_automated_annotations.sql` — applied to development;
   other deployments must apply it separately.
 * `scripts/run_annotations.py` — layers, limit, UUID filters, force, JSON summary.
+* `scripts/{prepare_l2_training_data,train_l2_classifier,smoke_l2}.py` — private
+  development exports, training and synthetic architecture verification.
+* `database/repositories/human_validations.py` and
+  `20261004_add_human_validations.sql` / `20261005_add_l2_human_validations.sql`
+  — implemented review storage and installed development extension.
+* `20261005_add_l2_annotations.sql` — provided; expected schema objects remain absent
+  in development as inspected on 5 October. Verify each target database separately.
 * `app/services/annotation_service.py`, `app/routes/annotations.py`, annotation
   templates, article detail/history, navigation and opt-in app configuration.
 * `storage/gcs.py` — optional generation-pinned JSON reads.
@@ -114,6 +165,14 @@ before implementation; required headers matched and extra columns were retained.
 * Existing roadmap/import/collection scripts and ingestion migrations retained.
 
 ## Test Status
+
+Latest recorded full suite on **5 October 2026**: **249 tests run, 248 passed, one
+optional installed-model integration test skipped**. L2 review verification and
+synthetic smoke details appear in the dated entries below. This documentation audit
+validated links, referenced files, commands and snapshot hashes without rerunning
+collection, training, inference or human decisions.
+
+### Historical L0/L1 milestone verification
 
 * `.venv/bin/python -m unittest discover -s tests -q`: **155 tests passed** —
   previous 108 plus 47 annotation tests, with publisher/HTTP calls mocked.
@@ -207,7 +266,7 @@ Recorded duration: **1,901,816.68 ms** (about 31.7 minutes).
 | not_kenya | **70** |
 | ambiguous | **136** |
 
-### Current full-corpus coverage (verified after full L1)
+### Historical v1 full-corpus coverage (verified after full L1 on 3 October)
 
 | Layer | Current decisions | Label counts | Pending eligible versions |
 | --- | ---: | --- | ---: |
@@ -219,3 +278,337 @@ groups and complete processed-generation metadata. The 17 quality-review version
 have no L1 result. These are automated outputs requiring sampled human validation.
 The repeated combined pending-only command selected zero versions, persisted no
 new annotation decisions and completed with exit 0.
+
+## L1 v2 geographic-resource enhancement — 4 October 2026
+
+The roadmap item **Implement automated L1 Kenya-relevance annotation** now also
+has an implemented deterministic geographic-resource enhancement. This is an
+engineering extension of existing L1, not completion of the sampled-validation
+exit gate or the Sheet's broader NER/classifier plans. Anonymous sync succeeded
+on 4 October before work: Roadmap, Current State and Stage Gates refreshed;
+Annotation Layers was current. All four tabs and AI_CONTEXT were inspected.
+Canonical Sheet planning rows were not edited by this task.
+
+* Inspected all three requested repositories, root LICENSE/README/data, and the
+  Tigawanna ward/counties/constituency GeoJSON and source download script.
+  Pinned commits, repository licenses, documented source claims and file SHA-256s
+  accompany the vendored public geographic inputs. Underlying official editions,
+  data licensing and code authority remain unverified.
+* `scripts/build_kenya_gazetteer.py` reproducibly builds/verifies
+  `kenya-gazetteer-v2.0`: 47 counties, 307 sub-counties, 290 constituencies,
+  1,448 wards, 916 localities, 1,827 areas and 36 retained towns. Two area duplicates
+  were reconciled; one missing Rosslyn locality parent is null/flagged. References
+  disagree (Tigawanna 1,439 wards; Alvinchesaro 45 county keys); full computed
+  discrepancy tuples and alias collisions are recorded rather than silently merged.
+* Cached alias indexes/token trie, longest lexical matches and canonical-name
+  deduplication provide one place observation per expression/name. Ward parents
+  add metadata rather than score. Shared-name/common-word/surname/cross-border
+  and unresolved-parent ambiguity is explicit. Country/institution/foreign logic,
+  all weights/caps/thresholds/confidence formulas and label vocabulary are unchanged.
+* Default effective method is `l1-v2.0-a39ff87099ee`, with resource SHA-256 included
+  in compatible identity. Changed weights append their own digest. V1 resource
+  remains unchanged, executable and selectable via `--l1-gazetteer v1`; v1 database
+  decisions remain historical. No database migration was introduced.
+* Flask result/history pages show structured geographic details and still render
+  v1. No human-review, L2/L4, NER, geocoding, live scoring APIs, polling stations
+  or new dependency was implemented.
+* Deterministic rebuild check and **171 offline tests passed**. Added integrity,
+  matching, hierarchy/score, ambiguity, cache, version/SQL compatibility, pipeline
+  history/pending and Flask v1/v2 rendering tests. `git diff --check` passed.
+* Read-only final comparison on 20 existing L0-valid/v1-result versions succeeded:
+  kenya → kenya 14; ambiguous → ambiguous 3; not_kenya → ambiguous 3; other six
+  transitions zero. Kenya scores changed on 11, foreign scores on zero and matched
+  place sets on 18. Mean Kenya score 6.825 → 8.775; foreign 1.5 → 1.5.
+  Private per-version report remains ignored under `data/trials/processed/`.
+  Selection is stable creation/UUID order, not stratified/reference validation.
+* Local loading time: v1 0.248 ms/v2 21.792 ms. Mean evaluation: 9.5848/4.4143 ms;
+  medians 8.5655/4.0519 ms, excluding cloud reads/writes. Single smoke measurements
+  establish neither production latency nor accuracy improvement.
+* No annotation run/results were written by comparison, and no full-corpus v2
+  reannotation occurred. The current monitor now uses v2 compatibility; historical
+  v1 completion does not imply v2 completion. Review changed evidence/weak-word
+  ambiguity before approving full v2 reannotation. Sampled human/reference
+  validation and numeric research acceptance thresholds remain pending.
+* `docs/annotations.md`, `docs/AI_CONTEXT.md`, README and this log describe the
+  implemented resource/build/versioning/CLI/evidence/performance and limitations.
+  Existing user edits to annotations documentation were preserved.
+
+
+## Authorized forced full L1 v2 run — 4 October 2026
+
+Following the bounded enhancement comparison, the user explicitly requested a
+full rerun using force and v2. Executed:
+
+```bash
+.venv/bin/python scripts/run_annotations.py --layer l1 --l1-gazetteer v2 --force
+```
+
+* Run `437f091c-436c-4f40-8d29-62904f382354`, method `l1-v2.0-a39ff87099ee`:
+  **completed**, CLI exit **0**, 536 selected/processed, **519 fresh decisions**,
+  **17 current-L0-review gated skips**, **0 failures**. Duration
+  **1,238,193.64 ms** (about 20 minutes 38 seconds). L0 was not rerun.
+* Final read-only database check confirms current v2 Kenya **324**, not Kenya
+  **35**, ambiguous **160**, with **zero eligible v2 pending**.
+* All **519 historical v1 rows** have an identical complete-row fingerprint
+  before/after the run. Existing 20 v2 trial rows were retained: 539 v2 historical
+  rows now coexist with 519 v1 rows and 536 L0 rows (1,594 automated rows total).
+  Force intentionally appends same-method history; compatible-current queries
+  resolve 519 latest v2 decisions linked to their current valid L0 prerequisites.
+* Full stored-label comparison: Kenya→Kenya **307**; not Kenya→not Kenya **35**;
+  ambiguous→ambiguous **122**; ambiguous→Kenya **17**;
+  not Kenya→ambiguous **38**; all other four transitions **0**.
+* Private run log and initial/final verification artifacts remain under ignored
+  `data/trials/processed/l1-v2-force-*`. No collected data is tracked/published.
+* README, annotation reference and AI_CONTEXT now reflect executed v2 coverage.
+  Public Sheet snapshots were not manually edited. Full automation does not
+  establish accuracy or complete the sampled-validation research exit gate.
+
+
+## Annotation inspection and protected local Human Review — 4 October 2026
+
+Anonymous roadmap synchronization succeeded for all four tabs before this work;
+all snapshots, AGENTS.md, AI_CONTEXT and the annotation reference were inspected.
+This implements the engineering workflow supporting sampled human validation. It
+**does not mark Human Validation or the sampled-validation exit gate achieved**.
+Canonical Sheet rows were not edited. No sampling, calibration, automatic human
+reviews, downstream layers or model training were added.
+
+* All L0/L1 total and label cards link to paginated results using Flask URLs, with
+  hover/focus states and emphasis on L0 needs-review / L1 ambiguous. Label/source/
+  review-status filters are validated; lists show machine evidence and human status.
+* GET/POST `/annotations/review/<uuid:annotation_id>` combines article metadata,
+  exact extraction, machine/run evidence and human review/history. All labels and
+  historical results remain reviewable. Article history links both ways. Previous,
+  Next, Back and Save & Next retain cohort filters/page, including status-filter
+  pagination when saving removes an item from the cohort.
+* Full article text is fetched only for unlocked local sessions, using the existing
+  generation-pinned GCS loader and extraction lineage/hash verification. Bodies and
+  notes are escaped; private no-store responses and safe error-type logs are used.
+* Additive `20261004_add_human_validations.sql` creates separate exact-lineage human
+  records with controlled decisions/labels, machine snapshots, configured reviewer/
+  guideline identity, reasons/notes, timestamps and append-only supersession history.
+  Unique chain indexes, stale-form checks and machine-row locking protect revisions.
+  Current review status is deterministic; forced/new machine rows do not inherit it.
+* Human Review is disabled by default, CSRF protected, direct-localhost only and
+  expires after 30 minutes. It requires a distinct review token, Flask secret,
+  actual configured reviewer identity and guideline version. Remote/proxied review
+  is blocked pending proper authenticated reviewer accounts and authorization.
+* **190 offline tests passed**, including 19 new executed repository/Flask review
+  tests. Dashboard links, filtering/pagination, all labels, safe pinned body loading,
+  v1/v2 evidence, separate confirms/corrections, unchanged machine data, history,
+  stale forms, CSRF, access restrictions, Save & Next and unavailable storage were
+  exercised. Existing collection/annotation tests remain passing.
+* Migration was applied to the configured development Supabase database. Before/
+  after complete-row fingerprints confirm all **1,594 automated annotation rows
+  unchanged**; human table row-level security is enabled and **zero human rows** exist.
+  Current machine counts: L0 valid **519**, needs-review **17**, invalid **0**;
+  L1 v2 Kenya **324**, not Kenya **35**, ambiguous **160**. Human pending: L0 **536**,
+  L1 **519**; priority progress **0/17** and **0/160**. No human decision was fabricated.
+* L0/L1 scorer SHA-256s exactly match the pre-work snapshot. README, `.env.example`,
+  annotation reference and AI_CONTEXT document local setup, schema, security and
+  remaining research work. Public roadmap snapshots contain no private review data.
+
+## L2 GBV relevance infrastructure — 5 October 2026
+
+The user explicitly authorized L2 implementation and bounded local engineering
+smokes, while forbidding full-corpus reannotation, expensive/full training,
+production deployment and destructive data changes. Anonymous roadmap sync
+succeeded for all four tabs and found snapshots current. Required architecture,
+operator, annotation and research documents were inspected. No public Sheet rows
+were edited; existing unrelated workspace changes were preserved.
+
+**Completed engineering item: automated L2 implementation infrastructure. The L2
+research stage/gate remains open.** L0/L1 sampled-validation evidence and agreed
+numeric research thresholds are still missing. Code availability does not supply
+validated labels or authority to skip those gates.
+
+* Added L2 labels, an additive migration with same-version L1 Kenya prerequisite
+  checks/trigger and a method/dependency index. The migration is provided but
+  **not applied to any cloud database in this task**. Historical migrations and
+  L0/L1 rule/scoring/gazetteer semantics were not changed by this task.
+* Shared CLI/service supports L2-only and ordered combined layers. Compatibility
+  derives the actual configured L1 version; it does not fix v1 or a corpus count.
+  Exact current L1 method/label/prerequisite and L2 method/version/parent are
+  matched before ranking. New L1 makes previous L2 historical. Pending-only,
+  force/history, cooperative locks, private input verification, per-version
+  failures and safe run summaries/logs are retained.
+* Versioned provisional weak-supervision resource and independent labeling
+  functions preserve votes, lexical evidence, counts and rule/aggregation identity.
+  Strong consistent positive/negative signals can yield binary bootstrap labels;
+  conflict/weakness/absence retains borderline. Publisher identity supplies no
+  vote. English/Swahili coverage is bounded; Sheng-specific terms remain empty
+  pending linguistic validation. No complete approved inclusion/exclusion
+  codebook was found, so rules are explicitly provisional, not a new thesis definition.
+* Bootstrap labels use `gbv_relevance_weak_supervision`; Transformer predictions
+  use `afroxlmr_gbv_relevance`. Weak labels cannot satisfy current-model queries.
+  A private deterministic builder exports existing exact-compatible binary weak
+  labels and lineage, excludes borderline/duplicate body hashes, verifies stored
+  objects and creates a checksummed development manifest. It does not export
+  unnecessary URL/author metadata or create human/reference labels.
+* Separate AfroXLMR-compatible training supports configured base/revision,
+  development dataset/version, CPU/MPS/CUDA, seeds, batch size, epochs, learning
+  rate, maximum length and bounded steps. It reports bootstrap training loss only.
+  Artifacts preserve reproducibility metadata, label order, tokenizer, dataset,
+  weak method, installed-file hashes and provisional threshold status.
+* Installed-artifact inference is offline-only, caches model/tokenizer, uses eval/
+  inference mode, binary GBV probability and configurable thresholds. L2-only
+  service batches verified eligible inputs and isolates batch/member failures.
+  Missing/invalid/untrained artifacts fail clearly; there is no weak/network fallback.
+  `0.8/0.2` are **UNVALIDATED ENGINEERING THRESHOLDS**, not calibrated research values.
+* Flask adds dynamic clickable model/eligible/pending/label coverage, current
+  model and explicit weak views, filters/pagination, L1 links, safe read-only
+  evidence/detail and article history. Full text uses existing protected local
+  access. No L2 human-review writes/interface or L3–L5 implementation was added.
+* README, `.env.example`, AI_CONTEXT and the annotation reference document local
+  dependencies, commands, migration/configuration, private artifact storage,
+  method identity, confidence terminology and research limitations.
+
+### Bounded executed synthetic smoke
+
+Installed optional ML development dependencies locally, then ran:
+
+```bash
+.venv/bin/python scripts/smoke_l2.py --output-dir data/l2/synthetic-smoke-20261005
+```
+
+The smoke creates a **4,018-parameter random tiny XLM-R architecture** and a
+synthetic WordLevel tokenizer, uses four fabricated English/Swahili examples with
+both weak binary classes, performs **two CPU training steps**, saves a manifest/
+safetensors/tokenizer artifact and reloads it for a four-input batch. It downloaded
+**no model/tokenizer artifact** and accessed **no real corpus or cloud database**.
+All four model outputs were borderline, consistent with an unvalidated tiny smoke
+rather than a research-trained classifier. The artifact is named
+`synthetic-smoke-not-research-v1` and was not configured as the primary L2 model.
+
+| Separate local smoke measurement | Time |
+| --- | ---: |
+| Weak supervision, four synthetic inputs | 2.180 ms |
+| Two tiny CPU training steps plus artifact save | 81.878 ms |
+| Installed tiny model/tokenizer load | 4.938 ms |
+| Tiny Transformer batch inference, four inputs | 1.625 ms |
+
+These one-shot measurements exclude library import/startup and cloud I/O. The
+1.625 ms number is **not AfroXLMR-base latency**, a production benchmark or a
+research-target achievement. Production-sized Transformer latency remains
+unmeasured. Runtime libraries: torch 2.14.1, transformers 4.57.6, safetensors 0.8.0.
+Private smoke datasets, weights and report remain under ignored `data/l2/`;
+`models/artifacts/` is also ignored. Git tracks no collected data.
+
+### Verification and remaining work
+
+The final offline suite and configured synthetic-model integration check are
+recorded below. New tests cover lexical evidence/uncertainty/multilingual
+normalization, input integrity, exact gating, compatibility before ranking,
+bootstrap/model separation, upstream replacement, pending/force, batch/member
+failures, cached offline loaders, probabilities/thresholds/manifests, deterministic
+exports and executed SQL/Flask counts/filters/history/private detail. Existing
+L0/L1 and collection tests remain passing. Compilation and diff whitespace checks
+pass; missing model CLI exits 2 before cloud access, with an explicit configuration
+message. No model binaries or private data were staged/committed.
+
+At the end of the initial implementation pass, **no research-trained AfroXLMR GBV model,
+real-corpus L2 annotation run, full
+inference coverage, independent human L2 reference set, calibration or final
+accuracy/precision/recall/F1/AUC was produced.** No production infrastructure,
+production data, public roadmap or deployment was changed. Next work requires
+reviewing the provisional study rules/codebook and upstream validation, agreeing
+development/held-out membership, selecting/pinning the real base checkpoint,
+performing an explicitly approved training/run scope, and independent sampled
+validation before research exit-gate claims.
+
+Final checks on 5 October 2026:
+
+* `.venv/bin/python -m unittest discover -s tests -q`: **238 tests run;
+  237 passed, 1 optional local-model integration test skipped** (3.495 s).
+* `GBV_L2_INTEGRATION_MODEL=data/l2/synthetic-smoke-20261005/tiny-trained
+  .venv/bin/python -m unittest tests.test_l2_model -q`: **10 tests passed**,
+  including the real local tiny-artifact integration (2.996 s); no download.
+* Python compilation and `git diff --check` passed. `git ls-files data` returned
+  no tracked data; `git check-ignore` confirms synthetic manifests/weights and
+  `models/artifacts/` outputs are excluded.
+
+### Weak bootstrap result tiles — 5 October 2026
+
+The existing read-only L2 weak results page now includes clickable `gbv`,
+`not_gbv` and `borderline` tiles with live grouped counts from the compatible
+weak-supervision cohort. Counts span pages and labels while respecting source/
+method/model-version filters. Links retain the filter context, select a label and
+reset pagination; zero-count categories remain visible. Historical and Transformer
+rows do not inflate bootstrap totals. No annotation rules, model methods, database
+schema, stored labels or public planning rows were changed.
+
+`.venv/bin/python -m unittest tests.test_l2_ui tests.test_annotation_routes -q`
+passed all **15 tests**, including new executed SQL/Flask checks for current vs
+historical rows, weak/model separation, filtered counts, links, pagination reset
+and empty-source categories. `git diff --check` passed. Restart the local Flask
+process to load the updated route/service before refreshing the weak results page.
+
+### L2 protected Human Review — 5 October 2026
+
+The user's follow-up request extends the existing local review workflow to L2.
+Roadmap sync succeeded; all four remote exports match the current snapshots.
+This supports the L2 implementation/validation work; public planning rows and
+research exit gates remain unchanged.
+
+* L2 weak bootstrap and model rows now open the shared review workspace. Reviewers
+  can unlock directly, inspect verified full text, exact L1 lineage, weak votes or
+  model metadata, and confirm/correct gbv/not_gbv/borderline or leave an unresolved
+  decision. The old exact-L2 URL redirects to this workspace.
+* Separate dashboard counts/status filters distinguish weak reviews from model
+  reviews. Navigation and Save & Next preserve label, source, review status, mode
+  and method/model versions. Current compatibility and exact annotation UUIDs
+  prevent old reviews from being inherited by new machine results.
+* The additive `20261005_add_l2_human_validations.sql` extends three named checks;
+  it preserves existing rows, indexes, RLS and foreign keys. Missing L2 constraints
+  block saves/status filters with a migration notice instead of a false conflict.
+  It was applied to the configured development Supabase database; constraint
+  inspection passed and machine/human row counts were unchanged. The local Flask
+  monitor was restarted on port 8080. No real human decision was fabricated.
+* Existing local-token, CSRF, expiry, private-text verification, revision/stale-form
+  protections and append-only storage remain in use. No research model training,
+  annotation rerun or validation-completion claim is introduced.
+
+Validation: **249 tests run, 248 passed, one optional installed-model integration
+test skipped**. Nine new executed synthetic L2-review tests cover saved decisions,
+immutable machine rows, revisions, stale forms, unresolved/cross-layer labels,
+method separation, navigation, new-result review isolation, local/remote/CSRF
+security and migration readiness. Python compilation and `git diff --check`
+passed; `git ls-files data` returned no tracked research artifacts.
+Read-only live HTTP checks passed for both L2 dashboard review sections, the weak
+pending-review list, the direct L2 unlock form and private/no-store response headers.
+Locked sessions expose no save control; live verification created no reviews.
+
+### Documentation consistency audit — 5 October 2026
+
+Updated all eight project-maintained Markdown guides against source behavior,
+dated executed test evidence and current read-only development aggregates/schema:
+
+* [Root README](../../README.md): coverage table, local run/stop/test commands,
+  model-unconfigured meaning, pending-only weak execution, direct L2 unlock and
+  explicit migration readiness.
+* [AGENTS.md](../../AGENTS.md): accepted implemented architecture, current priorities,
+  v2/weak/review progress and remaining research gates, without weakening research rules.
+* [AI_CONTEXT.md](../AI_CONTEXT.md): source tree, ML state, L0/L1/L2 orchestration,
+  review storage, current vs historical counts and future work.
+* [Annotation specification](../annotations.md): actual CLI/layer support, schema,
+  weak/model coverage separation, local review, current test evidence and limitations.
+* [Deployment notes](../app_engine_deployment.md): per-target migration verification,
+  development schema gap, remote-review restrictions and optional artifact configuration.
+* [Collection protocol](../collection_protocol.md): downstream annotation/review handoff
+  while preserving broad collection, archive sampling and privacy constraints.
+* [Roadmap guide](README.md): successful latest sync, current planning/engineering
+  mismatch and the separation between execution coverage and research gates.
+* This engineering log: current verified coverage, schema readiness, latest snapshot
+  hashes and explicit historical labeling of older test/run evidence.
+
+The three vendored `annotations/resources/upstream/*/README.md` files were preserved
+as pinned source evidence; the offline gazetteer `--check` passed. They are upstream
+documentation, not repository progress guides. No private article text, identity,
+reference labels or credentials were added. No public Sheet/CSV, application code,
+annotation, model, cloud resource or database schema was changed by this audit.
+
+Checks passed: local Markdown links/anchors and code fences across all eight guides,
+actual annotation CLI help/options, offline gazetteer verification and
+`git diff --check`. The latest full-suite result remains the previously executed
+249 tests (248 passed, one optional model integration test skipped); tests and
+research pipelines were not rerun for documentation-only edits.

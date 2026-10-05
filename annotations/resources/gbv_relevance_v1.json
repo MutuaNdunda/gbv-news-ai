@@ -1,0 +1,30 @@
+{
+  "version": "gbv-relevance-rules-v1.0",
+  "aggregation_version": "consistent-strong-v1",
+  "status": "provisional_requires_human_validation",
+  "definition_basis": ["docs/AI_CONTEXT.md section 5.1: physical, sexual, emotional, economic, harmful_practice, online", "docs/roadmap/annotation_layers.csv: report or substantive discussion under approved study definition"],
+  "definition_limit": "No complete approved inclusion/exclusion codebook is present. These are provisional bootstrap signals, not a thesis definition or GBV-type labels.",
+  "language_limit": "Bounded English/Swahili coverage. Sheng-specific terms withheld pending linguistic validation; code-switched text uses the same lexical signals.",
+  "positive_terms": {
+    "explicit_gbv": {"en": ["gender based violence", "gender based abuse"], "sw": ["ukatili wa kijinsia", "unyanyasaji wa kijinsia"], "sheng": []},
+    "sexual_violence": {"en": ["sexual violence", "sexual assault", "rape", "raped", "defilement"], "sw": ["ubakaji", "alibakwa", "kubakwa"], "sheng": []},
+    "domestic_intimate_partner_violence": {"en": ["domestic violence", "intimate partner violence", "spousal abuse"], "sw": ["ukatili wa nyumbani"], "sheng": []},
+    "fgm": {"en": ["female genital mutilation", "fgm"], "sw": ["ukeketaji"], "sheng": []},
+    "forced_or_child_marriage": {"en": ["forced marriage", "child marriage"], "sw": ["ndoa za lazima", "ndoa za utotoni"], "sheng": []},
+    "gender_based_killing": {"en": ["femicide", "gender based killing"], "sw": [], "sheng": []}
+  },
+  "context_terms": {
+    "relationship": {"en": ["husband", "wife", "partner", "spouse"], "sw": ["mume", "mke"], "sheng": []},
+    "physical_harm": {"en": ["beat", "beaten", "assaulted", "killed", "strangled"], "sw": ["alipigwa", "aliuawa"], "sheng": []},
+    "exploitation": {"en": ["trafficking", "exploitation"], "sw": ["usafirishaji haramu"], "sheng": []},
+    "sexual_context": {"en": ["sexual", "sex trafficking"], "sw": ["kingono"], "sheng": []},
+    "legal": {"en": ["court", "charged", "sentenced", "police"], "sw": ["mahakama", "polisi"], "sheng": []}
+  },
+  "negative_contexts": {
+    "general_non_gbv_crime": {"en": ["burglary", "robbery", "tax evasion", "embezzlement", "car theft"], "sw": ["wizi wa magari", "ufisadi"], "sheng": []},
+    "general_violence_without_gbv_context": {"en": ["armed conflict", "military offensive", "gang warfare", "football riot"], "sw": [], "sheng": []}
+  },
+  "ambiguous_terms": {"en": ["abuse", "harassment", "assault", "murder", "violence", "trafficking", "exploitation", "gbv"], "sw": ["ukatili", "unyanyasaji", "mauaji"], "sheng": []},
+  "aggregation": {"minimum_strong_positive_votes": 1, "minimum_strong_negative_votes": 1, "explicit_substantive_sentences": 2, "incidental_minimum_sentences": 4},
+  "negation_prefixes": ["not", "no", "without", "denied", "si"]
+}
