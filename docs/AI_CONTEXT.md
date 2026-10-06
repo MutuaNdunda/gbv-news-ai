@@ -42,12 +42,16 @@ objects absent at the initial check; no automatic migration. A later read-only
 run with OperationalError followed by AnnotationLockLost. The later operational closure installed all four required schema objects and
 verified rolled-back behavior; previous schema gaps are historical. See `docs/l2_model_performance.md`; independent
 performance remains unmeasured.
-Latest executed full suite including installed-model integration: 275 passed.
-The proposed next implementation is structured L2 human validation: reproducible
-review batches, initially hidden model output, separate adjudication and private
-progress/export reporting. Agree codebook/sampling first. These additions remain
-planned; training-article reviews are development error analysis, not independent
-testing. See `docs/annotations.md` Section 17.
+Latest executed full suite including installed-model integration: **304 passed**,
+zero failures/skips, on 6 October 2026. L2 validation batches, blinded initial review,
+protected membership and deterministic private evaluation are implemented. The
+additive `20261006_add_l2_validation_batches.sql` was **installed in development**
+on 6 October at 23:48 EAT after user authorization; standalone readiness is true
+and 15 rollback-only live guard checks passed with historical fingerprints unchanged;
+no real batch or independent metrics were generated. Agree codebook/sampling first.
+Training-article reviews are diagnostic error analysis, not independent testing.
+See `docs/annotations.md` Section 22 and README operator steps. The successful
+anonymous 6 October sync refreshed all four snapshots; no public Sheet writes.
 NER, geocoding, completed sampled human validation, mapping,
 and remote reviewer authentication remain future research work. Before roadmap-related
 implementation, run `python3 scripts/sync_roadmap.py` and read all four snapshots
@@ -900,6 +904,17 @@ AI_CONTEXT.md.
   fail-closed pending-only operation; safe failure phases/wall duration are recorded.
 - Protected local L0/L1/L2 Human Review, direct unlock, exact lineage, append-only
   decisions/history, method-separated review counts and filtered navigation.
+- L2 Validation navigation/routes integrate with existing review. New batch/member
+  schema freezes model identity, seed, source/language metadata, ordered membership
+  digest and initial/accepted review pointers. Migration is installed and live
+  behavior-verified in development; other targets require independent verification.
+- Verified exact-model training exclusion (all 322 actual records plus historical
+  hashes), random/proportional strata versus diagnostic enrichment, protected
+  shared export selection and old-export training CLI refusal. Missing schema
+  fails selection closed; existing annotation/review semantics are unchanged.
+- Blind initial review, stricter final-test feedback and pending adjudication counts;
+  private completed-batch evaluator with pinned lineage, conditional binary metrics,
+  abstentions, diagnostic warning and deterministic hashes. No real evaluation run.
 - Offline tests cover parsing, orchestration, persistence/recovery, monitor behavior,
   local imports, roadmap sync, rules, generation reads, actual SQL current queries,
   gating, counters, failure isolation, force/idempotency and UI protection. See
@@ -920,7 +935,10 @@ AI_CONTEXT.md.
 
 ### Planned / Not Implemented
 
-- Independent reference-label datasets, stratified sampling, completed validation/calibration.
+- Real independent reference-label datasets and completed validation/calibration;
+  sampling/protection engineering exists, but no real batch is created or reviewed.
+- Independent A/B reviewer assignment, separate adjudication records, semantic
+  near-duplicate grouping, subgroup metrics/AUC/calibration and date strata.
 - Independently validated research GBV classifier, agreed accuracy/fairness metrics,
   corpus freeze and protected held-out evaluation. Initial development training exists.
 - NER, location-role reasoning, geocoding, maps, and privacy-aware presentation.
@@ -962,10 +980,11 @@ The inspected roadmap currently prioritizes:
    have L1 decisions following the authorized full run.
 5. Create a small stratified/uncertainty-focused human reference sample and metrics.
 6. Inspect L2 weak uncertainty, verify schema prerequisites and agree the GBV codebook.
-7. L2 development coverage/schema closure is complete. Next, plan structured
-   human validation (batches, initially hidden predictions, adjudication and progress).
-   Before later independent evaluation, freeze reference membership
-   before evaluation; later-layer baselines follow the synchronized roadmap.
+7. L2 development coverage/schema closure is complete. Validation engineering is
+   implemented and its migration installed in development. Preflight/install/verify
+   other targets independently; agree the codebook/design and expand unseen support before freezing a real
+   independent batch. Protect final-test membership from tuning and training.
+   Later-layer baselines follow the synchronized roadmap.
 
 See `docs/roadmap/IMPLEMENTATION_STATUS.md` for current L0/L1/L2 implementation
 status, required decisions and actual validation evidence. The real 20-version
@@ -975,7 +994,7 @@ invalid 0, with no processing failures. Missing dates (12) and short bodies (5)
 require inspection. The initial full-run CLI had a post-completion lock-release
 error; annotation-specific autocommit/heartbeat/cleanup handling now addresses it.
 That historical milestone passed 155 tests; the latest installed-model suite
-passed 275 tests with zero failures/skips. Automated execution does not
+passed 304 tests with zero failures/skips on 6 October 2026. Automated execution does not
 establish human-validated reference labels.
 Full L1 completed with 499 new decisions and 17 gated skips, no failures and exit 0.
 Across 519 eligible versions, historical v1 totals were Kenya 307 / non-Kenya 73 / ambiguous

@@ -44,15 +44,17 @@ prevent idle sleep and verify actual advisory-lock ownership before writes.
 See [the L2 performance report](docs/l2_model_performance.md) for the diagnosis,
 timing and remaining limitations. Original weak outputs remain separately
 inspectable at `/annotations/l2?mode=weak`. Full offline suite including the
-installed-model integration: **275 tests passed**, zero skips. See
+installed-model integration at operational closure: **275 tests passed**, zero skips.
+The later validation-workflow suite passed **304 tests**, zero failures/skips. See
 [the engineering log](docs/roadmap/IMPLEMENTATION_STATUS.md) for execution evidence.
 L0 remains 519 valid / 17 needs_review; L1 v2 324 kenya / 35 not_kenya /
-160 ambiguous. Independent research validation and L3–L5 remain pending. The proposed next
-implementation is reproducible human-validation batches, initially hidden model
-output, adjudication and progress reporting in the existing local review workspace.
-Agree the codebook and sampling protocol first; see
-[the planned validation milestone](docs/annotations.md#17-next-steps-future-work).
-These additions are not yet implemented.
+160 ambiguous. Independent research validation and L3–L5 remain pending.
+Reproducible L2 batches, blinded initial review, protected reference exclusion and
+private evaluation are now implemented in the existing local workspace. The new
+validation migration is **installed and behavior-verified in development**; no real batch or independent
+metrics were generated. Agree the codebook and sampling protocol before review;
+see [validation setup](#l2-validation-and-protected-reference) and
+[the validation specification](docs/annotations.md#22-l2-validation-and-protected-reference-workflow).
 
 Development installation does not establish schema readiness for other targets.
 Apply migrations in filename order and verify each target independently before
@@ -70,12 +72,95 @@ python3 scripts/sync_roadmap.py --check
 
 No Google credentials are needed for roadmap synchronization. L0/L1 and L2
 infrastructure are implemented; sampled-validation and research exit gates remain open.
-The last successful sync on 5 October records completed model training and
-pre-closure 300/324 coverage; the later 6 October verification records 324/324.
-This documentation update did not resynchronize or change the public Sheet.
+The successful anonymous sync on 6 October records completed model training,
+324/324 development inference and independent validation as the current priority.
+All four snapshots were refreshed; the public Sheet was not changed.
 Independent evaluation remains pending; synchronized CSVs are not manually edited.
 See [the roadmap workflow](docs/roadmap/README.md) and
 [implementation status](docs/roadmap/IMPLEMENTATION_STATUS.md).
+
+## L2 validation and protected reference
+
+Use the existing local Flask app and Human Review token/configuration. The new
+**L2 Validation** navigation opens `/annotations/validation`; remote access remains
+blocked. This workflow supports the configured `l2-afroxlmr-dev-v1` artifact.
+
+The additive [validation migration](migrations/20261006_add_l2_validation_batches.sql)
+was **installed in the configured development database on 6 October 2026 at
+23:48 EAT**, after user authorization. The standalone checker returns `ready: true`
+and `missing: []`; 15 rollback-only synthetic database checks passed. Existing
+article, prediction and review fingerprints were unchanged. No real batch was created.
+For this target, skip installation and start at step 4 below. Other targets must
+complete steps 1–3 independently before creating `L2-VALIDATION-V1`:
+
+1. Confirm the intended development database and existing annotation/human-review
+   migrations. Do not infer installation from migration files.
+2. Run the read-only preflight using the existing `.env` configuration:
+
+   ```bash
+   .venv/bin/python scripts/check_l2_validation_schema.py
+   ```
+
+   Exit 0 means ready, 1 means missing objects, 2 means configuration/connection
+   failure. For a new installation expect both new tables and guards absent.
+   If objects already exist partially, inspect their definitions before applying;
+   the SQL deliberately refuses conflicting names rather than replacing them.
+3. Apply **only** `migrations/20261006_add_l2_validation_batches.sql` once to that
+   confirmed target using its SQL editor or an explicitly configured direct
+   PostgreSQL connection. The SQL includes its own transaction. If `psql` and
+   `DIRECT_DATABASE_URL` are configured for the intended target:
+
+   ```bash
+   psql "$DIRECT_DATABASE_URL" -v ON_ERROR_STOP=1 \
+     -f migrations/20261006_add_l2_validation_batches.sql
+   .venv/bin/python scripts/check_l2_validation_schema.py
+   ```
+
+   Require exit 0 afterward. Verify frozen membership and accepted-reference
+   immutability on rollback-only synthetic records for each new target. Development
+   passed these checks; installation on other targets is not established.
+4. Restart the local app with the existing Human Review configuration. Unlock
+   **L2 Validation → Create Validation Batch**. Choose `L2-VALIDATION-V1`, purpose
+   `development_validation`, configured model identity, agreed sample size,
+   `random` or proportional `stratified`, seed 42 (or record another seed), and
+   **Protect from training**. Optional source/language filters narrow the pool.
+5. Preview the available pool and membership digest, create a draft, then freeze
+   membership. All **322** actual first-model training records and their historical
+   body hashes are excluded. If only N unseen eligible records remain, the app
+   refuses a larger sample. Collect/validate additional unseen articles under a
+   separate agreed collection plan; do not relabel training data as independent.
+6. Select **Review Next**, record the independent human label and reason, then
+   inspect the pinned model comparison after saving. Review all members and
+   complete the batch to freeze accepted final pointers. Unresolved/adjudication
+   and human/model borderline remain explicit exclusions from binary evaluation.
+7. Evaluate a completed representative batch into a new private directory:
+
+   ```bash
+   .venv/bin/python scripts/evaluate_l2_validation.py \
+     --batch L2-VALIDATION-V1 \
+     --output-dir data/l2/evaluations/L2-VALIDATION-V1-v1
+   ```
+
+Outputs are private JSONL pairs, a JSON report and deterministic hashes under
+ignored `data/`. The report includes confusion counts, binary support, precision,
+recall, F1, conditional accuracy and abstentions. `diagnostic`/`enriched` batches
+may inspect training records but suppress representative metrics. No independent
+model performance is established until an appropriate unseen batch is reviewed.
+
+Frozen protected membership is automatically excluded from reviewed-only,
+mixed-effective and weak-bootstrap exports and private priority selection. Manual
+reference manifests remain supported. Training CLI rechecks older exports and
+rejects newly protected membership before loading the model. These paths now fail
+closed when the validation schema is missing. Avoid freezing conflicting batches
+during an active training job; direct low-level training calls do not consult DB.
+
+Final-test batches require protection and keep machine feedback hidden even after
+review. Evaluation requires explicit `--final-experiment` for the approved final
+experiment. Never use them for training, tuning, active learning or model selection.
+No final-test batch is created automatically. This local workflow does not isolate
+reviewers from ordinary machine-result pages; use the blind batch route before
+inspecting predictions. Independent A/B reviewers and separate adjudication records
+remain future work. See [the annotation specification](docs/annotations.md#22-l2-validation-and-protected-reference-workflow).
 
 ## Corpus Collection Monitor
 

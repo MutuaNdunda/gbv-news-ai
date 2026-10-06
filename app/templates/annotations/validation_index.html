@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block content %}<h1 class="h3">L2 Validation</h1>
+<p>Frozen review batches preserve exact model predictions and independent human decisions.</p>
+{% if error %}<p class="alert alert-warning">{{ error }}</p>{% else %}
+<a class="btn btn-primary mb-3" href="{{ url_for('validation.new') }}">Create Validation Batch</a>
+<table class="table"><thead><tr><th>Name</th><th>Purpose</th><th>Model</th><th>Sample</th><th>Status</th><th>Progress</th><th>Protected from training</th></tr></thead><tbody>
+{% for data in batches %}<tr><td><a href="{{ url_for('validation.detail',batch_id=data.batch.id) }}">{{ data.batch.name }}</a></td><td>{{ data.batch.purpose }}</td><td>{{ data.batch.model_version }}</td><td>{{ data.progress.total }}</td><td>{{ data.batch.status }}</td><td>{{ data.progress.reviewed }} reviewed / {{ data.progress.resolved }} resolved</td><td>{{ 'YES' if data.batch.protect_from_training and data.batch.status != 'draft' else 'Not yet frozen' if data.batch.protect_from_training else 'NO' }}</td></tr>{% endfor %}
+</tbody></table>{% endif %}{% endblock %}

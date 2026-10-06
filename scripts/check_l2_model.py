@@ -50,6 +50,9 @@ def main(argv=None):
     repository, reviews, objects = AnnotationRepository(sessions), HumanValidationRepository(sessions), GCSStorage()
     methods = bootstrap_methods()
     membership, reference_status, reference_hash = reference_membership(args.reference_manifest)
+    automatic = repository.protected_membership()
+    membership = {key: membership[key] | automatic[key] for key in membership}
+
     hashes = membership['content_hashes'] | repository.reference_content_hashes(membership['article_ids'], membership['article_version_ids'])
     candidates = repository.select_candidates(['L2'], methods, only_pending=False, eligible_l2_only=True)
     eligible = [row for row in candidates if str(row['id']) not in membership['article_version_ids']

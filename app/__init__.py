@@ -58,4 +58,6 @@ def create_app(config=None, services=None):
     app.register_blueprint(articles)
     app.register_blueprint(health)
     app.register_blueprint(annotations)
+    from app.routes.validation import blueprint as validation
+    app.register_blueprint(validation)
     return app

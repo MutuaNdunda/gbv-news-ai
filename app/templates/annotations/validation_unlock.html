@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block content %}
+<h1 class="h3">L2 Validation · local access</h1>
+<p>Unlock the existing local Human Review workspace to manage validation batches.</p>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<label for="token">Local review token</label><input class="form-control" type="password" id="token" name="review_token" autocomplete="off" required>
+<button class="btn btn-primary mt-3" name="action" value="unlock">Unlock review</button></form>
+{% endblock %}

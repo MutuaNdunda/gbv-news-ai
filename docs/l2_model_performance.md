@@ -260,13 +260,19 @@ Weights, training records, private reports and `.env` remain excluded from Git.
    and source/language error analysis. Tune thresholds on development validation
    only, preserving the independent final reference set.
 
-## Proposed next implementation — structured human validation
+## Validation engineering and remaining research work
 
-Operational coverage is complete; the next recommended implementation is the
-[structured validation workflow](annotations.md#17-next-steps-future-work):
-reproducible review batches, initially hidden predictions, separate adjudication
-and private coverage/progress reporting, after agreeing the codebook and sampling
-protocol. These capabilities are planned, not delivered by this documentation
-update. Reviews of training articles support development error analysis; a future
-independent reference set must exclude training articles and related duplicates.
-No new evaluation, retraining or threshold calibration was performed.
+Operational coverage is complete. The
+[structured L2 validation workflow](annotations.md#22-l2-validation-and-protected-reference-workflow)
+now implements reproducible batches, blind initial decisions, protected training
+exclusion and deterministic private evaluation. The new migration is **installed
+and behavior-verified in development** on 6 October at 23:48 EAT; 15 rollback-only
+guard checks passed, readiness is true and existing fingerprints are unchanged.
+No real independent batch or research scores were generated.
+All 322 actual training articles/versions/hashes are excluded from independent
+selection; training reviews are diagnostic error analysis. Near-duplicate grouping,
+independent A/B review and separate adjudication records remain pending. Approve the
+codebook/design, verify other targets independently, and collect sufficient unseen
+positive support before performance claims. Latest engineering suite: **304 tests
+passed**, including installed-artifact integration, zero failures/skips. No
+retraining or threshold calibration was performed.

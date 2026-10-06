@@ -26,7 +26,7 @@ tests. [AI_CONTEXT.md](AI_CONTEXT.md) provides orientation; [the root
 README](../README.md) provides setup/quick-start instructions;
 [IMPLEMENTATION_STATUS.md](roadmap/IMPLEMENTATION_STATUS.md) records dated runs and
 observations. The public Sheet governs planning and stage gates, not executable
-behavior. The latest anonymous synchronization on 5 October 2026 refreshed all
+behavior. The latest anonymous synchronization on 6 October 2026 refreshed all
 four snapshots. It now supports an initial L2 development model on the current
 usable corpus, iterative retraining toward ≥5,000 articles, and independent
 held-out human evaluation; class support and validation gates remain open.
@@ -176,6 +176,7 @@ remains open. This table reflects the current verified implementation.
 | Reviewed/mixed datasets | Reviewed 300 (3/297); mixed 322 (10/312). Two borderline excluded, no exact duplicates/unresolved; no frozen independent reference set. | Sections 1, 15, 21 describe label policy, manifest/hash, reference exclusion and imbalance. | [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
 | Real AfroXLMR model | Locally configured `l2-afroxlmr-dev-v1`; 12-layer encoder, binary head; weighted fine-tuning and offline reload executed. | Section 21 contains architecture, diagram, parameters, training and inference behavior. | [L2 performance](l2_model_performance.md), [README](../README.md) |
 | L2 persisted inference | 324/324 compatible results: 11/307/6; zero pending. Two pending-only resume passes completed; 300 earlier model rows unchanged. Model outputs have no independent validation. | Sections 1, 14, 21 record current closure, historical timing and research limits. | [L2 performance](l2_model_performance.md), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
+| L2 validation engineering | Seeded batches, blinded initial review, automatic protection and private pinned evaluation implemented; additive migration installed/behavior-verified in development, no real batch or independent metrics. | Section 22 describes schema, routes, sampling, exclusion, reference policy and limitations. | [Operator steps](../README.md#l2-validation-and-protected-reference), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
 | Database readiness | Required L2 constraints/index/trigger installed and behavior-tested in development; schema readiness true. Other targets need independent verification. | Sections 11, 20–21 distinguish schema contracts from verified installation. | [Deployment guide](app_engine_deployment.md), [README](../README.md) |
 | Research validation / later layers | No independent accuracy/F1/calibration; L3–L5, contextual NER, geocoding, mapping, prospective near-real-time integration remain unimplemented. | Sections 16–17, 21 preserve open gates and future scope. | [Roadmap guide](roadmap/README.md), [Agent guidance](../AGENTS.md) |
 
@@ -1133,7 +1134,9 @@ default; leave remote execution disabled until configured deliberately. See
 ## 13. Test coverage
 
 Latest full suite including the explicitly installed development artifact:
-**275 tests passed, zero failures/skips** on 5 October 2026. Run with
+**304 tests passed, zero failures/skips** on 6 October 2026, including 29 new
+validation-workflow regressions. The 5 October operational milestone passed 275.
+Run with
 `GBV_L2_INTEGRATION_MODEL=models/artifacts/l2-afroxlmr-dev-v1 .venv/bin/python -m unittest discover -s tests -q`.
 The earlier 264-test, 249/248/one-skip and 155-test milestones are historical. Ordinary
 unit execution does not download model weights; integration is explicitly selected.
@@ -1253,21 +1256,22 @@ validation and calibrated thresholds have not been independently established.
 
 L2 development model coverage and installed development schema are complete:
 324/324 compatible predictions, zero pending, verified on 6 October 2026 at
-00:04 EAT. Independent research validation remains open. The proposed next
-implementation milestone is a structured human-validation workflow in the existing
-protected local Human Review workspace; this documentation update implements none
-of the capabilities below.
+00:04 EAT. Independent research validation remains open. The structured L2
+validation/protected-reference workflow is now implemented in the existing local
+Human Review workspace; its additive migration is installed and behavior-verified in development.
+See [Section 22](#22-l2-validation-and-protected-reference-workflow) for engineering
+scope, operator steps and limitations. No real validation batch was created.
 
 Agree the GBV inclusion/exclusion codebook, reviewer instructions, sampling design,
 uncertainty handling and acceptance criteria before generating validation batches.
 Continue inspecting L0 anomalies, L1 ambiguity and language/source quality; model
 coverage does not validate those prerequisites.
 
-| Planned capability | Purpose and traceability requirement |
+| Capability | Purpose and traceability requirement |
 | --- | --- |
-| Reproducible review batches | Freeze private article/version and exact L0/L1/L2 identities with sampling configuration/seed. Include publisher, reviewed language, predicted-label strata and borderline cases. Do not treat uncertain language metadata as confirmed language. |
+| Reproducible L2 review batches — implemented | Freeze private article/version and exact L2 model identities with configuration/seed. Random/proportional source-language sampling excludes training membership; prediction enrichment is diagnostic only. Language metadata is not confirmed language. |
 | Initially hidden model output | Record the reviewer's initial decision before revealing the machine label/confidence to reduce prediction anchoring; preserve original machine output and current protected local access. |
-| Disagreement and adjudication | Store initial decisions and later adjudication separately and append-only, linked to the exact reviewed extraction, model identity and codebook version. |
+| Disagreement/adjudication readiness — partial | Initial decisions and append-only revisions are retained; unresolved/adjudication-pending statuses are counted. Independent reviewer assignment and separate adjudication records remain future work. |
 | Validation progress and private export | Report batch completion and source/language/label coverage; separate model predictions, human decisions, unresolved cases and reference membership. Keep identities and research text out of Git and public planning files. |
 
 Reviewing the present development/training articles supports error analysis but
@@ -1278,8 +1282,8 @@ accuracy/precision/recall/F1/AUC or calibration claims. Any sample enriched for
 borderline or positive cases requires an explicit sampling design and interpretation;
 its raw label proportions do not estimate corpus prevalence.
 
-These are recommendations for a separately authorized implementation milestone,
-not an achieved research gate or a change to the public Sheet. Retraining,
+Engineering support does not establish an achieved research gate or a change to
+the public Sheet. Retraining,
 threshold calibration, corpus growth, L3 GBV type classification, L4
 NER/event-location reasoning/geocoding and L5 privacy/safety work remain separate
 later tasks. Synchronize the public roadmap before future roadmap-driven
@@ -2085,3 +2089,183 @@ load, training and batch inference time. It downloads no model and is not an
 AfroXLMR-base GBV model or evaluation. Optional local-artifact integration can be
 run with `GBV_L2_INTEGRATION_MODEL=<installed-path>`; ordinary model unit tests use
 fake tensors/factories and never download a Transformer.
+
+## 22. L2 validation and protected reference workflow
+
+Implemented on **6 October 2026**. This extends the existing Flask Human Review,
+verified private article reads and append-only `human_validations`; it does not
+replace machine outputs. **The new migration was installed in development after
+user authorization on 6 October at 23:48 EAT; standalone readiness is true.
+No real `L2-VALIDATION-V1` or final-test batch exists from this task. Independent
+accuracy/F1 remains unmeasured.** Existing L2 operational coverage is unchanged.
+
+### Schema and lifecycle
+
+`migrations/20261006_add_l2_validation_batches.sql` is additive, transactional and
+creates two RLS-enabled tables, named checks/uniqueness/indexes and two lineage/
+immutability guards. It does not modify historical annotations or reviews.
+
+| Table | Traceability |
+| --- | --- |
+| `validation_batches` | UUID, unique versioned name, L2 layer, purpose (`development_validation`, `final_test`, `diagnostic`), exact model method/version and model version, codebook version, strategy/seed/size, protection flag, private JSON configuration and timestamps. |
+| `validation_batch_members` | UUID, batch/article/version/exact model annotation FKs; content hash, source/language/stratum/reason/order snapshots; immutable initial review FK, accepted final review FK and review status. Uniqueness covers version, annotation and order within each batch. |
+
+Lifecycle is **draft → frozen → in_review → completed**. Preview and draft creation
+are separate; freezing rechecks artifact/training provenance, protected conflicts,
+exact pinned lineage, requested count and ordered membership SHA-256. Freeze never
+resamples. Configuration/membership become immutable, and completed final pointers
+are sealed. The application uses row locks and a PostgreSQL transaction advisory
+lock for competing freeze/review/completion operations. PostgreSQL triggers add
+database-level guards. Fifteen rollback-only live PostgreSQL checks passed in
+development after installation; verify other targets independently. SQLite tests
+exercise application behavior separately from those PostgreSQL guard checks.
+
+### Selection and training exclusion
+
+`annotations/validation_batches.py` verifies the configured artifact checksums and
+the **exact checksummed training dataset manifest** using existing dataset
+provenance. Offline verification of `l2-afroxlmr-dev-v1` found **322 training
+article IDs, 322 extraction-version IDs and 322 body hashes**. All 322 are training
+data, including weak-unreviewed binary records. The stored manifest SHA-256 is
+`cdd8200674a103ab4e78c98254bb9e46c411cf82671827440c2b374474f2a132`.
+
+Selection uses current L0-valid/L1-Kenya eligibility and compatible predictions for
+the configured exact model identity. Independent purposes exclude training articles,
+versions, body hashes and all historical extraction hashes for those articles.
+They also exclude conflicts with existing frozen protected batches. Exact body
+duplicates are deduplicated. Missing or mismatched provenance fails closed.
+If support is insufficient, preview refuses with **“Only N unseen eligible records
+are available. Collect additional articles before creating this validation batch.”**
+No cloud query in this task establishes the current unseen pool size.
+
+| Mode | Design and interpretation |
+| --- | --- |
+| Representative `random` | Stable candidate ordering then seeded random sampling; no predicted-label enrichment. Estimates apply to the eligible unseen pool, subject to sampling support and corpus bias. |
+| Representative `stratified` | Proportional publisher × language-metadata allocation using largest remainders, seeded sampling within strata and shuffled review order. Store pool/selection counts, strata and inclusion probabilities. No label enrichment; metrics are unweighted and finite allocation rounding is disclosed. |
+| `diagnostic` / `enriched` | May include training records and prioritize predicted GBV/borderline or uncertainty. Visibly marked error analysis. Enrichment is prohibited for independent purposes; evaluator suppresses representative accuracy/precision/recall/F1. |
+
+Optional source/language filters narrow the eligible population. Language remains
+unvalidated provenance metadata; absent language forms an `unknown` stratum.
+Publication-period strata and near-duplicate/syndication grouping are not
+implemented. Exact exclusions do not guarantee semantic independence between
+related articles; review these limitations before research claims.
+
+### Protected reference membership
+
+A frozen batch with `protect_from_training=true` is automatically protected, even
+before review finishes. Final-test protection is compulsory. Drafts do not protect
+membership. The UI displays **PROTECTED FROM TRAINING: YES** once frozen.
+
+`AnnotationRepository.protected_membership()` shares automatic article/version/
+historical-hash exclusion across reviewed-only, mixed-effective and weak-bootstrap
+exports and private review-priority selection. Existing external/manual exclusion
+manifests remain supported and are combined with automatic membership. The training
+CLI rechecks current protection before model loading, rejecting exports made before
+a conflicting batch was frozen. Missing validation schema fails these selection
+paths closed; install and verify it before new exports/training. Historical
+artifacts are preserved. Export/pretraining checks are not a distributed atomic
+training registry; do not freeze new conflicting batches during an active training
+job. Direct low-level `train_classifier()` calls have no database access; operators
+must use the protected export/CLI path.
+
+### Existing-app routes and blinded review
+
+| Route | Operation |
+| --- | --- |
+| `/annotations/validation` | Protected batch list with identity, purpose, status, size, progress and protection. |
+| `/annotations/validation/new` | Configure versioned name, purpose, configured model identity, size, strategy, seed, optional source/language filters and protection; preview then create a draft. Only the configured artifact is supported; no model registry is added. |
+| `/annotations/validation/<batch_id>` | Progress, source/language metadata coverage, human counts, freeze/complete actions and ordered member navigation. No aggregate model accuracy. |
+| `/annotations/validation/<batch_id>/next` | Redirect to the next pending member in stable batch order. |
+| Existing `/annotations/review/<annotation_id>?batch_id=…&member_id=…` | Batch-aware review of the exact pinned result; ordinary review remains available. |
+
+Before an initial decision the batch review template receives verified article
+title/body, non-model metadata and codebook identity, but **no machine answer,
+probability, thresholds, weak label or model evidence**. The decision selector is
+blank and offers `gbv`, `not_gbv`, `borderline`, `unable_to_determine` and
+`needs_adjudication`. After submission it is translated into the existing review
+contract, stored separately and linked as the member's immutable initial review.
+Development/diagnostic comparison then reveals the exact pinned label/probability
+and initial agreement. Later batch revisions append a review, preserving the
+initial pointer while updating the accepted final pointer; stale forms conflict.
+Completion seals the accepted reference pointers, so later ordinary reviews do not
+silently change evaluation.
+
+Direct localhost, existing token unlock/CSRF, trusted server reviewer and guideline
+identities, verified object generation/hash, escaped text, private no-store responses
+and text-free logs are retained. Resolved batch reference decisions require verified
+article text; missing/unverifiable text permits only unresolved/adjudication decisions.
+Batch codebook must match server configuration.
+Blinding is a workflow boundary: this local operator application still has ordinary
+machine-result pages. Reviewers must avoid those results before independent review;
+it does not enforce independent reviewer-role isolation or remove prior exposure.
+
+Final-test batch pages withhold model feedback **even after initial review**.
+They require training protection, and private evaluation refuses without explicit
+`--final-experiment`. That flag is an operator assertion of an approved final
+experiment, not a new authorization platform. No final-test batch is created
+automatically. Never use final-test labels for threshold tuning, active learning or
+model selection. Separate Reviewer A/B assignment and append-only adjudication
+records remain next enhancements; pending adjudication is preserved and excluded
+from binary metrics rather than relabeled as certainty.
+
+### Deterministic private evaluation
+
+After every member has an initial decision, complete the batch to freeze accepted
+final decisions. Completion can include unresolved cases, which remain explicit.
+
+```bash
+.venv/bin/python scripts/evaluate_l2_validation.py \
+  --batch L2-VALIDATION-V1 \
+  --output-dir data/l2/evaluations/L2-VALIDATION-V1-v1
+```
+
+The evaluator uses exact pinned automated annotations and accepted final review
+IDs, validates membership digest/count, model/article/version/codebook lineage and
+finite stored probabilities, and performs no inference or database writes. It
+creates a new ignored `data/` directory containing `evaluation_pairs.jsonl`,
+`evaluation_report.json` and a deterministic SHA-256 manifest. It refuses overwrite.
+No article body or reviewer identity is exported or printed.
+
+Representative reports include total/reviewed/resolved/unresolved counts; explicit
+human/model GBV, not-GBV and borderline counts; binary evaluable/excluded support;
+TP/FP/TN/FN, accuracy, positive-class precision/recall/F1 and model abstention rate.
+Human uncertainty/adjudication and human borderline are excluded from binary
+metrics. Model borderline is an abstention and also excluded from those metrics;
+abstention rate uses all batch members. Scores are **conditional on binary human
+references and non-abstaining model output**, not whole-corpus accuracy. Undefined
+denominators yield JSON `null`, not invented zero scores. Diagnostic reports retain
+counts/confusion pairs but return `metrics: null` with an explicit warning.
+AUC, calibration and subgroup metrics have reserved fields but are not computed.
+There is no threshold tuning or training-loss-as-accuracy conversion.
+
+### Installation, tests and research readiness
+
+Use the [README operator steps](../README.md#l2-validation-and-protected-reference)
+to confirm the target, preflight, apply the exact additive SQL once and verify
+readiness before creating a batch. The preflight is read-only:
+
+```bash
+.venv/bin/python scripts/check_l2_validation_schema.py
+```
+
+The initial engineering implementation performed no live database reads/writes.
+The later user-authorized installation applied the exact additive migration to the
+configured development database and passed 15 synthetic database checks, with all
+synthetic articles/versions/annotations/reviews/batches rolled back. Standalone
+readiness returns `missing: []`, `ready: true`. Fingerprints verified all 536
+articles, 536 versions, 14 annotation runs, 2,242 automated annotations and 303 human
+validations unchanged. No real batch, new real human decision, retraining or
+independent evaluation was performed. Installation report is private under ignored
+`data/l2/schema-verification/`; see the implementation log for the exact SQL hash.
+The four public roadmap CSVs were synchronized anonymously on 6 October; the
+public Sheet was not modified. They still describe research validation as pending;
+repository engineering support does not satisfy that research gate.
+
+Targeted **82 tests** and full offline **304 tests** passed, zero failures/skips,
+including explicit installed-artifact integration. Twenty-nine new synthetic tests
+cover deterministic/diagnostic selection, training/protected exclusions, blind and
+final-test feedback, exact lineage, stale forms/security, initial/final pointers,
+progress, reference pinning, evaluator math/private hashes and old-export rejection.
+Fifteen later live PostgreSQL behavior checks passed and were rolled back in development.
+Approve codebook/acceptance criteria, validate prerequisites and expand unseen
+positive/source/language support before independent performance claims.

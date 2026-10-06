@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block title %}Validation review{% endblock %}{% block content %}
+<h1 class="h3">{{ batch.name }} · member {{ member.selection_order }}</h1>
+<a href="{{ url_for('validation.detail',batch_id=batch.id) }}">Batch progress</a>
+<p>{{ batch.purpose }} · Codebook {{ batch.guideline_version }} · Source {{ member.source }} · Language metadata {{ member.language or 'unknown' }}</p>
+{% if batch.purpose=='diagnostic' %}<p class="alert alert-warning">Diagnostic error analysis; this is not independent model evaluation.</p>{% endif %}
+<h2 class="h4">{{ title }}</h2>{% if content_issue %}<p class="alert alert-warning">{{ content_issue }}</p>{% endif %}
+{% if article_text %}<div class="article-text border p-3">{{ article_text }}</div>{% endif %}
+{% if error %}<p class="alert alert-warning">{{ error }}</p>{% endif %}
+{% if comparison %}<section class="card card-body mt-3"><h2 class="h5">Pinned model comparison · after initial decision</h2>
+<p>Initial human decision: {{ initial.human_label or initial.review_decision }}</p><p>Machine label: {{ comparison.label }} · GBV probability: {{ comparison.probability }}</p>
+<p>Agreement with initial label: {{ 'Not evaluable' if not initial.human_label else 'Yes' if initial.human_label==comparison.label else 'No' }}</p><p>{{ comparison.model_version }} · {{ comparison.method_version }}</p><p>The initial decision is permanently retained. Later batch revisions update only the accepted final pointer.</p></section>
+{% elif batch.purpose=='final_test' %}<p class="mt-3">Final-test model feedback remains sealed for the final experiment.</p>{% if initial %}<p>Initial human decision: {{ initial.human_label or initial.review_decision }}</p>{% endif %}
+{% else %}<p class="mt-3">Record your independent initial decision. Machine answers are withheld until it is saved.</p>{% endif %}
+{% if batch.status!='completed' %}<form method="post" class="mt-3"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="expected_final" value="{{ member.final_human_validation_id or '' }}">
+<label for="choice">Human decision</label><select class="form-select" name="choice" id="choice" required><option value="" selected disabled>Choose your independent decision</option>{% for value in ['gbv','not_gbv','borderline','unable_to_determine','needs_adjudication'] %}<option>{{ value }}</option>{% endfor %}</select>
+<label for="reason">Decision reason</label><textarea class="form-control" id="reason" name="reason" maxlength="1000" required></textarea><p class="small">Avoid copied article passages or unnecessary personal identifiers.</p>
+<button class="btn btn-primary mt-3" name="action" value="save">{{ 'Save revision' if initial else 'Save initial decision' }}</button><button class="btn btn-success mt-3" name="action" value="save_next">Save &amp; Next</button></form>{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}{% block content %}<h1 class="h3">Create Validation Batch</h1>
+<p>Independent validation excludes verified training membership and protected reference records. Diagnostic batches are error analysis only. Language strata use unvalidated metadata.</p>
+{% if error %}<p class="alert alert-warning">{{ error }}</p>{% endif %}
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<label for="name">Versioned name</label><input class="form-control" id="name" name="name" maxlength="120" value="{{ form.get('name','L2-VALIDATION-V1') }}" required>
+<label for="purpose">Purpose</label><select class="form-select" id="purpose" name="purpose">{% for purpose in ['development_validation','diagnostic','final_test'] %}<option {{ 'selected' if form.get('purpose')==purpose }}>{{ purpose }}</option>{% endfor %}</select>
+<label for="model_version">Model identity</label><select class="form-select" id="model_version" name="model_version" required><option value="{{ configured_model or '' }}">{{ configured_model or 'Configure the local L2 artifact first' }}</option></select>
+<p class="small">This installation supports the configured artifact. Its exact method identity and training checksums are verified during preview.</p>
+<label for="strategy">Sampling strategy</label><select class="form-select" id="strategy" name="strategy">{% for value in ['random','stratified','enriched'] %}<option {{ 'selected' if form.get('strategy')==value }}>{{ value }}</option>{% endfor %}</select>
+<label for="size">Sample size</label><input class="form-control" id="size" type="number" min="1" max="10000" name="size" value="{{ form.get('size','20') }}" required>
+<label for="seed">Sampling seed</label><input class="form-control" id="seed" type="number" name="seed" value="{{ form.get('seed','42') }}" required>
+<label for="sources">Optional sources, comma-separated</label><input class="form-control" id="sources" name="sources" value="{{ form.get('sources','') }}">
+<label for="languages">Optional language metadata, comma-separated</label><input class="form-control" id="languages" name="languages" value="{{ form.get('languages','') }}">
+<label class="mt-3"><input type="checkbox" name="protect" value="1" {{ 'checked' if not form or form.get('protect')=='1' }}> Protect from training after freeze</label>
+<p>Guideline: {{ guideline }}. Model identity is pinned from the configured artifact and verified training manifests.</p>
+<button class="btn btn-primary" name="action" value="preview">Preview</button>
+{% if preview %}<section class="card card-body mt-3"><h2 class="h5">Preview · {{ preview.name }}</h2><p>{{ preview.size }} records · {{ preview.model.model_version }} · {{ preview.configuration.eligible_pool_size }} available candidates</p><p>Membership digest: <code>{{ preview.configuration.membership_sha256 }}</code></p>
+<p>Source/language metadata strata: {% for row in preview.selected %}{{ row.stratum }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+<p>No predictions are shown in this preview. Creating saves a draft; freezing preserves this membership.</p>
+<input type="hidden" name="preview_digest" value="{{ preview.configuration.membership_sha256 }}"><button class="btn btn-success" name="action" value="create">Create this draft</button></section>{% endif %}
+</form>{% endblock %}

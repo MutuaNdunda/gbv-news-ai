@@ -139,6 +139,9 @@ def run():
 
 @blueprint.route("/review/<uuid:annotation_id>", methods=("GET", "POST"))
 def review(annotation_id):
+    if request.args.get("batch_id") or request.args.get("member_id"):
+        from app.routes.validation import review_member
+        return review_member(annotation_id)
     # A lightweight lookup establishes the true layer; posted labels/identity never do.
     selected = service().review_record(annotation_id)
     if selected is None:

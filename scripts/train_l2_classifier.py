@@ -36,6 +36,16 @@ def main(argv=None):
     args = vars(parser.parse_args(argv))
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     try:
+        # Recheck protection even for an export created before a batch was frozen.
+        from annotations.l2_training import load_training_data
+        from annotations.validation_batches import excluded
+        from database.repositories.annotations import AnnotationRepository
+        from database.session import create_session_factory
+        rows, _ = load_training_data(args["dataset_dir"], args["dataset_version"])
+        protected = AnnotationRepository(create_session_factory()).protected_membership()
+        if any(excluded({"article_id": row["article_id"], "id": row["article_version_id"],
+                         "content_hash": row["content_hash"]}, protected) for row in rows):
+            raise ValueError("Dataset contains protected reference members; regenerate the development export.")
         result = train_classifier(**args, l2_config=L2Config.from_env())
     except Exception as exc:
         print(f"L2 training stopped ({type(exc).__name__}); verify development manifest, optional dependencies and parameters.", file=sys.stderr)

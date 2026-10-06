@@ -247,3 +247,67 @@ class HumanValidation(Base):
     guideline_version: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
     supersedes_validation_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.human_validations.id"))
+
+
+class ValidationBatch(Base):
+    """Versioned L2 sampling configuration; membership is frozen before review."""
+    __tablename__ = "validation_batches"
+    __table_args__ = (
+        UniqueConstraint("name", name="uq_validation_batch_name"),
+        CheckConstraint("layer = 'L2'", name="validation_batch_layer_check"),
+        CheckConstraint("purpose IN ('development_validation','final_test','diagnostic')", name="validation_batch_purpose_check"),
+        CheckConstraint("status IN ('draft','frozen','in_review','completed')", name="validation_batch_status_check"),
+        CheckConstraint("sampling_strategy IN ('random','stratified','enriched')", name="validation_batch_strategy_check"),
+        CheckConstraint("requested_size > 0", name="validation_batch_size_check"),
+        CheckConstraint("purpose <> 'final_test' OR protect_from_training", name="validation_batch_final_protection_check"),
+        CheckConstraint("sampling_strategy <> 'enriched' OR purpose = 'diagnostic'", name="validation_batch_diagnostic_check"),
+        {"schema": "public"},
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    layer: Mapped[str] = mapped_column(Text)
+    purpose: Mapped[str] = mapped_column(Text)
+    model_method_name: Mapped[str] = mapped_column(Text)
+    model_method_version: Mapped[str] = mapped_column(Text)
+    model_version: Mapped[str] = mapped_column(Text)
+    guideline_version: Mapped[str] = mapped_column(Text)
+    sampling_strategy: Mapped[str] = mapped_column(Text)
+    seed: Mapped[int] = mapped_column(Integer)
+    requested_size: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(Text)
+    protect_from_training: Mapped[bool] = mapped_column(Boolean)
+    configuration: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    frozen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ValidationBatchMember(Base):
+    """Pinned machine result and immutable initial blinded human-decision pointer."""
+    __tablename__ = "validation_batch_members"
+    __table_args__ = (
+        UniqueConstraint("validation_batch_id", "article_version_id", name="uq_validation_member_version"),
+        UniqueConstraint("validation_batch_id", "automated_annotation_id", name="uq_validation_member_annotation"),
+        UniqueConstraint("validation_batch_id", "selection_order", name="uq_validation_member_order"),
+        CheckConstraint("status IN ('pending','resolved','unable_to_determine','needs_adjudication')", name="validation_member_status_check"),
+        CheckConstraint("(status = 'pending' AND initial_human_validation_id IS NULL AND final_human_validation_id IS NULL) OR "
+                        "(status <> 'pending' AND initial_human_validation_id IS NOT NULL AND final_human_validation_id IS NOT NULL)",
+                        name="validation_member_decision_check"),
+        Index("idx_validation_member_content", "content_hash"),
+        {"schema": "public"},
+    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    validation_batch_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.validation_batches.id"))
+    article_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.articles.id"))
+    article_version_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.article_versions.id"))
+    automated_annotation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.automated_annotations.id"))
+    content_hash: Mapped[str] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(Text)
+    language: Mapped[str | None] = mapped_column(Text)
+    sampling_stratum: Mapped[str] = mapped_column(Text)
+    selection_reason: Mapped[str] = mapped_column(Text)
+    selection_order: Mapped[int] = mapped_column(Integer)
+    initial_human_validation_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.human_validations.id"))
+    final_human_validation_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("public.human_validations.id"))
+    status: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

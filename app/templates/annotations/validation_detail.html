@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block content %}<h1 class="h3">{{ batch.name }}</h1>
+<p>{{ batch.purpose }} · {{ batch.status }} · Model {{ batch.model_version }} · Codebook {{ batch.guideline_version }}</p>
+{% if batch.purpose=='diagnostic' %}<p class="alert alert-warning">DIAGNOSTIC / ERROR ANALYSIS: includes development records; cannot establish independent population performance.</p>{% endif %}
+<p><strong>PROTECTED FROM TRAINING: {{ 'YES' if batch.protect_from_training and batch.status!='draft' else 'NOT YET FROZEN' if batch.protect_from_training else 'NO' }}</strong></p>
+{% if error %}<p class="alert alert-warning">{{ error }}</p>{% endif %}
+<dl class="row">{% for key,value in progress.items() %}<dt class="col-6">{{ key.replace('_',' ') }}</dt><dd class="col-6">{{ value }}</dd>{% endfor %}</dl>
+<p>Human decisions: {{ human_counts }}</p><p>Sources: {{ source_counts }}</p><p>Language metadata (unvalidated): {{ language_counts }}</p>
+{% if batch.status=='draft' %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn btn-primary" name="action" value="freeze">Freeze membership</button></form>
+{% elif batch.status!='completed' %}{% if next_member %}<a class="btn btn-primary" href="{{ url_for('validation.next_member',batch_id=batch.id) }}">Review Next</a>{% endif %}
+<form method="post" class="mt-3"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn btn-success" name="action" value="complete" {{ 'disabled' if progress.pending }}>Complete · freeze accepted decisions</button></form>{% endif %}
+<p class="small mt-3">Unresolved cases remain excluded from binary evaluation. Adjudication is a pending status; independent reviewer assignment and a separate adjudication workflow remain future work. No aggregate model accuracy is shown during review.</p>
+<table class="table"><thead><tr><th>Order</th><th>Source</th><th>Language metadata</th><th>Review status</th></tr></thead><tbody>{% for member in members %}<tr><td>{% if batch.status!='draft' %}<a href="{{ url_for('annotations.review',annotation_id=member.automated_annotation_id,batch_id=batch.id,member_id=member.id) }}">{{ member.selection_order }}</a>{% else %}{{ member.selection_order }}{% endif %}</td><td>{{ member.source }}</td><td>{{ member.language or 'unknown' }}</td><td>{{ member.status }}</td></tr>{% endfor %}</tbody></table>{% endblock %}

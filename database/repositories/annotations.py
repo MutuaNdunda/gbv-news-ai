@@ -216,6 +216,11 @@ class AnnotationRepository:
             rows = session.scalars(query).all()
         return {(row.article_version_id, row.layer): row for row in rows}
 
+    def protected_membership(self):
+        """Shared automatic exclusions; incomplete validation schema fails closed."""
+        from database.repositories.validation_batches import ValidationBatchRepository
+        return ValidationBatchRepository(self.sessions).protected_membership()
+
     def reference_content_hashes(self, article_ids, article_version_ids):
         """Protect reference bodies including historical/out-of-cohort versions."""
         from uuid import UUID

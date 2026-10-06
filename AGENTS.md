@@ -1095,22 +1095,29 @@ downstream eligibility follows the synchronized Annotation Layers and Stage Gate
 L0/L1 are implemented and executed. L2 weak supervision, model infrastructure and
 local review, reviewed/mixed export and the first real development model are
 implemented. Full eligible model coverage and development L2 schema installation
-are complete; independent L2 validation remains pending. The last successful
-sync on 5 October records training and pre-closure 300/324 coverage; the later
-6 October verification records 324/324. No fresh Sheet sync was performed by this
-documentation update. Preserve that dated distinction without manually rewriting CSVs. The roadmap permits location/NER
+are complete; independent L2 validation remains pending. The successful anonymous
+sync on 6 October refreshed all four exports and records 324/324 development
+coverage and independent validation as current priority. CSVs were not manually
+rewritten and the public Sheet was not changed. The roadmap permits location/NER
 baseline design after initial usable L2-positive output; final evaluation still
 requires validated positives and independently reviewed spans/roles.
 L3–L5 remain planned. Automated execution alone does not
 satisfy the sampled-validation exit gates.
 
-The proposed next implementation milestone is a structured L2 human-validation
-workflow: reproducible publisher/language/label review batches, initially hidden
-model predictions, separate adjudication and private progress/export reporting.
-These additions are planned, not implemented by the documentation update. Review
-of training articles supports development error analysis, not independent testing;
-a future reference set must exclude training articles and related duplicates.
-See `docs/annotations.md` Section 17 for scope and research limits.
+Structured L2 validation batches, blinded initial decisions, protected reference
+membership and private completed-batch evaluation are implemented. The additive
+`20261006_add_l2_validation_batches.sql` was installed in the configured development
+database on 6 October at 23:48 EAT and passed 15 rollback-only live guard checks;
+standalone readiness is true and historical fingerprints were preserved. No real
+batch or independent metrics were generated. Latest full offline suite including
+installed-artifact integration: 304 passed, zero failures/skips. Random/proportional
+source-language sampling excludes all 322 actual training records and historical
+hashes; label enrichment is diagnostic only. Protected membership automatically
+excludes future exports, and training CLI rechecks older exports. Missing validation
+schema fails selection closed. Separate A/B assignment/adjudication records and
+near-duplicate grouping remain future work. Approve codebook/design, confirm and
+verify other targets independently, then expand unseen support before a real independent
+batch. See `docs/annotations.md` Section 22 and README operator steps.
 
 Human oversight primarily means stratified validation, low-confidence review,
 uncertainty-based sampling, error analysis, and adjudication of sampled disagreements.

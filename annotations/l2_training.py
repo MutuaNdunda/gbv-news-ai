@@ -38,10 +38,16 @@ def build_bootstrap(repository, objects, output_dir, limit=None, config=DEFAULT_
     """Export existing exact-compatible binary weak labels, never create annotations."""
     output = private_output(output_dir)
     methods = bootstrap_methods(config)
+    from annotations.validation_batches import EMPTY_MEMBERSHIP, excluded
+    protected = repository.protected_membership() if hasattr(repository, "protected_membership") else EMPTY_MEMBERSHIP
     candidates = repository.select_candidates(["L2"], methods, limit=limit, only_pending=False, eligible_l2_only=True)
     current = repository.current_for_candidates([item["id"] for item in candidates], methods)
     records, skipped, seen_hashes = [], Counter(), set()
     for candidate in sorted(candidates, key=lambda item: str(item["id"])):
+        if excluded(candidate, protected):
+            skipped["held_out_reference"] += 1
+            continue
+
         version_id = candidate["id"]
         l0, l1, weak = (current.get((version_id, layer)) for layer in ("L0", "L1", "L2"))
         if (l0 is None or l0.label != "valid" or l1 is None or l1.label != "kenya"

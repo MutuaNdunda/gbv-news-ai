@@ -72,6 +72,12 @@ def build_development(repository, reviews, objects, output_dir, label_policy, li
         raise ValueError("Unknown development label policy")
     methods = bootstrap_methods(config)
     membership, reference_status, reference_hash = reference_membership(reference_manifest)
+    if hasattr(repository, "protected_membership"):
+        automatic = repository.protected_membership()
+        membership = {key: membership[key] | automatic[key] for key in membership}
+        if any(automatic.values()):
+            reference_status = "application_protected_and_optional_external_membership_excluded"
+
     candidates = repository.select_candidates(["L2"], methods, limit=limit, only_pending=False, eligible_l2_only=True)
     current = repository.current_for_candidates([item["id"] for item in candidates], methods)
     latest = reviews.latest_for_annotations([row.id for (version, layer), row in current.items() if layer == "L2"])

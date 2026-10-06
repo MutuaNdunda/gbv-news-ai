@@ -11,7 +11,144 @@ corpus; training/inference infrastructure and local L0/L1/L2 Human Review implem
 Human review is recorded for all 302 originally borderline L2 weak results.
 The first real AfroXLMR development artifact is trained/configured locally;
 L2 development model coverage is complete: 324/324 compatible predictions, zero
-pending; required L2 schema is installed. Independent research validation remains pending.**
+pending; required L2 annotation schema is installed. L2 validation-batch, blind-review,
+protected-reference and private-evaluator engineering is implemented; its new
+validation migration is installed and behavior-verified in development.
+Independent research validation remains pending.**
+
+### Validation migration installed — 6 October 2026, 23:48 EAT
+
+Following the user's explicit request to run installation, applied
+`migrations/20261006_add_l2_validation_batches.sql` to the existing configured
+development Supabase session-pooler target. Preflight confirmed both new tables,
+both guard functions/triggers and conflicting expected names absent, with existing
+L2 annotation/review prerequisites ready. The additive migration committed at
+`2026-10-06T20:48:21.941476+00:00`. SQL SHA-256:
+`d8e586964cea95697f1a974cb9676aef23d951c3086d3480f09b92dfbdeaa8db`.
+Both PL/pgSQL blocks use explicit `END;` terminators, consistent with existing migrations.
+
+Standalone `.venv/bin/python scripts/check_l2_validation_schema.py` subsequently
+returned **`ready: true`, `missing: []`**. Tables, named checks/uniqueness, index,
+RLS and enabled lineage/immutability guards are verified in development. This
+supersedes the initial engineering implementation's created-only status below;
+installation on other targets remains unverified.
+
+**Fifteen live synthetic checks passed**, exercising valid pinned draft/member,
+freeze, initial reference, append-only final revision and completion; rejected
+draft stage-skipping, frozen configuration changes, resampling/member/batch deletion,
+initial-pointer replacement, completed final/batch modification, wrong body hash
+and wrong review guideline. All fabricated articles, versions, annotation runs,
+annotations, reviews and batches were rolled back through savepoints before the
+migration commit. New validation tables contain zero real/synthetic batches.
+
+Historical fingerprints were identical before/after: **536 articles, 536 extraction
+versions, 14 annotation runs, 2,242 automated annotations and 303 human validations**.
+Existing rows were held under short transaction SHARE locks during verification;
+no original content, predictions or reviews were changed. The private installation
+report and fingerprints remain ignored under `data/l2/schema-verification/`.
+No model inference/retraining, real validation batch, real human decision,
+independent performance result, production deployment or public Sheet change.
+The existing full offline engineering suite remains 304 passing tests; this
+follow-up verifies PostgreSQL installation/behavior rather than rerunning unchanged
+Python/model semantics. Next: approved codebook/design and sufficient unseen pool,
+then preview/freeze `L2-VALIDATION-V1` in the existing local app.
+
+### L2 validation and protected reference workflow — 6 October 2026
+
+**Engineering implemented; new migration created only. No real validation or
+final-test batch created, no cloud database read/write in this task and no independent
+performance measured.** Existing 324/324 coverage and historical outputs are retained;
+the earlier real-run counts below are dated evidence, not a fresh database audit.
+
+Implemented in the existing Flask Human Review:
+
+* `annotations/validation_batches.py`: exact checksummed model/training provenance,
+  seeded random and proportional publisher/language-metadata strata, diagnostic
+  enrichment, membership digest and private pinned-reference evaluator math.
+* `database/models.py`, `database/repositories/validation_batches.py` and
+  `20261006_add_l2_validation_batches.sql`: additive batch/member tables, exact
+  article/version/model snapshots, draft/frozen/in_review/completed lifecycle,
+  initial/accepted human pointers, row/advisory locks and PostgreSQL immutability/
+  lineage guards. The SQL was not installed or live behavior-tested. New tables
+  use RLS; missing required tables/checks/guards/index/RLS fail readiness closed.
+* `app/routes/validation.py`, existing review route integration, five templates
+  and navigation: `/annotations/validation`, `/new`, `/<batch_id>` and
+  `/<batch_id>/next`; blinded member review uses the existing exact-annotation URL
+  with batch/member parameters. Preview, create, freeze, progress, next and
+  completion retain current local/token/CSRF/trusted-identity/private-text security.
+* Before the first human save, no machine label, probability, thresholds, weak
+  answer or model evidence enters the batch template. Independent choice is blank.
+  Initial pointers remain immutable across append-only revisions; completed final
+  pointers stay pinned even if ordinary Human Review later changes. Development/
+  diagnostic comparisons reveal only after the initial save; final-test batch
+  feedback stays sealed and evaluation requires `--final-experiment`.
+* Shared `AnnotationRepository.protected_membership()` automatically excludes
+  frozen protected article/version/historical body hashes from reviewed-only,
+  mixed-effective and weak-bootstrap exports and private priority selection.
+  Existing manual manifests remain additive. Training CLI checks current protection
+  against older exports before model loading. Selection fails closed if the new
+  validation schema is missing; use the documented installation steps first.
+* `scripts/check_l2_validation_schema.py` is a read-only preflight, never an
+  installer. `scripts/evaluate_l2_validation.py` reads completed exact pinned
+  predictions and accepted references, checks membership/lineage/probabilities and
+  writes immutable deterministic private JSON/JSONL/hash manifests under `data/`.
+
+Offline actual-provenance verification found **322 training articles, 322 versions
+and 322 body hashes** for `l2-afroxlmr-dev-v1` / method
+`l2-47035d92f81cd5240062610d`; training manifest SHA-256
+`cdd8200674a103ab4e78c98254bb9e46c411cf82671827440c2b374474f2a132`.
+Every one is training data. Independent selection excludes these and historical
+hashes plus existing protected conflicts; requested sample size above unseen
+support refuses with the actual available N. No live unseen-pool count was queried.
+Diagnostic batches may inspect training data, clearly marked error analysis, and
+never return representative accuracy/precision/recall/F1. Representative binary
+metrics exclude human uncertainty/borderline and machine abstentions, reporting
+support/abstention separately; no independent research score is asserted here.
+
+**Executed verification:** targeted 82 tests (8.682 s), full offline suite with
+explicit installed-artifact integration **304 passed, zero failures/skips**
+(13.736 s). Twenty-nine new synthetic regressions cover deterministic allocation,
+training IDs/versions/hashes, protected export paths, immutability, blind/final-test
+feedback, exact pinning, trusted identity/local/CSRF, stale forms, progress,
+unresolved policy, confusion math, deterministic private artifacts and old-export
+training refusal. Python compilation, Markdown local-link/anchor/fence checks across seven maintained
+guides, `git diff --check` and Git/private-exclusion checks passed. No collected
+files are tracked; `.env`, datasets, evaluation outputs and model artifacts remain ignored. No model training or new persisted
+inference was performed; installed-model integration uses synthetic input only.
+
+**Operator handoff:** approve the codebook/design, confirm the target, run the
+read-only schema preflight, apply the exact additive SQL once, verify readiness and
+guards, then create/preview/freeze `L2-VALIDATION-V1` from sufficient unseen eligible
+support. Review Next → independent labels → Complete → private evaluator:
+
+```bash
+.venv/bin/python scripts/evaluate_l2_validation.py \
+  --batch L2-VALIDATION-V1 \
+  --output-dir data/l2/evaluations/L2-VALIDATION-V1-v1
+```
+
+See [README operator steps](../../README.md#l2-validation-and-protected-reference)
+and [annotations Section 22](../annotations.md#22-l2-validation-and-protected-reference-workflow).
+Separate A/B reviewers/adjudication records, near-duplicate grouping, date strata,
+AUC/calibration/subgroup metrics and reviewer-role isolation remain future work.
+The ordinary machine-result pages are still accessible to the local operator;
+blinding applies to the batch workflow. Do not freeze conflicting membership while
+training is active; low-level training calls do not consult the protection database.
+L0/L1 human-validation gates, unseen-positive support and independent performance
+remain research blockers. No L3/L4, retraining, collection or public Sheet write.
+
+Anonymous roadmap synchronization succeeded on 6 October 2026 using the repository
+environment; all four CSVs were refreshed, without manual edits or writeback. The
+Sheet now records 324/324 operational closure and research validation as current
+priority. Its validation wording is planning/evidence state, not a claim that this
+new engineering workflow was executed on real articles.
+
+| Snapshot | Data rows | SHA-256 |
+| --- | --- | --- |
+| `roadmap.csv` | 32 | `76faef58b644722955abe29e354a6339904818f46dacb741af8f517c25de1dac` |
+| `current_state.csv` | 11 | `b388b096dec57ed49c271c3a23f45390a5d191231e6bd88a8f8d4145a1e4dccc` |
+| `stage_gates.csv` | 12 | `c9235a24a0b686f32b095cb02fe57d18d3fd9ef9fb16b2e844c65b1dabc61cfd` |
+| `annotation_layers.csv` | 8 | `87e7ef4180187272c93a773f9f46a7464dc30df823f745f72c5739c9b20ef019` |
 
 ### Markdown alignment — 6 October 2026
 

@@ -51,9 +51,8 @@ a validated final corpus, or permission to include every local collection artifa
 
 ## Engineering progress — documentation aligned 6 October 2026
 
-The last successful anonymous synchronization on 5 October refreshed all four
-exports. Those snapshots record model training and the earlier 300/324 model
-coverage. The subsequent operational closure verified **324/324** compatible
+The successful anonymous synchronization on 6 October refreshed all four
+exports. These snapshots record model training and **324/324** compatible
 predictions (11 gbv / 307 not_gbv / 6 borderline), **zero pending**, and installed,
 behavior-tested development L2 constraints/index/trigger. The existing artifact,
 thresholds, model/weak/human history and upstream lineage were preserved.
@@ -63,16 +62,19 @@ Mixed training has 322 records (10/312), with only three reviewed positives. A
 protected independent reference set and independent model metrics remain absent.
 Development model coverage is complete; the research gate remains open.
 
-This documentation update did not download new exports, change the public Sheet
-or edit synchronized CSVs. Do not represent the dated snapshots as freshly
-synchronized. See [the executed operational closure](IMPLEMENTATION_STATUS.md#l2-operational-milestone-closed--6-october-2026-0004-eat)
+No public Sheet changes or manual CSV edits were made. See
+[the validation engineering log](IMPLEMENTATION_STATUS.md#l2-validation-and-protected-reference-workflow--6-october-2026)
+and [the executed operational closure](IMPLEMENTATION_STATUS.md#l2-operational-milestone-closed--6-october-2026-0004-eat)
 and [the operator guide](../../README.md) for coverage, schema, tests and commands.
 
-The proposed next implementation is a structured local human-validation workflow:
-reproducible batches, initially hidden predictions, separate adjudication and
-private progress/export reporting. Agree the codebook and sampling protocol;
-training articles and related duplicates cannot enter an independent test set.
-See [the planned milestone](../annotations.md#17-next-steps-future-work).
+L2 batch sampling, blinded initial review, protected reference membership and
+private evaluation engineering are implemented; the new migration was installed
+and behavior-verified in development on 6 October at 23:48 EAT after user authorization.
+No real independent batch or metrics exists from this implementation.
+Agree the codebook/sampling protocol, verify other targets independently and expand
+unseen support; training articles and related duplicates cannot establish
+independent performance. Separate adjudication records remain future work.
+See [the implemented workflow](../annotations.md#22-l2-validation-and-protected-reference-workflow).
 This recommendation does not change canonical roadmap sequencing or mark any
 research gate achieved. Synchronize before implementing future roadmap work.
 
