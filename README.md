@@ -21,7 +21,7 @@ extraction, geocoding and mapping interfaces. Data collection and validation
 come first. Privacy, provenance, reproducibility, and human oversight will guide
 development throughout.
 
-## Current progress — verified 5 October 2026
+## Current progress — verified 6 October 2026, 00:04 EAT
 
 Human-review state, reconfirmed at **22:59 EAT**: 324 eligible versions; original weak labels
 7 gbv / 15 not_gbv / 302 borderline; human overlay **10 / 312 / 2**.
@@ -35,24 +35,23 @@ implemented. Twenty-record in-memory inference passed: 0 gbv / 19 not_gbv /
 1 borderline, zero failures. **No reliable independent validation metrics exist.**
 No final held-out human reference set is frozen; L2 research gates remain open.
 
-Latest progress audit at **22:59 EAT** reconfirmed **300 saved transformer predictions**
-(10 gbv / 284 not_gbv / 6 borderline), with **24 eligible pending**. The run
-failed after a database error and loss of its annotation lock. Required L2 schema
-objects remain absent; existing rows do not prove migration readiness. See
-[the L2 performance report](docs/l2_model_performance.md) for measured timing
-and the incomplete-run limits. No migration was automatically installed or production
-configuration changed. Original weak outputs remain separately inspectable at
-`/annotations/l2?mode=weak`. Full suite including installed-model integration:
-**264 tests passed**. See [the engineering log](docs/roadmap/IMPLEMENTATION_STATUS.md)
-for datasets, model revision, parameters, checksums and execution evidence.
+L2 operational closure verifies **324/324 compatible Transformer predictions**:
+**11 gbv / 307 not_gbv / 6 borderline**, with **zero pending**. The additive L2
+migration is installed and behavior-tested in development. Pending-only resume
+added 24 predictions without changing existing model, weak, human or L1 history.
+The earlier interrupted run coincided with macOS idle sleep; model CLI runs now
+prevent idle sleep and verify actual advisory-lock ownership before writes.
+See [the L2 performance report](docs/l2_model_performance.md) for the diagnosis,
+timing and remaining limitations. Original weak outputs remain separately
+inspectable at `/annotations/l2?mode=weak`. Full offline suite including the
+installed-model integration: **275 tests passed**, zero skips. See
+[the engineering log](docs/roadmap/IMPLEMENTATION_STATUS.md) for execution evidence.
 L0 remains 519 valid / 17 needs_review; L1 v2 324 kenya / 35 not_kenya /
-160 ambiguous. L3–L5, NER, geocoding and mapping remain planned.
+160 ambiguous. Independent research validation and L3–L5 remain pending.
 
-The L2 Human Review schema extension is installed in development. Schema inspection
-found the earlier `20261005_add_l2_annotations.sql` migration's expected constraints,
-identity index and prerequisite trigger absent. Apply that migration to the intended
-database before further automated L2 writes; existing weak rows alone do not prove schema readiness.
-This documentation audit was read-only; it did not run annotation or training jobs.
+Development installation does not establish schema readiness for other targets.
+Apply migrations in filename order and verify each target independently before
+L2 writes. Production configuration was not changed.
 
 ## Sync project roadmap
 
@@ -240,16 +239,17 @@ L2 requires the exact current compatible L1 `kenya` result. It has separate
 provisional weak labels and installed-model predictions; neither is a human
 reference label. L0/L1 validation gates and L2 research validation remain open.
 Weak bootstrap covers all 324 eligible versions. The initial development artifact
-is configured locally; 300 compatible model predictions are saved and 24 eligible
-versions remain pending after an interrupted run. Independent research evaluation
-and installed L2 schema readiness remain open. See Section 21 of
+is configured locally; 324 compatible model predictions are saved and zero eligible versions remain
+pending after verified operational closure. Installed L2 schema readiness is true
+in development; independent research evaluation remains open. See Section 21 of
 [the annotation document](docs/annotations.md#21-l2--gbv-relevance-infrastructure-5-october-2026)
 for the model architecture, training procedure and measured operational results.
 
 Apply the new additive migration once to the intended database, after prior
 migrations: `migrations/20261005_add_l2_annotations.sql`. Its expected schema objects
 were absent in the 5 October development check, despite stored weak labels.
-This documentation update did not apply migrations. Optional local ML dependencies
+The operational closure installed and behavior-tested the migration in development;
+verify other databases independently. Optional local ML dependencies
 are in `requirements-l2.txt`.
 
 ```bash
@@ -268,6 +268,17 @@ are in `requirements-l2.txt`.
 
 Pending-only weak execution skips existing compatible results; it does not mean
 "exactly 324 new articles." Eligibility and pending counts are queried dynamically.
+
+L2 execution now refuses incomplete installed schema before creating run/result rows.
+On macOS, model CLI execution automatically holds a scoped `caffeinate` idle-sleep
+assertion and releases it on exit. Keep the computer/network available; forced
+sleep or lost actual advisory-lock ownership stops writes rather than relocking.
+Safe summaries include failure phase, SQLSTATE where available and wall duration.
+Resume with the same pending-only command; do not use `--force` for recovery:
+
+```bash
+.venv/bin/python scripts/run_annotations.py --layer l2 --l2-mode model
+```
 
 Set `L2_MODEL_PATH` to the immutable trained artifact directory and optionally
 `L2_MODEL_VERSION` to enforce its manifest version. `L2_POSITIVE_THRESHOLD=0.8`

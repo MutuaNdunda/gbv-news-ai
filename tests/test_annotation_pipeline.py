@@ -23,6 +23,8 @@ class FakeRepository:
 
     def lock(self): return nullcontext()
 
+    def ensure_l2_schema(self): pass
+
     def create_run(self, layers, methods, trigger, collection_run_id, configuration):
         run_id = uuid4()
         self.runs[run_id] = {"layers": layers, "methods": methods, "trigger": trigger, "configuration": configuration}
@@ -202,7 +204,7 @@ class PipelineTests(unittest.TestCase):
         initial = Mock()
         initial.one.return_value = (True, 123)
         heartbeat = Mock()
-        heartbeat.scalar_one.return_value = 123
+        heartbeat.one.return_value = (123, True)
         disconnected = OperationalError("synthetic", {}, RuntimeError("disconnected"), connection_invalidated=True)
         connection.execute.side_effect = [initial, heartbeat, disconnected]
         with self.assertLogs("annotations.service", level="WARNING") as logs:
@@ -214,7 +216,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_lost_or_changed_lock_connection_stops_processing(self):
         connection = Mock()
-        connection.execute.return_value.scalar_one.return_value = 999
+        connection.execute.return_value.one.return_value = (999, True)
         with self.assertRaises(AnnotationLockLost):
             AnnotationLease(connection, 123).check()
         connection.execute.side_effect = OperationalError("synthetic", {}, RuntimeError("disconnected"))

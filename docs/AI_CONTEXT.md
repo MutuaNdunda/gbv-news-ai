@@ -24,7 +24,8 @@ a local, token-protected Human Review workspace.
 L2 now has separate provisional weak supervision, private bootstrap exports,
 AfroXLMR-compatible PyTorch training, installed-artifact inference and protected local review.
 The first real AfroXLMR development model, `l2-afroxlmr-dev-v1`, is now trained and
-configured locally; full DB inference and independent L2 evaluation remain pending.
+configured locally; L2 operational closure at 6 October 2026, 00:04 EAT confirms 324/324 compatible
+results (11/307/6), zero pending and installed L2 schema. Independent evaluation remains pending.
 Human-review state reconfirmed at 22:59 EAT on 5 October: 324 eligible; weak machine 7/15/302,
 human overlay 10/312/2. Reviews: 300 corrected plus two confirmed borderline;
 22 weak binary labels unreviewed. Reviewed-only export has 300 records (3/297),
@@ -38,10 +39,10 @@ manifest and `docs/roadmap/IMPLEMENTATION_STATUS.md`. Offline reload and bounded
 (`annotations/l2_readiness.py`, `scripts/check_l2_model.py`) found four required L2
 objects absent at the initial check; no automatic migration. A later read-only
 22:59 EAT audit reconfirmed 300 persisted results (10/284/6), 24 pending, and a failed
-run with OperationalError followed by AnnotationLockLost. All four required
-schema objects remain absent. See `docs/l2_model_performance.md`; independent
+run with OperationalError followed by AnnotationLockLost. The later operational closure installed all four required schema objects and
+verified rolled-back behavior; previous schema gaps are historical. See `docs/l2_model_performance.md`; independent
 performance remains unmeasured.
-Latest full suite including installed-model integration: 264 passed.
+Latest full suite including installed-model integration: 275 passed.
 NER, geocoding, completed sampled human validation, mapping,
 and remote reviewer authentication remain future research work. Before roadmap-related
 implementation, run `python3 scripts/sync_roadmap.py` and read all four snapshots
@@ -509,8 +510,8 @@ manifest/checksum handling and offline inference live under `annotations/` and
 `scripts/`. Generated artifacts belong in ignored `models/artifacts/` or private
 `data/l2/`. The real `l2-afroxlmr-dev-v1` artifact is locally configured, trained on 322 mixed
 records with only 10 positives (three reviewed). Tiny synthetic checkpoints remain
-engineering smoke only. Full compatible prediction coverage, schema readiness,
-NER and independent model evaluation remain pending.
+engineering smoke only. Full compatible prediction coverage and development schema
+readiness are verified; NER and independent model evaluation remain pending.
 
 ### `app/`, `main.py`, and `app.yaml`
 
@@ -889,7 +890,9 @@ AI_CONTEXT.md.
 - Reviewed/mixed immutable development exports with latest-human provenance,
   reference/hash exclusion and configurable class-weighted training.
 - First real pinned AfroXLMR artifact, offline reload, private review-priority output
-  and read-only installed-schema checks; 300 saved model results, 24 pending.
+  and enforced installed-schema checks; 324 saved model results, zero pending.
+  macOS model CLI sleep prevention and actual `pg_locks` ownership checks preserve
+  fail-closed pending-only operation; safe failure phases/wall duration are recorded.
 - Protected local L0/L1/L2 Human Review, direct unlock, exact lineage, append-only
   decisions/history, method-separated review counts and filtered navigation.
 - Offline tests cover parsing, orchestration, persistence/recovery, monitor behavior,
@@ -906,8 +909,8 @@ AI_CONTEXT.md.
 - Automated L0/L1 decisions exist, but extraction quality and Kenya relevance have
   not passed sampled human validation or calibration. Protected local review tooling
   exists; sample validation remains pending.
-- Full L2 inference is incomplete after a database/lock interruption (24 pending).
-  Required L2 schema objects remain absent despite existing predictions.
+- Complete L2 coverage is operationally verified, but network/forced-sleep failures
+  can still stop a lease; no automatic write replay or relock is implemented.
 - Near-real-time is an objective, but only retrospective/snapshot collection exists.
 
 ### Planned / Not Implemented
@@ -933,9 +936,9 @@ AI_CONTEXT.md.
 - Scan tracking, source expansion and automated annotations have versioned SQL
   migrations; the initial Supabase ingestion tables predate repository migration
   history. The local Human Review UI has additive migrations. Inspection on 5 October
-  found the expected L2 annotation checks/index/trigger absent, although the L2
-  human-review extension is installed; apply `20261005_add_l2_annotations.sql` before
-  further automated L2 writes. No prospective scheduler or end-to-end latency instrumentation exists.
+  initially found L2 objects absent; the operational closure installed and
+  behavior-tested the exact migration in development. Verify other targets
+  separately before further automated L2 writes. No prospective scheduler or end-to-end latency instrumentation exists.
 - Tests cover important deterministic behavior but do not perform live archive
   compatibility checks or broad extraction-quality evaluation.
 - The zero-byte notebook remains a placeholder; database models are implemented and
@@ -954,8 +957,8 @@ The inspected roadmap currently prioritizes:
    have L1 decisions following the authorized full run.
 5. Create a small stratified/uncertainty-focused human reference sample and metrics.
 6. Inspect L2 weak uncertainty, verify schema prerequisites and agree the GBV codebook.
-7. Resolve L2 schema readiness and the connection/lock failure; finish pending-only
-   inference. Expand reviewed positives and freeze independent reference membership
+7. L2 development coverage/schema closure is complete. Next, under a separate
+   milestone, expand reviewed positives and freeze independent reference membership
    before evaluation; later-layer baselines follow the synchronized roadmap.
 
 See `docs/roadmap/IMPLEMENTATION_STATUS.md` for current L0/L1/L2 implementation
@@ -966,7 +969,7 @@ invalid 0, with no processing failures. Missing dates (12) and short bodies (5)
 require inspection. The initial full-run CLI had a post-completion lock-release
 error; annotation-specific autocommit/heartbeat/cleanup handling now addresses it.
 That historical milestone passed 155 tests; the latest installed-model suite
-passed 264 tests with zero failures/skips. Automated execution does not
+passed 275 tests with zero failures/skips. Automated execution does not
 establish human-validated reference labels.
 Full L1 completed with 499 new decisions and 17 gated skips, no failures and exit 0.
 Across 519 eligible versions, historical v1 totals were Kenya 307 / non-Kenya 73 / ambiguous
@@ -1037,8 +1040,8 @@ predictions; current compatibility and exact machine UUIDs prevent review inheri
 Historical reviews remain accessible. No human decisions or validation metrics are
 generated by adding this interface, and research gates remain open.
 The extension is installed in development. The earlier L2 annotation migration's
-expected checks/index/trigger were absent at the latest read-only inspection;
-schema file presence and saved weak labels do not establish deployment readiness.
+expected checks/index/trigger were absent at initial inspection and installed during
+the later operational closure. Verify other database targets separately.
 
 L2 GBV result lists now default to current labels after Human Review
 (`label_basis=effective`), using the latest resolved review for each exact current

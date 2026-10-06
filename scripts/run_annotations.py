@@ -1,10 +1,13 @@
 """Run versioned L0/L1/L2 annotations over persisted trial article versions."""
 
 import argparse
+from contextlib import contextmanager
 from dataclasses import replace
 import json
 import logging
+import os
 from pathlib import Path
+import subprocess
 import sys
 from uuid import UUID
 
@@ -14,6 +17,31 @@ sys.path.insert(0, str(ROOT))
 from annotations.schemas import DEFAULT_CONFIG
 from annotations.l2_config import L2Config
 from annotations.service import run_annotation_pipeline
+
+
+@contextmanager
+def prevent_idle_sleep(enabled):
+    """Keep a macOS model CLI run awake; never reconnect a lost database lease."""
+    if not enabled or sys.platform != "darwin":
+        yield
+        return
+    process = subprocess.Popen(
+        ["/usr/bin/caffeinate", "-i", "-w", str(os.getpid())],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    try:
+        if process.poll() is not None:
+            raise RuntimeError("Could not prevent idle sleep for the model run")
+        logging.getLogger(__name__).info("annotation_idle_sleep_prevented")
+        yield
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
 
 
 def main(argv=None):
@@ -41,9 +69,10 @@ def main(argv=None):
                      if getattr(args, key) is not None}
         if l2_config is not None:
             l2_config = replace(l2_config, **overrides)
-        summary = run_annotation_pipeline(args.layer.split(","), args.limit, args.article_id,
-                                          args.collection_run_id, not args.force, config=config,
-                                          l2_mode=args.l2_mode, l2_config=l2_config)
+        with prevent_idle_sleep("l2" in args.layer.split(",") and args.l2_mode == "model"):
+            summary = run_annotation_pipeline(args.layer.split(","), args.limit, args.article_id,
+                                              args.collection_run_id, not args.force, config=config,
+                                              l2_mode=args.l2_mode, l2_config=l2_config)
     except Exception as exc:
         if "l2" in args.layer and isinstance(exc, ValueError):
             print("L2 configuration unavailable: install a trained local artifact and verify thresholds/manifest, "

@@ -1,5 +1,6 @@
 """Exact upstream gating, append-only history, batching and failure isolation."""
 from dataclasses import replace
+from contextlib import nullcontext
 import unittest
 from unittest.mock import Mock, patch
 
@@ -147,6 +148,6 @@ class L2PipelineTests(unittest.TestCase):
 
     def test_cli_l2_explicit_bootstrap_or_model(self):
         for mode in ("model", "weak"):
-            with patch("scripts.run_annotations.run_annotation_pipeline", return_value={"failed": 0}) as runner, patch("builtins.print"):
+            with patch("scripts.run_annotations.run_annotation_pipeline", return_value={"failed": 0}) as runner, patch("builtins.print"), patch("scripts.run_annotations.prevent_idle_sleep", return_value=nullcontext()):
                 self.assertEqual(main(["--layer", "l2", "--l2-mode", mode, "--limit", "2"]), 0)
                 self.assertEqual(runner.call_args.kwargs["l2_mode"], mode)

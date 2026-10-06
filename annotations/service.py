@@ -4,7 +4,7 @@ from dataclasses import asdict
 import hashlib
 import json
 import logging
-from time import perf_counter
+from time import perf_counter, time
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -19,6 +19,19 @@ LOGGER = logging.getLogger(__name__)
 
 def log_event(event, **fields):
     LOGGER.info("%s %s", event, " ".join(f"{name}={value}" for name, value in fields.items()))
+
+
+def failure_details(exc, phase):
+    """Retain useful database diagnostics without SQL, parameters or error messages."""
+    from sqlalchemy.exc import DBAPIError
+    details = {"error_type": type(exc).__name__, "failure_phase": phase}
+    cause = exc if isinstance(exc, DBAPIError) else exc.__cause__
+    if isinstance(cause, DBAPIError):
+        state = getattr(cause.orig, "sqlstate", None)
+        if isinstance(state, str) and len(state) == 5 and state.isalnum():
+            details["sqlstate"] = state
+        details["connection_invalidated"] = bool(cause.connection_invalidated)
+    return details
 
 
 def load_article(candidate, objects):
@@ -121,6 +134,8 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
         from storage import GCSStorage
         services = AnnotationRepository(create_session_factory()), GCSStorage()
     repository, objects = services
+    if "L2" in layers:
+        repository.ensure_l2_schema()
     configuration = {"parameters": asdict(config), "limit": limit, "only_pending": only_pending,
                      "article_ids": [str(value) for value in article_ids or []],
                      "collection_run_id": str(collection_run_id) if collection_run_id else None}
@@ -132,14 +147,17 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                                "negative_threshold": l2_config.negative_threshold,
                                "threshold_status": "UNVALIDATED ENGINEERING THRESHOLDS"}
     started = perf_counter()
+    wall_started = time()
     summary = {"requested": 0, "processed": 0, "success": 0, "failed": 0, "skipped": 0,
                "layers": {layer: {"eligible": 0, "processed": 0, "skipped": 0, "failed": 0,
                                   "skipped_l0": 0, "labels": {}} for layer in layers}, "errors": []}
+    phase = "lock_acquisition"
     with repository.lock() as lease:
         run_id = repository.create_run(layers, methods, trigger_type, collection_run_id, configuration)
         summary["run_id"] = str(run_id)
         log_event("annotation_run_started", annotation_run_id=run_id, layers=",".join(layers), trigger=trigger_type)
         try:
+            phase = "candidate_selection"
             candidates = repository.select_candidates(layers, methods, limit, article_ids,
                                                        collection_run_id, only_pending)
             summary["requested"] = len(candidates)
@@ -147,6 +165,7 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
             current = repository.current_for_candidates([item["id"] for item in candidates], methods)
             l2_outcomes = {}
             if layers == ["L2"]:
+                phase = "input_loading_and_model_inference"
                 tick = perf_counter()
                 pending = [item for item in candidates if not only_pending or
                            current.get((item["id"], "L2")) is None]
@@ -154,6 +173,7 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                                                l2_config.batch_size, lease)
                 summary["layers"]["L2"]["inference_and_loading_ms"] = round((perf_counter() - tick) * 1000, 2)
             for candidate in candidates:
+                phase = "lock_health_check"
                 if lease is not None:
                     lease.check()
                 summary["processed"] += 1
@@ -194,10 +214,12 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                         tick = perf_counter()
                         log_event(f"{layer.lower()}_started", **fields)
                         if layer == "L2" and candidate["id"] in l2_outcomes:
+                            phase = "input_loading_or_model_inference"
                             result = l2_outcomes[candidate["id"]]
                             if isinstance(result, Exception):
                                 raise result
                         else:
+                            phase = "input_loading"
                             if input_article is None: input_article = load_article(candidate, objects)
                             if layer in ("L1", "L2"):
                                 body = input_article.get("article_text")
@@ -205,6 +227,7 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                                         or not isinstance(body, str)
                                         or hashlib.sha256(body.encode("utf-8")).hexdigest() != candidate["content_hash"].lower()):
                                     raise ValueError("Annotation input no longer matches the accepted article version")
+                            phase = "annotation_evaluation"
                             result = (evaluate_l0(input_article, config) if layer == "L0" else
                                       evaluate_l1(input_article, config) if layer == "L1" else
                                       l2_predictor.evaluate(input_article))
@@ -212,8 +235,10 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                                               or result.method_name != methods["L2_method_name"]
                                               or result.method_version != methods["L2"]):
                             raise ValueError("L2 predictor returned an incompatible result identity")
+                        phase = "lock_health_check"
                         if lease is not None:
                             lease.check()
+                        phase = "prediction_persistence"
                         annotation = repository.persist(candidate, run_id, result,
                                                         l0.id if layer == "L1" else l1.id if layer == "L2" else None)
                         if layer == "L0": l0 = annotation
@@ -228,17 +253,20 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                     summary["failed"] += 1
                     summary["layers"][layer]["failed"] += 1
                     error = {"article_id": str(candidate["article_id"]), "article_version_id": str(candidate["id"]),
-                             "layer": layer, "error_type": type(exc).__name__}
+                             "layer": layer, **failure_details(exc, phase)}
                     summary["errors"].append(error)
                     log_event(f"{layer.lower()}_failed", annotation_run_id=run_id, **error)
                     # Losing serialization is a run-wide failure; do not continue writes.
                     if isinstance(exc, AnnotationLockLost):
                         raise
                 summary["duration_ms"] = round((perf_counter() - started) * 1000, 2)
+                summary["wall_duration_ms"] = round((time() - wall_started) * 1000, 2)
+                phase = "run_checkpoint"
                 repository.checkpoint(run_id, summary)
             status = ("failed" if summary["failed"] and summary["failed"] == summary["requested"] else
                       "completed_with_errors" if summary["failed"] else "completed")
-            summary.update(status=status, duration_ms=round((perf_counter() - started) * 1000, 2))
+            summary.update(status=status, duration_ms=round((perf_counter() - started) * 1000, 2),
+                           wall_duration_ms=round((time() - wall_started) * 1000, 2))
             repository.checkpoint(run_id, summary, status)
             log_event("annotation_run_failed" if status == "failed" else "annotation_run_completed",
                       annotation_run_id=run_id, status=status,
@@ -247,8 +275,9 @@ def run_annotation_pipeline(layers=("L0", "L1"), limit=None, article_ids=None,
                       labels=json.dumps({key: value["labels"] for key, value in summary["layers"].items()}, sort_keys=True))
         except BaseException as exc:
             status = "interrupted" if isinstance(exc, (KeyboardInterrupt, SystemExit)) else "failed"
-            summary.update(status=status, duration_ms=round((perf_counter() - started) * 1000, 2))
-            summary["errors"].append({"error_type": type(exc).__name__})
+            summary.update(status=status, duration_ms=round((perf_counter() - started) * 1000, 2),
+                           wall_duration_ms=round((time() - wall_started) * 1000, 2))
+            summary["errors"].append(failure_details(exc, phase))
             try:
                 repository.checkpoint(run_id, summary, status)
             except Exception:

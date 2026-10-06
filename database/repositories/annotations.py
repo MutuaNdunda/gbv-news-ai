@@ -17,14 +17,27 @@ class AnnotationLease:
     def __init__(self, connection, backend_id):
         self.connection = connection
         self.backend_id = backend_id
+        self.lost = False
 
     def check(self):
         try:
-            backend_id = self.connection.execute(text("SELECT pg_backend_pid()")).scalar_one()
+            backend_id, owns_lock = self.connection.execute(text("""
+                SELECT pg_backend_pid(), EXISTS (
+                    SELECT 1 FROM pg_locks
+                    WHERE locktype = 'advisory' AND pid = pg_backend_pid() AND granted
+                      AND mode = 'ExclusiveLock' AND objsubid = 1
+                      AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+                      AND classid = ((hashtextextended(:name, 0) >> 32) & 4294967295)::oid
+                      AND objid = (hashtextextended(:name, 0) & 4294967295)::oid
+                )
+            """), {"name": "automated-annotation-pipeline"}).one()
         except DBAPIError as exc:
+            self.lost = True
+            self.connection.invalidate()
             raise AnnotationLockLost("Annotation lock connection was lost") from exc
-        if backend_id != self.backend_id:
-            raise AnnotationLockLost("Annotation lock backend changed")
+        if backend_id != self.backend_id or not owns_lock:
+            self.lost = True
+            raise AnnotationLockLost("Annotation lock backend or ownership changed")
 
 
 def current_annotations(methods):
@@ -90,13 +103,15 @@ class AnnotationRepository:
             ).one()
             if not acquired:
                 raise RuntimeError("Another annotation run is already active")
+            lease = AnnotationLease(connection, backend_id)
             try:
-                yield AnnotationLease(connection, backend_id)
+                yield lease
             finally:
                 try:
-                    connection.execute(
-                        text("SELECT pg_advisory_unlock(hashtextextended(:name, 0))"), parameters,
-                    )
+                    if not lease.lost:
+                        connection.execute(
+                            text("SELECT pg_advisory_unlock(hashtextextended(:name, 0))"), parameters,
+                        )
                 except DBAPIError as exc:
                     # A lost physical session has already released its lock.
                     # Do not turn successfully checkpointed results into a CLI failure.
@@ -104,6 +119,13 @@ class AnnotationRepository:
                     logging.getLogger("annotations.service").warning(
                         "annotation_lock_release_failed error_type=%s", type(exc).__name__,
                     )
+
+    def ensure_l2_schema(self):
+        """Refuse any L2 run before run/result writes when its schema is incomplete."""
+        from annotations.l2_readiness import l2_schema_readiness
+        state = l2_schema_readiness(self.sessions)
+        if not state["ready_for_prediction_writes"]:
+            raise RuntimeError("L2 schema is not ready: " + ", ".join(state["missing"]))
 
     def create_run(self, layers, methods, trigger, collection_run_id, configuration):
         run_id = uuid4()

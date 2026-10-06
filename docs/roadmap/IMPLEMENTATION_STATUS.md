@@ -10,8 +10,129 @@ No private article content, victim information or reference labels belong here.
 corpus; training/inference infrastructure and local L0/L1/L2 Human Review implemented.
 Human review is recorded for all 302 originally borderline L2 weak results.
 The first real AfroXLMR development artifact is trained/configured locally;
-300 transformer results are persisted; 24 eligible versions remain pending after
-a failed run. Independent validation and required L2 schema installation remain pending.**
+L2 development model coverage is complete: 324/324 compatible predictions, zero
+pending; required L2 schema is installed. Independent research validation remains pending.**
+
+### L2 operational milestone closed — 6 October 2026, 00:04 EAT
+
+**L2 DEVELOPMENT MODEL COVERAGE is complete: 324/324
+compatible predictions, zero pending.** Final model labels are
+**gbv 11 / not_gbv 307 / borderline 6**.
+This closes operational coverage, not the L2 research-validation gate.
+
+The read-only baseline used the same documented development database configured
+by repository-local `.env`: PostgreSQL/psycopg, Supabase session pooler
+`aws-1-eu-west-1.pooler.supabase.com:5432`, database `postgres`. No production
+configuration was used. Baseline: 536 article versions; L0 valid 519/review 17;
+L1 v2 kenya 324/not_kenya 35/ambiguous 160; model 300/324 with 10/284/6 and 24 pending.
+Original weak counts were 7/15/302, effective weak view 10/312/2; human-validation
+rows were L1 1 and L2 302 (303 total). Those upstream/human records were preserved.
+
+**Artifact verified unchanged:** `l2-afroxlmr-dev-v1`, method
+`l2-47035d92f81cd5240062610d`, the existing binary order and 0.8/0.2 engineering
+thresholds. Manifest, config, tokenizer and safetensors checksums passed; offline
+local-files-only reload with remote code disabled, `eval()` and a synthetic
+`inference_mode()` forward pass succeeded. The validation reload took
+3.338 seconds on cpu; this is a separate artifact check,
+not model-load timing from the resume runs. No data regeneration, retraining,
+new model identity, tokenizer change or threshold tuning occurred.
+
+**Migration:** preflight inspected all 624 historical L2 weak/model rows. Invalid
+labels, NULL/missing prerequisites, non-L1 prerequisites, cross-article,
+cross-version and non-Kenya prerequisite counts were all **zero**. Expected-name
+conflicts were zero, including the trigger function. The exact additive
+`20261005_add_l2_annotations.sql` was applied to the confirmed development target
+at 2026-10-05T20:25:03.711181+00:00 using existing SQLAlchemy/psycopg credentials (`psql` was
+unavailable and `DIRECT_DATABASE_URL` unset). No history rows were repaired or
+rewritten. Schema readiness is now **true**. Installed objects:
+
+- `automated_annotations_l2_label_check`;
+- `automated_annotations_l2_prerequisite_check`;
+- `idx_auto_annotations_l2_identity`;
+- `validate_l2_prerequisite()` and trigger `automated_annotations_l2_prerequisite`.
+
+Rolled-back synthetic behavior tests accepted valid L2 lineage and rejected an
+invalid label, NULL prerequisite, non-L1/non-Kenya prerequisite and wrong
+article/version. All synthetic articles, versions, run and test annotations were
+rolled back. No private article content was used in these schema tests.
+
+**Failure diagnosis:** macOS power-management evidence records idle sleep at
+**16:25:50** and wake at **16:33:26** on 5 October; the earlier failed run ended at
+**16:33:29**, three seconds later. This strongly supports host sleep disrupting the
+live database connections, and explains the active-time/wall-time discrepancy.
+Source inspection locates the first caught `OperationalError` in prediction
+persistence; the next dedicated-connection check raised `AnnotationLockLost`, a
+secondary fail-closed stop. The old run retained exception types only: its exact
+socket/server message and SQLSTATE cannot be recovered, so no specific server
+termination mechanism is claimed. Current PostgreSQL idle-session and
+idle-transaction timeouts are zero; the configured connection is session mode,
+not rejected transaction pooling. No lock checks were disabled to finish.
+
+**Minimal reliability changes:** macOS model CLI runs now hold a scoped
+`caffeinate -i -w <CLI-PID>` idle-sleep assertion through loading/inference/writes,
+with cleanup on success or failure. This prevents automatic idle sleep; forced
+sleep/network interruption can still lose the connection and correctly stop a run.
+L2 execution checks installed schema before creating a run or prediction rows.
+Lease checks now verify both original backend PID and actual exclusive ownership
+of the specific advisory lock in `pg_locks`. A lost connection is invalidated;
+cleanup does not reconnect to unlock a replacement session. No automatic relock,
+force mode or database write replay was introduced. Safe diagnostics now retain
+failure phase, SQLSTATE where supplied, connection-invalidated flag and a separate
+`wall_duration_ms`, without SQL, parameters, error messages or article text.
+
+**Executed resume:** a precise five-article pending-only pass saved five not-GBV
+results, verified unchanged history, then the normal unbounded pending-only command
+finished the remaining eligible records:
+
+```bash
+.venv/bin/python scripts/run_annotations.py --layer l2 --l2-mode model
+```
+
+The bounded pass used five live pending article IDs through existing repeatable
+`--article-id` filters; private IDs are not published here. Both passes used the
+existing artifact/configuration, batch size 2 and no `--force`, weak, L0 or L1
+execution. The unbounded pending selector also scans versions gated out by L1;
+those are accounted as skips and did not receive new predictions.
+
+| Pass | Selected | Processed | Saved | Skipped | Failed | Run duration | Wall duration | Inference + loading | Stage average / saved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Five-article pass | 5 | 5 | 5 | 0 | 0 | 20.097 s | 20.097 s | 4.734 s | 946.728 ms |
+| Remaining pending-only pass | 231 | 231 | 19 | 212 | 0 | 276.064 s | 276.063 s | 14.278 s | 751.481 ms |
+
+New predictions total **24**: gbv
+1, not_gbv 23, borderline
+0. Both runs completed with zero recorded failures.
+`inference_and_loading_ms` includes verified object retrieval and batched inference;
+its average is **not pure transformer latency** or proof of the thesis <500 ms
+inference target. Overall duration includes selection, gates, lock checks,
+persistence and checkpoints, and starts after artifact initialization/schema reads.
+
+**Integrity proof:** private before/after row fingerprints verified all **300**
+pre-existing model predictions remain unchanged and current, all **2,218**
+pre-existing automated annotation rows unchanged (including weak and L1 history),
+all **303** human-validation rows unchanged, and all **536** article versions
+unchanged. Only 24 pending-compatible L2 rows were added. There are **zero**
+duplicate current-compatible groups or unexpected force/history rows. Every current
+model result uses the same identity/thresholds and exact current same-article,
+same-version L1-Kenya prerequisite. Artifact hashes are unchanged. Private evidence
+is stored under ignored `data/l2/operational-close-20261005/`.
+
+**Verification:** 47 targeted schema/L2/pipeline/lock tests passed; full offline suite
+with explicitly installed-model integration **275 passed**, zero failures/skips.
+The 11 new operational tests cover missing-schema refusal, installed-schema success,
+macOS guard cleanup/failure, actual lock ownership, connection invalidation, safe
+SQLSTATE/phase logging, transient member failure and partial resume, retention of
+300 results with only 24 added, and lost-lease write refusal. Existing batch/member,
+exact prerequisite, pending/force history and threshold tests passed unchanged in
+behavior. `git diff --check`, private-data/model/.env exclusions and Markdown links
+passed. New model probabilities are operational outputs, not reference labels.
+
+**Remaining research limitations:** only 10 positive training examples (three
+human-reviewed), no independent protected reference set, no calibrated thresholds,
+no independently measured accuracy/precision/recall/F1/AUC. L0/L1 validation and
+reference design remain open. No L3/L4, NER, geocoding, active learning, corpus
+expansion or retraining was started. The next milestone is independently designed
+human validation and improved positive/reference support under separate authorization.
 
 ### Project progress and documentation audit — 5 October 2026, 22:59 EAT
 
@@ -40,17 +161,17 @@ code. The Sheet/CSVs were not manually changed. Final research gates remain open
 location baseline design is allowed by the plan after initial usable L2-positive
 output, but independent final location validation is not established.
 
-### Latest L2 persisted-run audit — 5 October 2026, 22:43 EAT
+### Historical interrupted L2 run audit — 5 October 2026, 22:43 EAT
 
 Read-only verification found **300 / 324 eligible transformer results (92.59%)**:
 **10 gbv / 284 not_gbv / 6 borderline**, with **24 pending**. The recorded run
 failed after one `OperationalError` and then `AnnotationLockLost`; it selected
 536 versions, processed 489, saved 300 and skipped 188 on prerequisite gates.
 These are partial-run counts. Stored duration is 1,093.565 seconds; timestamps
-span 1,542.706 seconds, an unresolved discrepancy. Batched article-loading and
+span 1,542.706 seconds; the later diagnosis links the discrepancy to idle sleep. Batched article-loading and
 inference time is 227.627 seconds, not pure model latency.
 
-The required four L2 schema objects remain absent despite existing model rows.
+At that historical audit, four required L2 objects were absent; the later closure above installed them.
 No migration, retry or prediction write was performed by this documentation audit.
 Training diagnostics, the bounded 20-record check, publisher coverage, schema
 limits and evaluation requirements are documented in [L2 model performance](../l2_model_performance.md).
@@ -147,7 +268,7 @@ Private reports and 20 review-priority rows are under
 
 Ignored local `.env` now configures this artifact and batch two. Method identity
 is `l2-47035d92f81cd5240062610d`; final local readback reports model ready.
-The database still lacks all four required L2 schema objects: label constraint,
+At this historical milestone, the database lacked all four required L2 schema objects: label constraint,
 prerequisite constraint, method/dependency index and L1-Kenya prerequisite trigger
 from `20261005_add_l2_annotations.sql`. The migration was **not installed** by
 this task. **Zero model predictions were written; all 324 remain DB-pending.**
@@ -275,6 +396,10 @@ in each run's configuration.
 
 ## Completed
 
+* L2 operational closure: installed/behavior-tested schema, scoped macOS sleep
+  prevention, fail-closed ownership checks and pending-only resume; 324/324 current
+  compatible model results, zero pending, all prior row fingerprints unchanged.
+
 * Collection retained: seven publisher parsers, bounded/retrospective collectors,
   private GCS/Supabase lineage, local import and run/scan monitoring. No scraper changes.
 * Roadmap sync ran first; all four snapshots were inspected. The Sheet was not changed.
@@ -300,8 +425,8 @@ in each run's configuration.
 * Authorized full L1 completed: 499 new decisions, 17 gated review-case skips,
   zero failures and CLI exit 0. All 519 L0-valid versions now have L1 decisions.
 * Authorized v2 reprocessing preserved v1 history; current v2 eligibility is 324 Kenya
-  versions. All 324 have compatible L2 weak labels; the later model run saved 300 compatible
-  results, with 24 eligible pending after a failed run.
+  versions. All 324 have compatible L2 weak labels and now compatible model results:
+  11 gbv / 307 not_gbv / 6 borderline, zero pending after operational closure.
 * L2 weak supervision, private development export, training CLI, checksummed offline
   model inference and bounded synthetic smoke are implemented. Real initial
   development fine-tuning is executed; independent performance is not established.
@@ -330,22 +455,23 @@ have not been passed through automation or review coverage alone.
 3. Review initial rules/gazetteer and agree error thresholds, sample sizes and an
    uncertainty/stratification protocol. Engineering thresholds are not calibrated.
 4. Inspect L1 ambiguity, evidence and source/language coverage over the eligible corpus.
-5. Resolve installed L2 schema readiness and the database/lock interruption, then
-   finish pending-only inference without changing human or weak-label history.
+5. Keep installed-schema/lease safeguards enabled; completed model coverage does
+   not close independent research-validation gates.
 6. Expand independently reviewed positives; store sampled validation and adjudicated
    reference labels separately, freeze reference membership and report defensible
    accuracy/F1, false-pass/false-fail, calibration and subgroup evidence before
    claiming research exit-gate completion.
 
 L2 infrastructure, reviewed/mixed exports and the initial real development model
-are implemented. Full eligible inference, installed L2 schema readiness, independent
-model validation, L3–L5, NER, geocoding and mapping remain pending. Automated outputs
+are implemented. Full eligible inference and installed L2 schema readiness are
+complete. Independent model validation, L3–L5, NER, geocoding and mapping remain pending. Automated outputs
 are not gold labels; execution alone does not satisfy sampled-validation gates.
 
 ## Blockers / Limitations
 
-* Historical bounded trial/full L0 had no infrastructure blocker. Current L2 has
-  four missing schema objects plus a connection/lock interruption leaving 24 pending.
+* Historical bounded trial/full L0 had no infrastructure blocker. The L2
+  schema/idle-sleep interruption was resolved in the closure above; general network
+  interruptions still fail closed and require operator pending-only resume.
 * Human-reference data and agreed numeric acceptance thresholds are absent.
   L0/L1 quality, coverage and confidence have not been independently validated.
 * Raw references are checked without per-version raw-object existence reads.
@@ -366,17 +492,18 @@ are not gold labels; execution alone does not satisfy sampled-validation gates.
 ## Last Roadmap Sync
 
 Latest anonymous synchronization succeeded on **5 October 2026 (Africa/Nairobi)**
-during this progress audit; all four exports were current and unchanged. The
-Sheet still lists reviewed/mixed export and first-model fitting as pending despite
-executed local code; final research validation remains pending in both accounts. Required headers
+during operational closure; all four exports were refreshed. The
+latest refreshed Sheet records the trained model and 300/324 pre-closure coverage;
+repository closure now records 324/324. Final research validation remains pending
+in both accounts; the public Sheet was not modified by this task. Required headers
 matched and no canonical planning rows or synchronized CSVs were manually edited.
 
 | Snapshot | Planning rows | SHA-256 |
 | --- | ---: | --- |
-| `roadmap.csv` | 30 | `e196dc7d051d6186e4efb11828aa6622fa93237e188d7f9363a631add13c2b8e` |
-| `current_state.csv` | 9 | `07c56a117ea012ccb3b564f68a121bcd7f3c80ce739fc2a92c4a537dc5702a6e` |
-| `stage_gates.csv` | 12 | `c5448e5d57ae37e4fcf1d76c7cb2b24b35ac122edb2d09a817ec6abe1fc151e1` |
-| `annotation_layers.csv` | 8 | `bef657d033cd7304e6deb0f233ba69babbbad0ecdddfe36e753dc645bd3495a4` |
+| `roadmap.csv` | 31 | `b7bd48882a8d0b65586b90d56da44a479841550ad4dd16b2904236defc8bc14f` |
+| `current_state.csv` | 10 | `7b21f8f55a132957bdc907183279dbab97991a6eb62e8719959298b3d8849bd5` |
+| `stage_gates.csv` | 12 | `ad7adbe7c7c3d6ff369bda135348d7ee0a7bcb9dfda3669cc76ea16b22847288` |
+| `annotation_layers.csv` | 8 | `6a1f14954fce9b454e7bd6d1c8b2f44aa747a94e946f053f60a0dcf56b6b8481` |
 
 ## Relevant Code / Migrations
 
@@ -392,8 +519,10 @@ matched and no canonical planning rows or synchronized CSVs were manually edited
 * `database/repositories/human_validations.py` and
   `20261004_add_human_validations.sql` / `20261005_add_l2_human_validations.sql`
   — implemented review storage and installed development extension.
-* `20261005_add_l2_annotations.sql` — provided; expected schema objects remain absent
-  in development as inspected on 5 October. Verify each target database separately.
+* `20261005_add_l2_annotations.sql` — installed and behavior-tested in development
+  during operational closure. Verify each other target database separately.
+* `tests/test_l2_operational_completion.py` — 11 schema, sleep, lease, diagnostic
+  and pending-only history-preservation regressions.
 * `app/services/annotation_service.py`, `app/routes/annotations.py`, annotation
   templates, article detail/history, navigation and opt-in app configuration.
 * `storage/gcs.py` — optional generation-pinned JSON reads.
@@ -403,10 +532,10 @@ matched and no canonical planning rows or synchronized CSVs were manually edited
 ## Test Status
 
 Latest full suite including installed-model integration on **5 October 2026**:
-**264 passed, zero failures/skips**. L2 review verification and
-synthetic smoke details appear in the dated entries below. This documentation audit
-validated links, referenced files, commands and snapshot hashes without rerunning
-collection, training, inference or human decisions.
+**275 passed, zero failures/skips**. L2 review verification and
+synthetic smoke details appear in the dated entries below. Operational closure
+ran the existing artifact pending-only after schema/test verification; no collection,
+training or human-decision changes were performed.
 
 ### Historical L0/L1 milestone verification
 
