@@ -42,7 +42,12 @@ objects absent at the initial check; no automatic migration. A later read-only
 run with OperationalError followed by AnnotationLockLost. The later operational closure installed all four required schema objects and
 verified rolled-back behavior; previous schema gaps are historical. See `docs/l2_model_performance.md`; independent
 performance remains unmeasured.
-Latest full suite including installed-model integration: 275 passed.
+Latest executed full suite including installed-model integration: 275 passed.
+The proposed next implementation is structured L2 human validation: reproducible
+review batches, initially hidden model output, separate adjudication and private
+progress/export reporting. Agree codebook/sampling first. These additions remain
+planned; training-article reviews are development error analysis, not independent
+testing. See `docs/annotations.md` Section 17.
 NER, geocoding, completed sampled human validation, mapping,
 and remote reviewer authentication remain future research work. Before roadmap-related
 implementation, run `python3 scripts/sync_roadmap.py` and read all four snapshots
@@ -957,8 +962,9 @@ The inspected roadmap currently prioritizes:
    have L1 decisions following the authorized full run.
 5. Create a small stratified/uncertainty-focused human reference sample and metrics.
 6. Inspect L2 weak uncertainty, verify schema prerequisites and agree the GBV codebook.
-7. L2 development coverage/schema closure is complete. Next, under a separate
-   milestone, expand reviewed positives and freeze independent reference membership
+7. L2 development coverage/schema closure is complete. Next, plan structured
+   human validation (batches, initially hidden predictions, adjudication and progress).
+   Before later independent evaluation, freeze reference membership
    before evaluation; later-layer baselines follow the synchronized roadmap.
 
 See `docs/roadmap/IMPLEMENTATION_STATUS.md` for current L0/L1/L2 implementation

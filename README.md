@@ -47,7 +47,12 @@ inspectable at `/annotations/l2?mode=weak`. Full offline suite including the
 installed-model integration: **275 tests passed**, zero skips. See
 [the engineering log](docs/roadmap/IMPLEMENTATION_STATUS.md) for execution evidence.
 L0 remains 519 valid / 17 needs_review; L1 v2 324 kenya / 35 not_kenya /
-160 ambiguous. Independent research validation and L3–L5 remain pending.
+160 ambiguous. Independent research validation and L3–L5 remain pending. The proposed next
+implementation is reproducible human-validation batches, initially hidden model
+output, adjudication and progress reporting in the existing local review workspace.
+Agree the codebook and sampling protocol first; see
+[the planned validation milestone](docs/annotations.md#17-next-steps-future-work).
+These additions are not yet implemented.
 
 Development installation does not establish schema readiness for other targets.
 Apply migrations in filename order and verify each target independently before
@@ -65,10 +70,10 @@ python3 scripts/sync_roadmap.py --check
 
 No Google credentials are needed for roadmap synchronization. L0/L1 and L2
 infrastructure are implemented; sampled-validation and research exit gates remain open.
-The latest sync found all four snapshots current. Their L1 v2/review counts are
-aligned, but their exporter/first-model tasks still lag executed engineering work:
-reviewed/mixed export and `l2-afroxlmr-dev-v1` training are complete. Independent
-evaluation remains pending; synchronized CSVs are not manually edited.
+The last successful sync on 5 October records completed model training and
+pre-closure 300/324 coverage; the later 6 October verification records 324/324.
+This documentation update did not resynchronize or change the public Sheet.
+Independent evaluation remains pending; synchronized CSVs are not manually edited.
 See [the roadmap workflow](docs/roadmap/README.md) and
 [implementation status](docs/roadmap/IMPLEMENTATION_STATUS.md).
 

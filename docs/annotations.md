@@ -388,8 +388,8 @@ Local L0/L1/L2 review and the L2 human-validation schema extension are implement
 Inspection found the expected L2 annotation constraints/index/trigger absent in
 development. Apply `20261005_add_l2_annotations.sql` before further automated L2 writes;
 the presence of weak rows is not proof that this migration is installed.
-Latest recorded full suite: 249 run, 248 passed, one optional model integration
-test skipped. Earlier dated counts/tests below retain their historical meaning.
+At that historical observation, the recorded full suite was 249 run, 248 passed,
+one optional model integration test skipped. Earlier dated counts/tests below retain their historical meaning.
 
 ## 2. Pipeline architecture
 
@@ -1028,8 +1028,9 @@ article/version consistency constraint.
 
 `20261005_add_l2_annotations.sql` adds a separate method/prerequisite identity index
 and an L2 trigger enforcing same-article/same-version L1 Kenya lineage. Expected
-objects from that migration were absent in the latest development inspection;
-application gating does not substitute for installing the documented SQL checks.
+objects were installed and behavior-tested during the 6 October operational
+closure in development. Application gating does not substitute for per-target
+installation; L2 execution now checks readiness before creating run/result rows.
 
 RLS is enabled on both tables with no anonymous browser grants in this migration.
 The configured backend PostgreSQL role needs appropriate access; RLS enablement
@@ -1250,20 +1251,39 @@ validation and calibrated thresholds have not been independently established.
 
 ## 17. Next steps (future work)
 
-First review L0 anomalies and versioned parser repairs; agree the annotation
-specification, gazetteer review, cohort membership and numeric validation criteria.
-Perform stratified/uncertainty-focused human validation, separate reference/adjudicated
-labels, error analysis, calibration and source/language coverage reporting before
-claiming roadmap exit-gate completion.
+L2 development model coverage and installed development schema are complete:
+324/324 compatible predictions, zero pending, verified on 6 October 2026 at
+00:04 EAT. Independent research validation remains open. The proposed next
+implementation milestone is a structured human-validation workflow in the existing
+protected local Human Review workspace; this documentation update implements none
+of the capabilities below.
 
-The first L2 development fine-tuning is complete. Further research execution
-includes iterative retraining, independent validation and calibrated thresholds
-using Section 21's infrastructure; L3 multi-label GBV type, L4
-NER/event-location reasoning/geocoding, and L5 privacy/safety detection and output
-controls. Corpus version freeze, duplicate-aware splits and held-out evaluation
-must preserve independent reference evidence. These are planned capabilities, not
-implemented research outcomes of the runner. Change canonical planning rows in the
-public Sheet first and synchronize before future roadmap-driven implementation.
+Agree the GBV inclusion/exclusion codebook, reviewer instructions, sampling design,
+uncertainty handling and acceptance criteria before generating validation batches.
+Continue inspecting L0 anomalies, L1 ambiguity and language/source quality; model
+coverage does not validate those prerequisites.
+
+| Planned capability | Purpose and traceability requirement |
+| --- | --- |
+| Reproducible review batches | Freeze private article/version and exact L0/L1/L2 identities with sampling configuration/seed. Include publisher, reviewed language, predicted-label strata and borderline cases. Do not treat uncertain language metadata as confirmed language. |
+| Initially hidden model output | Record the reviewer's initial decision before revealing the machine label/confidence to reduce prediction anchoring; preserve original machine output and current protected local access. |
+| Disagreement and adjudication | Store initial decisions and later adjudication separately and append-only, linked to the exact reviewed extraction, model identity and codebook version. |
+| Validation progress and private export | Report batch completion and source/language/label coverage; separate model predictions, human decisions, unresolved cases and reference membership. Keep identities and research text out of Git and public planning files. |
+
+Reviewing the present development/training articles supports error analysis but
+cannot establish independent test performance of the current artifact. A future
+protected reference set must exclude training articles and related duplicates;
+near-duplicate grouping and frozen membership are needed before independent
+accuracy/precision/recall/F1/AUC or calibration claims. Any sample enriched for
+borderline or positive cases requires an explicit sampling design and interpretation;
+its raw label proportions do not estimate corpus prevalence.
+
+These are recommendations for a separately authorized implementation milestone,
+not an achieved research gate or a change to the public Sheet. Retraining,
+threshold calibration, corpus growth, L3 GBV type classification, L4
+NER/event-location reasoning/geocoding and L5 privacy/safety work remain separate
+later tasks. Synchronize the public roadmap before future roadmap-driven
+implementation and honor its research stage gates.
 
 ## 18. L1 v2: expanded offline geographic evidence
 

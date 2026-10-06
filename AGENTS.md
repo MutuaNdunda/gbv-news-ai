@@ -843,7 +843,8 @@ first real AfroXLMR development artifact are also implemented. The public
 Google Sheet and synchronized snapshots in `docs/roadmap/` govern sequencing and
 stage gates (see Section 34). Current State now records 536 article versions;
 407 was an older planning snapshot. Neither establishes a validated final dataset.
-Supabase contained 536 article versions when rechecked on 5 October 2026. The user
+The operational closure verified 536 article versions on 6 October 2026 at
+00:04 EAT, with 324/324 compatible L2 model predictions and zero pending. The user
 authorized L0 over all 536 after a successful 20-version L0/L1 trial, then explicitly
 authorized L1 on the remaining 499 L0-valid versions. All 519 eligible versions now
 have L1 decisions; the 17 L0 review cases remain gated.
@@ -857,10 +858,11 @@ and monitor (see Section 33). The next priorities are:
 2. Review annotation specification, gazetteer, thresholds and corpus membership.
 3. Inspect L1 uncertainty and source/language coverage over the agreed eligible corpus.
 4. Validate a stratified/uncertain sample of L0/L1/L2 weak results with separate reviews.
-5. Verify/install required L2 annotation schema; finalize codebook and thresholds.
-6. Resolve the L2 connection/lock interruption, then complete 24 pending predictions.
-7. Expand reviewed positives and freeze independent reference membership before evaluation.
-8. Design later-layer baselines only as the synchronized roadmap permits; final validation remains gated.
+5. Preserve installed L2 schema and fail-closed leases; development model coverage is complete.
+6. Agree the GBV codebook and a reproducible human-validation sampling protocol.
+7. Plan review batches, initially hidden model output, adjudication and coverage reporting.
+8. Design independent reference membership excluding training articles and related duplicates.
+9. Undertake retraining or later-layer work only as separately authorized and stage gates permit.
 ```
 
 Do not build advanced model-serving or distributed infrastructure before reliable data collection has been demonstrated.
@@ -884,7 +886,7 @@ When several implementations are possible, prefer the simplest approach that sat
 
 ---
 
-## 33. Implemented Progress (Reviewed 5 October 2026)
+## 33. Implemented Progress (Reviewed 6 October 2026)
 
 This summary reflects repository implementation and operator documentation. It does
 not establish production deployment, completed collection, or validated research
@@ -1003,28 +1005,39 @@ or end-to-end model latency.
   training/synthetic smoke and checksummed offline trained-artifact inference.
   `l2_datasets.py` adds latest-human reviewed/mixed development exports, exact
   deduplication and explicit reference exclusion. The locally configured
-  `l2-afroxlmr-dev-v1` has 300 compatible predictions (10 gbv / 284 not_gbv /
-  6 borderline); 24 eligible versions remain pending after OperationalError and
-  AnnotationLockLost. See `docs/annotations.md` Section 21 for actual architecture
+  `l2-afroxlmr-dev-v1` has 324/324 compatible predictions (11 gbv / 307 not_gbv /
+  6 borderline), zero pending, verified on 6 October at 00:04 EAT. The two
+  pending-only resume passes added 24 rows without force or changes to history. See `docs/annotations.md` Section 21 for actual architecture
   and training/operational evidence. No independent accuracy/F1 is established.
 * Local Human Review supports all L0/L1/L2 labels, exact machine/extraction lineage,
   direct L2 unlock, protected verified text, separate append-only decisions/revisions,
   filtered Save & Next and separate weak/model review counts. One current L1 review
   is recorded; L0 has no saved reviews. L2 weak reviews comprise 300 corrections
   and two confirmed borderline, producing effective 10/312/2; 22 binary weak
-  results remain unreviewed. All 300 model predictions remain unreviewed. These
+  results remain unreviewed. The closure wrote no model-review decisions; model
+  predictions remain unreviewed at that verification. These
   records do not establish a completed independent validation sample.
 * `20261004_add_human_validations.sql` and the
   `20261005_add_l2_human_validations.sql` extension are installed in development.
-  Inspection found expected checks, identity index and prerequisite trigger from
-  `20261005_add_l2_annotations.sql` absent. Apply that migration to the intended
-  database before further automated L2 writes; never assume file presence means installation.
+  After a clean preflight of 624 historical L2 rows,
+  `20261005_add_l2_annotations.sql` was installed and behavior-tested in development.
+  Both constraints, identity index and L1-Kenya prerequisite trigger are present;
+  readiness is true. Verify other targets independently before L2 writes.
 * Latest full suite including the real installed-model integration on 5 October:
-  264 passed, zero failures/skips. Synthetic smoke is engineering evidence only.
+  275 passed, zero failures/skips, including 11 new operational regressions. Synthetic smoke is engineering evidence only.
 * First-model training used 322 mixed records (10/312; only three reviewed positives),
   class-weighted loss and three epochs. No independent held-out reference set is
-  frozen. Four required L2 schema objects remain absent despite stored model rows.
-  Independent GBV accuracy, calibration and research stage-gate completion remain pending.
+  frozen. Development operational coverage is complete; independent GBV accuracy,
+  calibration and research stage-gate completion remain pending.
+* The earlier persistence error strongly coincided with macOS idle sleep; its exact
+  driver message was not retained. Subsequent `AnnotationLockLost` was a secondary
+  fail-closed stop. Model CLI runs now prevent automatic idle sleep on macOS,
+  check installed schema before writes and verify actual advisory-lock ownership.
+  Safe summaries retain error phase/SQLSTATE and wall duration; lost leases are
+  invalidated without automatic relock or write replay.
+* Private fingerprints verified all 300 earlier model rows, 2,218 automated
+  annotation rows, 303 human-validation rows and 536 extraction versions unchanged.
+  No duplicate compatible groups or unexpected force-history rows appeared.
 
 ---
 
@@ -1081,14 +1094,23 @@ records**, retaining gating and uncertainty. L1 runs only on L0-valid records;
 downstream eligibility follows the synchronized Annotation Layers and Stage Gates.
 L0/L1 are implemented and executed. L2 weak supervision, model infrastructure and
 local review, reviewed/mixed export and the first real development model are
-implemented. Full eligible prediction coverage, L2 schema installation and independent
-L2 validation remain pending. Latest synchronized Sheet text includes L1 v2 and
-human review, but exporter/first-model tasks lag execution. Record that mismatch
-without manually rewriting synchronized CSVs. The roadmap permits location/NER
+implemented. Full eligible model coverage and development L2 schema installation
+are complete; independent L2 validation remains pending. The last successful
+sync on 5 October records training and pre-closure 300/324 coverage; the later
+6 October verification records 324/324. No fresh Sheet sync was performed by this
+documentation update. Preserve that dated distinction without manually rewriting CSVs. The roadmap permits location/NER
 baseline design after initial usable L2-positive output; final evaluation still
 requires validated positives and independently reviewed spans/roles.
 L3–L5 remain planned. Automated execution alone does not
 satisfy the sampled-validation exit gates.
+
+The proposed next implementation milestone is a structured L2 human-validation
+workflow: reproducible publisher/language/label review batches, initially hidden
+model predictions, separate adjudication and private progress/export reporting.
+These additions are planned, not implemented by the documentation update. Review
+of training articles supports development error analysis, not independent testing;
+a future reference set must exclude training articles and related duplicates.
+See `docs/annotations.md` Section 17 for scope and research limits.
 
 Human oversight primarily means stratified validation, low-confidence review,
 uncertainty-based sampling, error analysis, and adjudication of sampled disagreements.

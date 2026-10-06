@@ -112,7 +112,7 @@ a month from their URLs or archive timestamps. No claim of exhaustive publisher
 coverage or random sampling is made. The date-window filter is automatic, but
 Kenya relevance and language coverage still require human validation.
 
-## Annotation handoff — current progress, 5 October 2026
+## Annotation handoff — verified 6 October 2026, 00:04 EAT
 
 Collection remains independent of classification and never selects the corpus
 solely from GBV keywords. The current development readback contains 536 extraction
@@ -123,13 +123,18 @@ automated labels, not verified incidents, a gold corpus or coverage/accuracy cla
 
 Protected local Human Review supports L0/L1/L2 and preserves exact extraction,
 machine annotation and human revision lineage. The first real AfroXLMR development
-artifact is locally configured; 22:59 EAT readback reconfirmed 300 compatible
-predictions (10 gbv / 284 not_gbv / 6 borderline), with 24 eligible pending after
-a failed run. Human overlay on the separate weak cohort is 10/312/2. Mixed training
+artifact is locally configured; operational closure verified 324/324 compatible
+predictions (11 gbv / 307 not_gbv / 6 borderline), with zero pending. The resume
+added 24 rows while preserving prior model/weak/human/upstream history. Human overlay on the separate weak cohort is 10/312/2. Mixed training
 uses 322 binary records, only 10 positive (three reviewed), and no frozen independent
 reference set exists. Operational progress is not independent model evaluation.
-The L2 annotation migration's expected checks/index/trigger were
-absent in development at schema inspection; apply that prerequisite before further automated L2 writes. No collector behavior or archive sampling scope changed in this update.
+The L2 constraints/index/trigger are installed and behavior-tested in development;
+verify other targets independently before L2 writes. No collector behavior or
+archive sampling scope changed in this update. The proposed next milestone is
+structured human-validation batches, initially hidden predictions, adjudication
+and progress reporting. Source/language strata must account for the archive and
+metadata limitations above; training-article reviews cannot establish independent
+model performance. See [the planned validation scope](annotations.md#17-next-steps-future-work).
 
 Use [the annotation specification](annotations.md), [operator commands](../README.md)
 and [dated implementation evidence](roadmap/IMPLEMENTATION_STATUS.md) for downstream

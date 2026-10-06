@@ -13,6 +13,31 @@ The first real AfroXLMR development artifact is trained/configured locally;
 L2 development model coverage is complete: 324/324 compatible predictions, zero
 pending; required L2 schema is installed. Independent research validation remains pending.**
 
+### Markdown alignment — 6 October 2026
+
+Aligned all nine project-maintained Markdown guides to the executed 00:04 EAT L2
+closure: 324/324 compatible predictions, 11/307/6, zero pending, installed and
+behavior-tested development schema, unchanged prior history and 275 passing tests.
+Corrected stale current summaries in AGENTS, deployment, collection handoff,
+roadmap guidance and the annotation schema description. Older dated run/test
+observations remain historical evidence. The three pinned upstream READMEs were
+reviewed and preserved as source provenance.
+
+Documented the proposed next implementation in
+[annotations Section 17](../annotations.md#17-next-steps-future-work): agree the
+codebook/sampling protocol, then add reproducible review batches, initially hidden
+model output, separate adjudication and private progress/export reporting to the
+existing local review workspace. These are planned capabilities. Training-article
+reviews support error analysis; independent testing requires excluded training
+articles/related duplicates and frozen reference membership.
+
+This update changed Markdown only. No fresh roadmap synchronization, public Sheet
+or CSV edits, code changes, database queries/writes, inference, review decisions,
+training or evaluation were performed. Counts refer to the executed closure, not
+a new live audit. The full-suite result remains the previously executed 275 passes;
+validation for these documentation edits checks Markdown links/anchors, fences,
+consistent current summaries and `git diff --check`.
+
 ### L2 operational milestone closed — 6 October 2026, 00:04 EAT
 
 **L2 DEVELOPMENT MODEL COVERAGE is complete: 324/324
@@ -353,7 +378,7 @@ update checks Markdown structure/local links and `git diff --check`; it does not
 rerun model or collection workflows. Private article content, reviewer identities,
 review-row identifiers and credentials are omitted from this log.
 
-### Latest verified development state — 5 October 2026, 12:44 EAT
+### Historical verified development state — 5 October 2026, 12:44 EAT
 
 **Historical pre-review audit; use the 14:52 EAT snapshot above for current L2 review state and planning alignment.**
 
@@ -457,8 +482,11 @@ have not been passed through automation or review coverage alone.
 4. Inspect L1 ambiguity, evidence and source/language coverage over the eligible corpus.
 5. Keep installed-schema/lease safeguards enabled; completed model coverage does
    not close independent research-validation gates.
-6. Expand independently reviewed positives; store sampled validation and adjudicated
-   reference labels separately, freeze reference membership and report defensible
+6. Plan structured human validation: reproducible source/language/label batches,
+   initially hidden model output, separate adjudication and private progress/export
+   reporting. Agree codebook/sampling first; these additions are not implemented.
+7. Under a later authorized research milestone, store independent reference labels
+   separately, exclude training articles/related duplicates, freeze membership and report defensible
    accuracy/F1, false-pass/false-fail, calibration and subgroup evidence before
    claiming research exit-gate completion.
 

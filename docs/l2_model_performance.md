@@ -259,3 +259,14 @@ Weights, training records, private reports and `.env` remain excluded from Git.
    recall, F1, macro-F1, confusion counts and AUC where defensible, plus calibration
    and source/language error analysis. Tune thresholds on development validation
    only, preserving the independent final reference set.
+
+## Proposed next implementation — structured human validation
+
+Operational coverage is complete; the next recommended implementation is the
+[structured validation workflow](annotations.md#17-next-steps-future-work):
+reproducible review batches, initially hidden predictions, separate adjudication
+and private coverage/progress reporting, after agreeing the codebook and sampling
+protocol. These capabilities are planned, not delivered by this documentation
+update. Reviews of training articles support development error analysis; a future
+independent reference set must exclude training articles and related duplicates.
+No new evaluation, retraining or threshold calibration was performed.

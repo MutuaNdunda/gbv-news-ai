@@ -49,26 +49,32 @@ Current State now records the 536-version observation from 3 October; its earlie
 407-record figure was a planning snapshot. Neither is a fixed eligibility count,
 a validated final corpus, or permission to include every local collection artifact.
 
-## Engineering progress — checked 5 October 2026
+## Engineering progress — documentation aligned 6 October 2026
 
-All four anonymous exports synchronized successfully and matched the local files.
-All four exports were rechecked during the 22:59 EAT progress audit and were
-unchanged. The Sheet includes L1 v2 and human-review counts, but still describes
-reviewed/mixed export and the first real AfroXLMR as pending. Repository execution
-has completed those development tasks: mixed training has 322 records (10/312),
-and the configured artifact has 300 compatible predictions (10/284/6), 24 pending.
-Weak coverage remains 324/324; its human overlay is 10/312/2. Independent evaluation
-and a frozen held-out reference set remain absent. This planning/execution mismatch
-is documented without changing canonical Sheet rows or manually editing snapshots.
-The expected L2 annotation migration
-objects still require installation in development; the review extension is installed.
+The last successful anonymous synchronization on 5 October refreshed all four
+exports. Those snapshots record model training and the earlier 300/324 model
+coverage. The subsequent operational closure verified **324/324** compatible
+predictions (11 gbv / 307 not_gbv / 6 borderline), **zero pending**, and installed,
+behavior-tested development L2 constraints/index/trigger. The existing artifact,
+thresholds, model/weak/human history and upstream lineage were preserved.
 
-See [the progress/documentation audit](IMPLEMENTATION_STATUS.md#project-progress-and-documentation-audit--5-october-2026-2259-eat)
-for coverage, schema readiness, test evidence and limitations, and
-[the operator guide](../../README.md) for commands. Update canonical planning rows
-in the Sheet before syncing changed statuses; this documentation update did not
-change the Sheet or manually rewrite CSVs. Execution coverage and review tooling
-do not satisfy research exit gates.
+Weak coverage remains 324/324 (7/15/302); its separate human overlay is 10/312/2.
+Mixed training has 322 records (10/312), with only three reviewed positives. A
+protected independent reference set and independent model metrics remain absent.
+Development model coverage is complete; the research gate remains open.
+
+This documentation update did not download new exports, change the public Sheet
+or edit synchronized CSVs. Do not represent the dated snapshots as freshly
+synchronized. See [the executed operational closure](IMPLEMENTATION_STATUS.md#l2-operational-milestone-closed--6-october-2026-0004-eat)
+and [the operator guide](../../README.md) for coverage, schema, tests and commands.
+
+The proposed next implementation is a structured local human-validation workflow:
+reproducible batches, initially hidden predictions, separate adjudication and
+private progress/export reporting. Agree the codebook and sampling protocol;
+training articles and related duplicates cannot enter an independent test set.
+See [the planned milestone](../annotations.md#17-next-steps-future-work).
+This recommendation does not change canonical roadmap sequencing or mark any
+research gate achieved. Synchronize before implementing future roadmap work.
 
 ## Public source configuration
 
