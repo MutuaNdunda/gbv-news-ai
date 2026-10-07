@@ -2,6 +2,7 @@
 import hashlib
 import json
 import logging
+import math
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -33,12 +34,15 @@ def allowed_url(url, hosts):
 class Client:
     """Check robots, throttle all requests, and validate each redirect before fetching."""
     def __init__(self, hosts, delay=2.0, user_agent='GBVResearchBot/0.1',
-                 url_validator=None, request_stage='HTTP'):
+                 url_validator=None, request_stage='HTTP', read_timeout=30.0):
+        if not math.isfinite(read_timeout) or read_timeout <= 0:
+            raise ValueError('Read timeout must be finite and positive')
         self.hosts = hosts
         self.delay = delay
         self.user_agent = user_agent
         self.url_validator = url_validator
         self.request_stage = request_stage
+        self.read_timeout = read_timeout
         self.session = requests.Session()
         self.session.headers['User-Agent'] = user_agent
         self.robots = {}
@@ -77,7 +81,9 @@ class Client:
             time.sleep(max(0, self.delay - (time.monotonic() - self.last_request)))
             self.last_request = time.monotonic()
             try:
-                response = self.session.get(url, timeout=(10, 30), allow_redirects=False)
+                # Longer index waits must not lengthen robots-policy requests.
+                read_timeout = 30 if stage == 'ROBOTS' else self.read_timeout
+                response = self.session.get(url, timeout=(10, read_timeout), allow_redirects=False)
             except requests.RequestException as exc:
                 if attempt == 2:
                     raise

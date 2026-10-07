@@ -10,6 +10,7 @@ import hashlib
 from io import StringIO
 import json
 import logging
+import math
 import os
 from pathlib import Path
 import re
@@ -141,7 +142,10 @@ def report(run_name, run_id, state, objects, articles, scans):
     return rows
 
 
-def run(config, run_name, services=None):
+def run(config, run_name, services=None, *, index_read_timeout=30.0):
+    """Resume the same discovery configuration with a recorded operational timeout."""
+    if not math.isfinite(index_read_timeout) or not 1 <= index_read_timeout <= 300:
+        raise ValueError("index read timeout must be finite and between 1 and 300 seconds")
     supplied = services or build_services()
     persistence, articles, runs = supplied[:3]
     scans = supplied[3] if len(supplied) > 3 else CollectionRunScanRepository(articles.sessions)
@@ -155,6 +159,12 @@ def run(config, run_name, services=None):
     state = state or initial_state(config, months)
     state["status"] = "running"
     state.setdefault("pending_index", [])
+    state.setdefault("execution_settings", []).append({
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "index_read_timeout_seconds": index_read_timeout,
+    })
+    LOG.info("CDX index read timeout: %s seconds per attempt; up to three attempts",
+             index_read_timeout)
     for pending in list(state["pending_index"]):
         persistence.retry_index(pending, run_id)
         state["pending_index"].remove(pending)
@@ -164,7 +174,7 @@ def run(config, run_name, services=None):
     index_client = Client(("web.archive.org",), config["delay"],
                           os.environ.get("SCRAPER_USER_AGENT", "GBVResearchBot/0.1"),
                           url_validator=lambda url: urlsplit(url).path == "/cdx/search/cdx",
-                          request_stage="CDX_INDEX")
+                          request_stage="CDX_INDEX", read_timeout=index_read_timeout)
     article_client = Client(
         ("web.archive.org",), config["delay"], index_client.user_agent,
         request_stage="ARCHIVE_REPLAY",
@@ -334,6 +344,9 @@ def main():
     parser.add_argument("--end-month", default="2026-08")
     parser.add_argument("--source", action="append", choices=SOURCES)
     parser.add_argument("--delay", type=float, default=2.0)
+    parser.add_argument("--index-read-timeout", type=float, default=30.0,
+                        help="CDX read timeout per attempt, 1–300 seconds (default: 30); "
+                             "may be adjusted when resuming the same run")
     parser.add_argument("--max-index-pages", type=int, default=0)
     parser.add_argument("--max-fetches-per-month", type=int, default=0)
     parser.add_argument("--index-match", choices=("domain", "prefix"),
@@ -348,6 +361,8 @@ def main():
         parser.error(str(exc))
     if not 1.5 <= args.delay < float("inf") or args.max_index_pages < 0 or args.max_fetches_per_month < 0:
         parser.error("delay must be finite and >=1.5; limits must be nonnegative")
+    if not math.isfinite(args.index_read_timeout) or not 1 <= args.index_read_timeout <= 300:
+        parser.error("index read timeout must be finite and between 1 and 300 seconds")
     config = {"kind": "monthly", "start_month": args.start_month,
               "end_month": args.end_month,
               "sources": list(dict.fromkeys(args.source or SOURCES)),
@@ -365,7 +380,7 @@ def main():
     logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler(), log_handler])
     LOG.info("Run name: %s", run_name)
     with services[2].lock(run_name):
-        result = run(config, run_name, services)
+        result = run(config, run_name, services, index_read_timeout=args.index_read_timeout)
     LOG.info("Run status: %s", result["status"])
     return 0 if result["status"] == "index_scans_finished" else 2
 

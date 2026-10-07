@@ -4,17 +4,375 @@ This engineering log records executed code and observations. The public Sheet
 remains the planning source of truth; synchronized CSVs were not edited manually.
 No private article content, victim information or reference labels belong here.
 
+## Read-only expanded-corpus observation — 7 October 2026, 16:05:10 EAT
+
+A repeatable-read, read-only PostgreSQL snapshot verified **2,052 articles and
+2,052 extraction versions**: Nation 558, Citizen 466, Standard 20, Star 502,
+Tuko 80, Kenyans.co.ke 7 and Taifa Leo 419. These are collected candidates, not
+validated GBV labels or distinct incidents. The historical 536-version baseline
+below remains dated evidence.
+
+The existing L0 run is **in progress**, started at 15:25:15 EAT, selecting the
+1,516-version expansion. Its checkpoint recorded **846 processed/succeeded,
+zero execution failures**, with 670 outstanding. Current compatible L0 totals
+including the baseline were **1,360 valid / 18 needs_review / 4 invalid**.
+Compatible L1 remains **324 Kenya / 35 not_kenya / 160 ambiguous** (519);
+**841** currently L0-valid versions lack compatible L1. Current trained L2
+remains **11 gbv / 307 not_gbv / 6 borderline** (324), with zero pending only
+within the existing 324-version L1-Kenya cohort. Expanded L1/L2 coverage is not
+complete. There are **zero validation batches and zero batch members**;
+independent performance remains unmeasured.
+
+Expanded collection output is now verified beyond the earlier operator-log
+observation: a completed Nation trial retained 200 indexed versions;
+`multi_publisher_wayback_gbv_500_updated` is failed with 398 retained versions,
+and `remaining_publishers_wayback_gbv_100` is failed with 101 retained versions.
+Preserved partial saves do not imply successful run completion. A separate run
+still has a database status of running but no indexed versions; its process
+liveness was not verified.
+
+Separate read-only GCS checks at 16:06 EAT verified three sampled raw/normalized
+generation-pinned pairs and their hashes/provenance. Installed model and
+training-record checksums passed. This was not a full corpus/object audit.
+Private evidence and the supervisor handoff remain under ignored
+`data/private_reports/supervisor_handoff_2026-10-07/`. No running job was
+interrupted, no processing or tests were started, and no code/configuration,
+database or cloud object was changed by this inspection. These counts are a
+timestamped observation, not final L0 results.
+
 ## Current Milestone
 
 **L0/L1 implemented and executed; L2 weak bootstrap covers the current eligible
 corpus; training/inference infrastructure and local L0/L1/L2 Human Review implemented.
 Human review is recorded for all 302 originally borderline L2 weak results.
 The first real AfroXLMR development artifact is trained/configured locally;
-L2 development model coverage is complete: 324/324 compatible predictions, zero
+L2 development model coverage of the earlier eligible cohort is complete: 324/324 compatible predictions, zero
 pending; required L2 annotation schema is installed. L2 validation-batch, blind-review,
 protected-reference and private-evaluator engineering is implemented; its new
 validation migration is installed and behavior-verified in development.
 Independent research validation remains pending.**
+
+### Achievements and L2 codebook finalized — 7 October 2026
+
+The researcher explicitly confirmed **Finalize the L2 codebook** as completed.
+The semantic standard is `docs/research/l2_gbv_relevance_codebook_v1.0.md`, version
+1.0, guideline identifier `l2-gbv-relevance-codebook-v1.0`. Its status and linked
+operator, annotation, model and project-context documents now record researcher
+finalization. This records the user's completion statement; it does not assert
+a separate supervisor signature or ethics approval. No semantic rule, machine
+threshold, model artifact, existing review or runtime configuration was changed
+by this documentation update.
+
+| Achieved work | Evidence and limits |
+| --- | --- |
+| L0/L1 automation and L2 development model | Historical 536-version baseline; L0/L1 execution, dev-v1 trained on 322 records, 324/324 compatible L2 predictions and installed development schema. These remain dated observations, not current expanded-corpus counts or independent quality metrics. |
+| Protected human review and validation engineering | Append-only human decisions, seeded batches, first-decision blinding, frozen/protected reference membership, training exclusion and private evaluator; development validation schema installed/behavior-verified. |
+| L2 codebook v1.0 | **Finalized — researcher confirmation on 7 October.** Inclusion/exclusion, substantive/incidental reporting, multilingual review and semantic/workflow uncertainty are documented. |
+| Shared historical collection | All seven registered adapters use bounded shared waybackpy discovery, literal OR URL terms, separate capture/publication dates, supplied originals/replays, deduplication, raw-first private GCS and Supabase lineage, per-source counters and explicit live mode. |
+| Actual collection smoke | Ten new saves: Citizen five, Kenyans.co.ke five; all raw/normalized objects and DB lineage verified. Nation/Standard/Star/Tuko had CDX timeouts; Taifa Leo returned unsupported routes. No exhaustive coverage claim. |
+| Citizen extraction correction | Parser 1.2 recognizes the older article container; all five reported warning pages parsed successfully after actual retrieval. Fifty relevant mocked tests passed. No new cloud insertion was performed by that diagnostic fix. |
+| Expanded operator collection | User logs show continued paginated discovery and a 100-new-save target per publisher. No completed expanded-run totals were provided or verified; targets/CDX record counts are not achieved sample sizes. |
+
+Next: agree the sampling protocol, sample size, coverage and review/acceptance
+policy; check the real unseen L0-valid/L1-Kenya pool after collection and eligible
+L2 predictions; archive/pin the finalized guide and model identity; then preview,
+freeze and execute `L2-VALIDATION-V1` under its own authorization. Complete blinded
+review and protected evaluation before independent precision/recall/F1 claims.
+Training exposure, near-duplicate controls, source/language support and uncertainty
+reporting remain relevant. Codebook finalization does not complete these steps,
+retraining, L3–L5, NER, geocoding or the analytical dashboard.
+
+Roadmap synchronization in this task succeeded with all four CSVs **current**.
+The public combined **Finalize L2 codebook and structured human-validation workflow**
+item remains `In progress` and still asks for codebook/sampling approval. Markdown
+now records the newer user-confirmed codebook subtask achievement. Canonical Sheet
+status was not changed and synchronized CSVs were not manually edited. No database,
+collection, review or model operation was run by this documentation-only update.
+
+### Citizen replay body selector correction — 7 October 2026
+
+Investigated five operator-reported `No accessible article body` warnings using
+the shared HTTP Client. All five dated replay pages returned HTTP 200, retained
+article text and valid Citizen canonical URLs, and had no observed paywall marker.
+Their JSON-LD had no articleBody; visible text was nested under
+`.article-content .the-content`, absent from the old selector list. This was an
+extraction-layout mismatch, not evidence of unavailable content.
+
+Added that publisher-specific selector and versioned the parser as
+`citizen-archive-1.2` (live equivalent 1.2). Re-parsing all five private diagnostic
+snapshots succeeded, with 7/11/6/8/9 body paragraphs respectively. A synthetic
+regression covers nested paragraphs, provenance, unrelated-page-text exclusion
+and retained paywall rejection. 50 relevant offline tests passed; compilation
+and whitespace validation passed. Private diagnostic HTML remains ignored under
+data/; no article content was added to Git. This inspection did not insert new
+GCS/Supabase records. The existing operator process was not stopped and keeps its
+already-loaded parser; a later invocation uses the fix. Raw HTML is persisted
+before parsing by the collector, so these warnings skip normalized article
+indexing without implying that raw evidence was lost.
+
+### Shared keyword Wayback trials — 7 October 2026
+
+Extended the integrated flow with `scrapers/wayback_discovery.py` for every
+registered publisher: Nation, Standard, Star, Citizen, Tuko, Kenyans.co.ke and
+Taifa Leo. Publisher modules configure allowed domains, prefixes, route checks,
+normalization and archive/live extraction. `nation_wayback.py` delegates to the
+shared implementation for compatibility. CLI collection defaults to Wayback;
+`--method live` explicitly selects publisher monitoring, and `--method listing`
+retains the legacy archived listings. No automatic method fallback occurs.
+
+Inspected installed waybackpy 3.0.6 before integrating its CDX parser. Its transport
+is overridden with the shared Client, retaining robots checks, allowed-domain
+validation, pacing, finite timeouts and bounded retries. Literal repeatable
+`--term` options use case-insensitive OR filtering on original URL text, including
+hyphenated/encoded spaces. Capture dates are separate from publication dates.
+Records, logical index requests and extraction attempts are bounded per publisher;
+pages are bounded per prefix. `--limit` counts new successful saves **per publisher**.
+Newest/oldest selection compares the bounded observed cohort, not the full archive.
+Query/tracking variants share a normalized original identity; content deduplication
+remains active. Candidates retain discovery terms without being assigned GBV labels;
+the separate downstream annotation/classification pipeline is unchanged.
+
+**Offline verification:** 134 relevant tests passed with mocked network/cloud calls,
+including all seven source adapters, literal terms, URL validation, capture selection,
+deduplication, pagination/attempt bounds, storage and partial failures, explicit live
+collection and offline dry-run. Python compilation and whitespace checks passed.
+All four public roadmap exports were synchronized and current; no manual CSV or
+public Sheet edits were made.
+
+**Actual cloud smoke:** targeted five new articles per publisher using this command:
+
+```bash
+.venv/bin/python scripts/trial_scraper.py \
+  --sources nation standard star citizen tuko kenyans taifaleo \
+  --term femicide --term rape --term defilement \
+  --term 'sexual assault' --term 'domestic violence' \
+  --term 'gender based violence' --term FGM \
+  --term ubakaji --term ukeketaji \
+  --from-date 2025-01-01 --to-date 2026-09-30 \
+  --selection newest --max-records 500 --max-index-requests 2 \
+  --max-pages 1 --max-attempts 25 --limit 5 --delay 3 \
+  --run-name shared-wayback-keyword-smoke-20261007-v1
+```
+
+| Publisher | CDX records | Unique candidates | Retrieval attempts | New saves | Outcome |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Nation | 0 | 0 | 0 | 0 | Both bounded index requests timed out after retries |
+| Standard | 0 | 0 | 0 | 0 | Both bounded index requests timed out after retries |
+| Star | 0 | 0 | 0 | 0 | Both bounded index requests timed out after retries |
+| Citizen | 500 | 270 | 9 | 5 | Target reached; three parse failures, one content duplicate |
+| Tuko | 0 | 0 | 0 | 0 | Both bounded index requests timed out after retries |
+| Kenyans.co.ke | 500 | 153 | 6 | 5 | Target reached; one content duplicate |
+| Taifa Leo | 338 | 0 | 0 | 0 | All returned rows failed existing article-route validation |
+
+Citizen had six successful extractions and 193 repeated captures; Kenyans.co.ke
+had six successful extractions and 344 repeated captures. There were no article
+fetch or storage failures for either successful source. Both discovery scans
+encountered configured bounds; their results do not establish exhaustive coverage.
+The four index failures are not evidence of absent archive coverage. A separate
+read-only Taifa Leo diagnostic confirmed keyword matches but newer section-prefixed
+routes and tag/pagination pages; current extraction routes support root WordPress
+slugs and dated stories, so these returned candidates were rejected conservatively.
+No route/access restrictions were bypassed. Current reports distinguish
+`no_valid_candidates` from an empty `no_coverage_or_matches` query.
+
+Supabase and GCS record final status `finished_with_gaps`. Read back all ten
+article versions and their pinned raw/normalized GCS objects: re-parsed body text,
+content hashes, original URLs, replay URLs, capture timestamps and publication
+dates all matched. Private aggregate verification remains ignored under
+`data/trials/wayback-verification/`. The actual run started on shared discovery
+configuration v1; final code pins v2 with improved tracking-variant identity.
+Use a fresh run name for final code rather than resuming this historical smoke.
+The existing user-run collector was not stopped. No larger 200-article collection,
+model inference, annotation, reference membership or schema change was performed.
+
+Operator commands and limitations are in README and `docs/collection_protocol.md`.
+Modern publisher layouts, missing dates, access restrictions and variable archive
+coverage still require extraction review. URL filtering can miss relevant stories;
+English terms alone also miss many Swahili URLs. Keyword-enriched samples supplement
+the broader corpus and must not become its sole sampling frame.
+
+### Integrated Nation waybackpy trial mode — 7 October 2026
+
+Follow-up: added optional inclusive `--publication-start`/`--publication-end`
+filters to the cloud trial runner for the user's requested 200 January–August
+2026 articles. These independently gate parsed publication dates after raw
+persistence; missing/unparseable/out-of-window dates are counted and excluded
+from normalized indexing. Existing commands without these options keep their
+configuration; provided bounds are pinned in run configuration. 29 focused
+offline tests passed, including missing/outside dates and inclusive end-date
+acceptance through storage fakes. README includes the 200-new-save GCS/Supabase
+command with a generated run name. No 200-article collection was started.
+
+Implemented optional `--wayback` in `scripts/trial_scraper.py` with
+`scrapers/nation_wayback.py`. Lazy bounded CDX discovery supports capture-date
+bounds and optional section prefixes; supplied public live article URLs resolve
+to newest successful HTML captures, and dated replays need no lookup. Other
+publishers/default listing discovery and explicit live collection remain intact.
+Shared HTTP pacing, robots checks, retries and 30-second read timeout govern
+all library transport. Replay parsing, URL/content deduplication, raw-first
+create-only GCS writes, Supabase lineage, locks and pending-index recovery reuse
+the existing runner. Mode, scope, dates and URL-list digest are pinned in run
+configuration; changed configuration requires a new run name.
+
+**Offline:** 114 relevant tests passed, including real library parsing against
+mocked CDX responses, continuation/provenance, exact-URL resolution, storage fakes,
+duplicate reruns, live parsing and all seven publisher/HTTP/monthly regressions.
+CLI help, Python compilation and whitespace checks pass. All four roadmap exports
+were synchronized and current; no manual CSV or public Sheet edits.
+
+**Actual collection:** `nation-wayback-five-20261007-v1`, querying the root Kenya
+prefix over June 2024 captures, exhausted its two-page bound (1,000 index rows)
+with zero eligible article candidates, zero retrieval attempts and zero saves.
+The bound warning is incomplete coverage, not evidence of zero publisher output.
+The News-scoped follow-up `nation-wayback-five-20261007-v2` saved **five new
+articles from five retrieval attempts**, with no fetch/parse failures. Exact CLI:
+
+```bash
+.venv/bin/python scripts/trial_scraper.py --source nation --wayback \
+  --wayback-section news --wayback-start 20240601 --wayback-end 20240630 \
+  --limit 5 --max-pages 2 --delay 3 --run-name nation-wayback-five-20261007-v2
+```
+
+Read back all five raw and normalized GCS objects at their recorded generations
+and Supabase versions. Re-parsed raw snapshots reproduced stored body text; text
+hashes, original/canonical URLs, actual archive URLs, capture timestamps,
+publication dates and exact CDX discovery URLs all matched. Body lengths range
+1,091–7,203 characters. Private evidence remains ignored under
+`data/trials/wayback-verification/`. This was a historical engineering smoke test,
+not a January–August 2026 corpus run or independent research validation. No model,
+annotation, reference membership or schema changes were made.
+
+**Actual duplicate/resolution check:** supplied the same five articles' original
+live URLs to Wayback mode with the same capture bounds, under
+`nation-wayback-five-20261007-duplicates-v1`. Five exact CDX resolutions succeeded;
+the runner saved zero new articles and attempted zero article retrievals.
+Indexed original URLs were skipped before fetching bodies. An initial private
+verification-helper attempt hit sandbox DNS restrictions for Supabase/Google
+authentication; retry with permitted network access succeeded. This was an
+environment restriction, not a failed article extraction. The five-article
+collection run itself had no retrieval/parse/storage failures.
+
+### Standalone Nation January–August 2026 collector — 7 October 2026
+
+Added user-requested `scripts/nation_wayback_standalone.py`, separate from the app,
+Supabase and GCS. Uses waybackpy CDX parsing/continuation with bounded shared
+requests transport and existing Nation parsing. Monthly capture queries default
+to January–August 2026; parsed publication dates independently gate inclusion.
+Local raw-first snapshots, JSONL and latest-run summary stay ignored under data/.
+Reruns skip stored canonical URLs/content but repeat discovery. Capture-window
+coverage excludes later-only captures; inaccessible/missing-date records and
+bounded/failed index discovery do not establish exhaustive corpus coverage.
+No live collection performed. README documents command and private local outputs.
+
+### waybackpy explicit-URL archive lookup — 7 October 2026
+
+Added separate `scripts/collect_wayback_urls.py` and pinned `waybackpy==3.0.6`.
+Accepts pasted/file/argument Nation article links, looks up one newest/oldest
+successful HTML capture using exact CDX matching, and reuses private collection.
+The library's parser/selection methods use a bounded shared requests-based HTTP
+transport override, retaining robots checks, pacing, finite timeouts and retries.
+Login links are rejected; existing dated replays need no lookup. Missing captures
+are skipped, index failures stop lookup explicitly. No new snapshots are submitted.
+README documents CLI, capture-list resume limits and diagnostic sampling scope.
+Installed dependency locally; 29 focused offline tests passed, exercising the real
+library parser with fake HTTP responses. Added an explicit repository test package
+to prevent the installed dependency's `tests` package shadowing local tests.
+No live archive lookup or cloud collection performed.
+
+### Explicit Nation URL collector — 7 October 2026
+
+Added `scripts/collect_urls.py` for stdin-pasted plain/Markdown links, private input
+files and repeatable URL arguments. Input is deduplicated and validated offline
+with `--dry-run`. Sign-in routes and their embedded redirect targets are rejected.
+Public live Nation articles use a distinct `nation-live-1.0` parser identity without
+fabricated archive provenance; dated replay URLs retain archive parsing. Explicit
+URL cohorts reuse cloud trial persistence, raw-first storage, access checks,
+content deduplication and pending-index recovery. Run configuration pins the input
+count and ordered-list digest. No live collection was performed. Manually selected
+articles remain diagnostic candidates, not an unbiased sampling frame.
+
+Verification: 26 focused offline tests passed, including Markdown deduplication,
+login rejection, live identity/provenance, paywall rejection and cloud persistence
+through storage fakes without discovery requests. README updated.
+
+### Nation archived listing expansion — 7 October 2026
+
+User-requested Nation trial expansion now follows linked archived Kenya sections
+and ordinary `?page=N` pagination with `--max-pages`. Listings and article URLs
+are deduplicated; each candidate retains the actual discovery URL. Shared access
+checks and paywall handling remain active. Failed listings fail discovery explicitly;
+page-bound truncation is logged. Multi-page configuration records
+`archive-listings-v1`; use a new run name for expansion. Matching reruns revisit
+the homepage, without a persisted listing cursor. Available archive links and
+captures bound actual saves; this does not establish complete or date-filtered
+corpus coverage.
+
+Verification: 38 focused offline tests passed, including section/page traversal,
+duplicates, cycles, page bounds, listing failures and route/query restrictions.
+Operator README and AI context updated. All four roadmap exports synchronized and
+current. No live collection, model run or database mutation was performed.
+
+### Taifa Leo paginated cloud discovery — 7 October 2026
+
+Implemented user-requested expansion beyond the first 500 CDX rows in
+`scripts/trial_scraper.py` and `scrapers/taifaleo.py`. Existing `--max-pages` now
+bounds Taifa Leo continuation pages; its default one-page query is preserved.
+Multi-page runs record discovery version `cdx-resume-v1` and require a new run name
+when changing saved configuration. Each candidate retains its exact discovery
+page URL and capture provenance. Cross-page URL deduplication, shared access
+checks, request pacing and cloud content deduplication remain in place.
+
+Discovery stops before fetching another page once the article/attempt limit is
+reached. A remaining continuation at the page bound is logged; malformed or
+repeated continuation keys and later-page index failures fail the run rather than
+claiming complete coverage. Already saved articles remain preserved. Reruns begin
+at the first page and skip indexed articles; no durable trial CDX cursor is added.
+All-date capture discovery does not establish January–August publication coverage.
+
+Verification: **95 relevant offline tests passed**, including a synthetic 501-URL
+two-page discovery, cross-page deduplication, exact page provenance, continuation
+failure handling and no extra page request after reaching the save limit. README,
+collection protocol and AI context document the expansion command and limits.
+All four roadmap exports were synchronized and current on 7 October; no manual
+CSV/public Sheet edits, live collection, database changes, model runs or new
+research-validation claims were made by this pagination task.
+
+### CDX timeout troubleshooting — 7 October 2026
+
+The user-supplied six-publisher expansion log ended with
+`paused_index_unavailable`: Nation, Standard and Star August index queries each
+exhausted three 30-second read attempts; all other scans remained pending and this
+run added zero articles. Existing monthly totals are earlier stored records, not
+newly collected articles or evidence that pending/failed publishers had no output.
+
+Read-only public endpoint probes reproduced the problem: a one-record Nation CDX
+query received no bytes within 45 seconds; a subsequent request permitting 120
+seconds returned HTTP 504 after approximately 61 seconds. A separate Wayback
+robots endpoint request returned HTTP 404 in approximately one second. This
+establishes a CDX/gateway-path failure in those probes, not a proven global outage
+or a database fault. A larger client timeout alone cannot repair upstream 504s.
+No article bodies were downloaded by these probes and no cloud research records
+were read or written by this troubleshooting task.
+
+Implemented optional `--index-read-timeout` (default 30, finite range 1–300 seconds).
+Only the CDX client receives the longer read wait; robots and replay remain at
+30 seconds, connection timeout at 10, and request retries at three. Dates, source
+order, query scope, limits, deduplication, caching and pause semantics are unchanged.
+The timeout is an operational argument rather than a discovery configuration key,
+allowing the existing run name to resume. Each invocation appends UTC start time
+and timeout to `progress.json`'s `execution_settings` and logs the wait.
+
+Verification: **89 relevant offline tests passed**, covering HTTP access/retries,
+monthly resume/cache/scan behavior, cloud persistence fakes, trial/import logic and
+all publisher parsers. New regressions cover timeout validation, scope to CDX,
+bounded failure handling and same-run resume after a timeout adjustment. CLI help
+exposes the option. No full model suite, training, inference, live collection,
+human-label change, validation batch or migration was run in this task.
+
+The required anonymous roadmap synchronization on 7 October refreshed all four
+exports through `scripts/sync_roadmap.py`; no public Sheet writes or manual CSV
+edits. Current validation/research gates remain open. README and collection protocol
+document paused-run recovery and the limitations of longer index waits.
 
 ### Validation migration installed — 6 October 2026, 23:48 EAT
 

@@ -4,6 +4,22 @@
 
 ## 1. Project Summary
 
+Before real L2 validation, consult the [L2 GBV Relevance Codebook v1.0](research/l2_gbv_relevance_codebook_v1.0.md)
+and [L2 Validation Sampling Protocol v1.0](research/l2_validation_sampling_protocol_v1.0.md).
+The codebook is researcher-finalized on 7 October 2026, by explicit user confirmation.
+The sampling protocol remains a draft with unresolved design/execution decisions.
+These documents define the formal five-source scope and implementation gaps;
+codebook finalization does not create a batch or certify existing model outputs.
+
+Latest collection achievements: shared bounded Wayback discovery for all seven
+registered publishers, literal URL keyword enrichment, per-publisher budgets,
+separate live collection, cloud provenance and per-source reports. The actual
+seven-source smoke saved ten articles, with four CDX-timeout sources and unsupported
+Taifa Leo routes. Citizen parser 1.2 fixes the five reported older replay layouts;
+all five diagnostic re-parses succeeded and 50 relevant tests passed. Expanded
+operator runs are ongoing/reported at discovery stage; final totals are unverified.
+The 536-version/annotation figures below remain dated pre-expansion baselines.
+
 GBV News AI is a postgraduate research project for an ethical, human-supervised,
 near-real-time multilingual system that will identify, classify, geotag, and map
 gender-based violence (GBV) reporting in Kenyan digital news. The repository is in
@@ -48,10 +64,11 @@ protected membership and deterministic private evaluation are implemented. The
 additive `20261006_add_l2_validation_batches.sql` was **installed in development**
 on 6 October at 23:48 EAT after user authorization; standalone readiness is true
 and 15 rollback-only live guard checks passed with historical fingerprints unchanged;
-no real batch or independent metrics were generated. Agree codebook/sampling first.
+no real batch or independent metrics were generated. Codebook finalization is
+complete; agree sampling/support and acceptance criteria before a real batch.
 Training-article reviews are diagnostic error analysis, not independent testing.
 See `docs/annotations.md` Section 22 and README operator steps. The successful
-anonymous 6 October sync refreshed all four snapshots; no public Sheet writes.
+anonymous 7 October sync refreshed all four snapshots; no public Sheet writes.
 NER, geocoding, completed sampled human validation, mapping,
 and remote reviewer authentication remain future research work. Before roadmap-related
 implementation, run `python3 scripts/sync_roadmap.py` and read all four snapshots
@@ -72,6 +89,12 @@ Publisher archive/listing
         -> sampled human validation (workflow available; sample not completed)
         -> research model validation, NER/geocoding and analytical map (future)
 ```
+
+Monthly collection now supports `--index-read-timeout` (30 seconds by default,
+1–300 allowed). It is recorded as an operational execution setting and can change
+while resuming the same saved discovery configuration. Robots/replay read waits
+remain 30 seconds; retries and fail-closed pause behavior are retained. Longer
+client waits do not repair upstream CDX HTTP 504 failures. See README recovery steps.
 
 ## 2. Current Repository Tree
 
@@ -391,7 +414,7 @@ normalization, archive provenance, and parser version `kenyans-archive-1.0`. Aug
 
 **Key components:**
 
-- `SOURCES` registers the six publisher modules.
+- `SOURCES` registers the seven publisher modules.
 - Supabase repositories provide existing URLs and `(source, content_hash)` identities.
 - `candidates` uses source-specific expanded discovery when available, otherwise feeds
   then listings.
@@ -399,8 +422,20 @@ normalization, archive provenance, and parser version `kenyans-archive-1.0`. Aug
   persisted/indexed through `CollectionPersistence`.
 - `run_trial_extraction` orchestrates sources sequentially and caps retrieval attempts
   at five times the requested save limit.
-- `main` exposes repeatable `--source`, `--limit` (default 20 per source), `--max-pages`
-  (Standard listings, default 1), `--delay`, and a durable `--run-name`.
+- CLI defaults to `--method wayback` for all seven registered adapters via
+  `scrapers/wayback_discovery.py`; supports `--sources`, repeatable `--source`,
+  escaped OR URL `--term` filters, capture bounds, supplied URLs, newest/oldest
+  selection, and independent per-publisher record/request/attempt/save budgets.
+  Selection compares only bounded observed captures. All library transport uses
+  the shared HTTP client. Failed publisher discovery continues with explicit gaps;
+  raw/normalized GCS and Supabase lineage remain the existing workflow.
+  `--method live` uses source-specific landing pages and live extraction without
+  fabricated archive provenance. `--method listing` preserves old snapshot paths.
+  Python callers without an explicit method retain the legacy listing API behavior.
+  `--dry-run` performs no environment/cloud/HTTP work. Keyword matches are sampling
+  metadata, not GBV labels; downstream L0/L1/L2 remain separate. Run configuration
+  pins method and options; use new run names for changed configuration. Reruns
+  requery discovery and skip indexed URL/content duplicates.
 
 **Inputs:** CLI settings, publisher listings/pages, Supabase identities, and GCS state.
 
@@ -633,7 +668,8 @@ Supabase article upsert + idempotent article_version/run linkage
 GCS run progress/counts/log/CDX-cache artifacts
 ```
 
-Trial discovery starts at configured archived snapshots. Monthly discovery queries
+Trial CLI defaults to shared bounded Wayback CDX discovery; explicit listing mode
+starts at configured archived snapshots, and live mode uses publisher pages. Monthly discovery queries
 successful HTML captures from Wayback CDX for each publisher domain/capture month,
 then lets publication metadata determine the record's actual corpus month.
 
@@ -692,7 +728,8 @@ The same command and run name resume it.
 ## 10. External Systems
 
 - **Publisher websites — PARTIALLY IMPLEMENTED:** Publisher domains and layouts are
-  validated, but current configured single-snapshot flows retrieve archived replays.
+  validated; explicit live paths reuse their extraction adapters but modern layouts
+  and full coverage remain unverified. Historical discovery uses archived replays.
 - **Internet Archive CDX and Wayback Machine — IMPLEMENTED:** Used for archive index
   discovery and page replay. Coverage depends on what the archive captured and serves.
 - **Google Cloud Storage — IMPLEMENTED:** Durable raw, processed, and run artifacts.
@@ -979,10 +1016,10 @@ The inspected roadmap currently prioritizes:
 4. Inspect L1 uncertainty and subgroup coverage; all 519 L0-valid versions now
    have L1 decisions following the authorized full run.
 5. Create a small stratified/uncertainty-focused human reference sample and metrics.
-6. Inspect L2 weak uncertainty, verify schema prerequisites and agree the GBV codebook.
+6. Preserve the researcher-finalized L2 codebook v1.0; inspect weak uncertainty and verify schema prerequisites for new eligible records.
 7. L2 development coverage/schema closure is complete. Validation engineering is
    implemented and its migration installed in development. Preflight/install/verify
-   other targets independently; agree the codebook/design and expand unseen support before freezing a real
+   other targets independently; agree the sampling design and expand unseen support before freezing a real
    independent batch. Protect final-test membership from tuning and training.
    Later-layer baselines follow the synchronized roadmap.
 

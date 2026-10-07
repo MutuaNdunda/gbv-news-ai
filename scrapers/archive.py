@@ -5,6 +5,23 @@ from bs4 import BeautifulSoup
 from scrapers.common import allowed_url, normalize_url
 
 
+def article_context(url, publisher_hosts, is_article, live=False):
+    """Validate live/replay context without inventing archive provenance."""
+    if live:
+        return (None, normalize_url(url)) if is_article(url) else None
+    return archive_parts(url, publisher_hosts)
+
+
+def live_result(article):
+    """Retain source extraction while separating live parser identity/provenance."""
+    if article:
+        article.pop('archive_url', None)
+        article.pop('archive_capture_timestamp', None)
+        article['parser_version'] = article['parser_version'].replace('-archive-', '-live-')
+        article['kenya_relevance_basis'] = article.get('kenya_relevance_basis', '').replace('Archived ', 'Live ', 1)
+    return article
+
+
 def archive_parts(url, publisher_hosts):
     """Validate a dated HTML replay and its embedded publisher URL."""
     if not allowed_url(url, ('web.archive.org',)):

@@ -22,6 +22,38 @@ def response(status, retry_after=None):
 
 
 class HttpClientTests(unittest.TestCase):
+    def test_index_timeout_is_configurable_but_robots_and_other_clients_keep_defaults(self):
+        index = Client(("web.archive.org",), delay=0,
+                       request_stage="CDX_INDEX", read_timeout=120)
+        with patch.object(index.session, "get", return_value=response(200)) as get, \
+                patch("scrapers.common.time.sleep"):
+            index._request(URL)
+            index._request("https://web.archive.org/robots.txt", stage="ROBOTS")
+        self.assertEqual(get.call_args_list[0].kwargs["timeout"], (10, 120))
+        self.assertEqual(get.call_args_list[1].kwargs["timeout"], (10, 30))
+        article = Client(("web.archive.org",), delay=0)
+        with patch.object(article.session, "get", return_value=response(200)) as get, \
+                patch("scrapers.common.time.sleep"):
+            article._request(URL)
+        self.assertEqual(get.call_args.kwargs["timeout"], (10, 30))
+
+    def test_configured_index_timeout_retains_bounded_retries_and_failure_context(self):
+        client = Client(("web.archive.org",), delay=0,
+                        request_stage="CDX_INDEX", read_timeout=120)
+        with patch.object(client, "permitted", return_value=True), \
+                patch.object(client.session, "get", side_effect=requests.ReadTimeout("slow index")) as get, \
+                patch("scrapers.common.time.sleep"):
+            self.assertIsNone(client.fetch(URL))
+        self.assertEqual(get.call_count, 3)
+        self.assertTrue(all(c.kwargs["timeout"] == (10, 120) for c in get.call_args_list))
+        self.assertEqual(client.last_failure["kind"], "ReadTimeout")
+        self.assertEqual(client.last_failure["stage"], "CDX_INDEX")
+
+    def test_invalid_read_timeouts_are_rejected(self):
+        for timeout in (0, -1, float("nan"), float("inf")):
+            with self.subTest(timeout=timeout), self.assertRaises(ValueError):
+                Client(("web.archive.org",), read_timeout=timeout)
+
     def test_rate_limit_honors_seconds_then_recovers(self):
         client = Client(("web.archive.org",), delay=0)
         success = response(200)

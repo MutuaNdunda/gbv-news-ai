@@ -23,6 +23,19 @@ development throughout.
 
 ## Current progress — verified 6 October 2026, 00:04 EAT
 
+**Documentation update — 7 October 2026:** the researcher confirmed that
+[L2 Codebook v1.0](docs/research/l2_gbv_relevance_codebook_v1.0.md) is finalized.
+Shared bounded Wayback keyword discovery is implemented for all seven registered
+publishers, with GCS/Supabase persistence and explicit live collection. The actual
+seven-source smoke saved ten articles (five Citizen, five Kenyans.co.ke); four
+sources hit CDX timeouts and Taifa Leo returned unsupported routes. The Citizen
+body-layout fix subsequently extracted all five operator-reported warning pages;
+that diagnostic check did not insert new article records. Current expanded runs
+have shown discovery progress, but their final saved totals have not been verified.
+The 536-version and annotation counts below are dated pre-expansion observations.
+Sampling design, independent review/evaluation and the research exit gate remain
+open; codebook finalization does not establish model accuracy.
+
 Human-review state, reconfirmed at **22:59 EAT**: 324 eligible versions; original weak labels
 7 gbv / 15 not_gbv / 302 borderline; human overlay **10 / 312 / 2**.
 All 302 originally borderline results have reviews (300 corrections, two confirmed
@@ -52,7 +65,8 @@ L0 remains 519 valid / 17 needs_review; L1 v2 324 kenya / 35 not_kenya /
 Reproducible L2 batches, blinded initial review, protected reference exclusion and
 private evaluation are now implemented in the existing local workspace. The new
 validation migration is **installed and behavior-verified in development**; no real batch or independent
-metrics were generated. Agree the codebook and sampling protocol before review;
+metrics were generated. The codebook is now researcher-finalized; agree the
+sampling protocol and acceptance criteria before review;
 see [validation setup](#l2-validation-and-protected-reference) and
 [the validation specification](docs/annotations.md#22-l2-validation-and-protected-reference-workflow).
 
@@ -72,7 +86,7 @@ python3 scripts/sync_roadmap.py --check
 
 No Google credentials are needed for roadmap synchronization. L0/L1 and L2
 infrastructure are implemented; sampled-validation and research exit gates remain open.
-The successful anonymous sync on 6 October records completed model training,
+The successful anonymous sync on 7 October records completed model training,
 324/324 development inference and independent validation as the current priority.
 All four snapshots were refreshed; the public Sheet was not changed.
 Independent evaluation remains pending; synchronized CSVs are not manually edited.
@@ -80,6 +94,14 @@ See [the roadmap workflow](docs/roadmap/README.md) and
 [implementation status](docs/roadmap/IMPLEMENTATION_STATUS.md).
 
 ## L2 validation and protected reference
+
+Before a real batch, review the [L2 GBV Relevance Codebook v1.0](docs/research/l2_gbv_relevance_codebook_v1.0.md)
+and [L2 Validation Sampling Protocol v1.0](docs/research/l2_validation_sampling_protocol_v1.0.md).
+The codebook is researcher-finalized as of 7 October; the sampling protocol remains
+a draft. They distinguish the five formal publishers from engineering sources.
+Resolve sampling/support, review acceptance and documented implementation gaps
+before `L2-VALIDATION-V1`. No separate supervisor/ethics approval or completed
+research-validation gate is asserted.
 
 Use the existing local Flask app and Human Review token/configuration. The new
 **L2 Validation** navigation opens `/annotations/validation`; remote access remains
@@ -511,44 +533,200 @@ python3 -m unittest discover -s tests -v
 
 ### 3. Choose the appropriate collector
 
-Use `scripts/trial_scraper.py` for a quick, bounded extraction-quality sample from
-the configured publisher snapshots or Taifa Leo's supplied CDX query. Use `scripts/collect_monthly.py` for the
-January–August 2026 retrospective corpus. Neither collector applies GBV keywords or
-produces GBV labels.
+Use `scripts/trial_scraper.py` for bounded, cloud-backed historical extraction.
+Wayback discovery through `waybackpy` is now the CLI default for every registered
+publisher: `nation`, `standard`, `star`, `citizen`, `tuko`, `kenyans`, `taifaleo`.
+Publisher modules define domains, prefixes, article routes and extraction adapters.
+`scripts/collect_monthly.py` remains the separate retrospective collector with its
+existing publication-window and resumable scan contracts.
 
-For a local Taifa Leo archive trial without cloud/database writes, use the command
-in the Taifa Leo subsection below. For a cloud end-to-end check, collect up to two Citizen articles:
+#### Shared historical Wayback and keyword discovery
 
-```bash
-python3 scripts/trial_scraper.py --source citizen --limit 2 --run-name trial-citizen-smoke
-```
-
-To sample all seven publishers, omit `--source`:
+In an activated environment, a single-publisher enrichment command is:
 
 ```bash
-python3 scripts/trial_scraper.py --limit 5
+caffeinate -i python scripts/trial_scraper.py \
+  --sources nation \
+  --term femicide --term rape --term raped --term defilement --term defiled \
+  --term "sexual violence" --term "sexual assault" --term "sexual abuse" \
+  --term "domestic violence" --term "gender based violence" \
+  --term "wife killed" --term "woman killed" --term "female genital mutilation" --term FGM \
+  --from-date 2025-01-01 --to-date 2026-09-30 \
+  --selection newest --max-records 10000 --max-index-requests 20 --max-pages 20 \
+  --limit 200 --max-attempts 1000 --delay 3 \
+  --run-name nation_wayback_gbv_expanded
 ```
 
-`--limit` applies separately to each selected publisher. Repeat `--source` to select
-several publishers, and use `--delay` to increase the request interval:
+For multiple publishers (200 new successful saves **per publisher**, at most 800
+for these four), use the same shared flow:
 
 ```bash
-python3 scripts/trial_scraper.py \
-  --source nation --source citizen --limit 5 --delay 3
+caffeinate -i python scripts/trial_scraper.py \
+  --sources nation standard star citizen \
+  --term femicide --term rape --term defilement --term "sexual assault" \
+  --term "domestic violence" --term "gender based violence" --term FGM \
+  --from-date 2025-01-01 --to-date 2026-09-30 \
+  --selection newest --max-records 10000 --max-index-requests 20 --max-pages 20 \
+  --limit 200 --max-attempts 1000 --delay 3 \
+  --run-name multi_publisher_wayback_gbv
 ```
 
-For Standard only, `--max-pages` controls how many archive listing pages are scanned,
-including the homepage:
+Add `tuko kenyans taifaleo` after `--sources` to select their registered adapters.
+Repeatable `--source` remains a compatibility alias. Omit source selection to use
+all seven. Add `--dry-run` to print the plan without HTTP, cloud credentials or DB
+access. Omit `--term` for broad discovery; terms use escaped case-insensitive OR
+matching against **original URL text only**, accommodating hyphens and encoded
+spaces. They do not search titles/bodies or establish GBV relevance. Relevant
+stories without these URL terms can be missed, and English terms can miss Swahili
+stories. Keyword enrichment must supplement broad corpus sampling; saved articles
+enter the existing separate L0/L1/L2 annotation/classification workflow without
+GBV labels being assigned by the collector.
+
+`--from-date`/`--to-date` are inclusive **archive capture dates**, not publication
+dates. Optional `--publication-start`/`--publication-end` separately gate parsed
+publication dates, excluding missing/unparseable/out-of-window dates after raw
+preservation. Capture bounds can miss articles first archived later.
+
+Every publisher receives independent `--max-records` (default 10,000 CDX rows,
+including duplicate captures), `--max-index-requests` (20 logical CDX fetches), and
+`--max-attempts` (default five times its article save limit) budgets. `--max-pages`
+(default 20) additionally caps pages per prefix/URL query. CDX requests ask for at
+most 500 remaining records. Shared HTTP retries remain capped at three per request,
+with robots checks, allowed-host and redirect validation, finite timeouts and the
+configured pacing. Replay requests retain their existing bounded redirect handling.
+No unbounded archive enumeration or automatic live fallback is used.
+
+Discovery validates publisher routes and selects one capture per publisher and
+normalized original identity. `--selection newest|oldest` compares timestamps
+among the **bounded observed captures**; a truncated scan does not establish the
+newest/oldest capture in the full archive. Discovery finishes before extraction,
+so large bounds may take time even for a small article target. Existing URL and
+within-publisher content duplicates, fetch/parse failures and publication exclusions
+do not count toward `--limit`. Page/record/request/attempt bounds or available
+coverage may prevent reaching the requested number.
+
+Repeat `--url URL` to resolve supplied live article URLs to suitable archived
+captures, or supply validated dated replay URLs directly. Captures must be within
+the requested date range. Homepages, categories, login routes and unrelated domains
+are rejected. Each replay is dispatched to its own publisher parser. Raw HTML,
+normalized JSON and run artifacts remain private in GCS; Supabase indexes article,
+version and run lineage. Original URL, actual replay URL, capture timestamp and
+publication date remain separate.
+
+`No accessible article body` means the parser could not produce an article; it
+can indicate an unsupported HTML layout as well as missing/restricted content.
+Raw HTML is stored before parsing, but rejected pages receive no normalized
+article/version indexing. Citizen parser 1.2 also supports the inspected older
+`.article-content .the-content` layout. A running process retains its loaded parser;
+later invocations use the correction without needing to stop an ongoing collection.
+
+Console counters and `runs/<run-name>/progress.json` report records, CDX requests,
+unique candidates, capture duplicates, stored-article duplicates, extraction
+successes, fetch/parse/storage failures and per-source stop reasons. New invocations
+also write `trial_report.json`. Empty coverage, failed index requests and configured
+bounds are distinct; publisher failures are reported and other sources continue.
+`no_valid_candidates` means records were returned but failed route/date/term
+validation; it does not mean the publisher has no archived articles. In the actual
+seven-publisher smoke, Citizen and Kenyans.co.ke each saved five articles; Nation,
+Standard, Star and Tuko hit CDX timeouts. Taifa Leo returned newer section-prefixed
+URLs outside its current root-slug/dated-story route support. Archive coverage,
+access restrictions and publisher layout changes can therefore prevent collection
+even with a registered adapter. See the implementation log for actual counters.
+Run configuration pins method, terms, selection, bounds and supplied-URL digest.
+Use a fresh run name for changed settings; omitting it generates one. Reruns repeat
+discovery and deduplicate stored articles; no durable CDX cursor is persisted.
+
+#### Explicit live and legacy listing paths
 
 ```bash
-python3 scripts/trial_scraper.py \
-  --source standard --max-pages 3 --limit 5
+python scripts/trial_scraper.py --sources citizen tuko --method live --limit 5 --delay 3
+python scripts/trial_scraper.py --sources nation --method listing --max-pages 3 --limit 5
 ```
 
-#### Per-publisher trial commands
+Live monitoring uses source-configured publisher listing pages and source-specific
+live extraction, without fabricated archive provenance. It may also receive
+repeatable live article `--url` arguments. Current live discovery scans configured
+landing pages, rather than exhaustively following every publisher category.
+`--method listing` preserves older source snapshot/listing discovery, including
+Nation/Standard pagination and the legacy Taifa Leo CDX path. `--wayback` is now a
+redundant compatibility alias for the default method; old `--wayback-start` and
+`--wayback-end` accept capture bounds as `YYYYMMDD`. The legacy
+`--wayback-section` option limits Nation scope only.
+
+For a separate local Nation January–August 2026 collector, use:
+
+```bash
+pip install waybackpy==3.0.6 requests
+caffeinate -i python scripts/nation_wayback_standalone.py \
+  --start 2026-01-01 --end 2026-08-31 \
+  --limit 1000 --max-pages 20 --delay 3
+```
+
+This script has no app/database/cloud dependencies. It reuses the repository's
+Nation parser and shared requests client (so repository parsing dependencies must
+also be installed). Local output is ignored under `data/trials/nation-wayback-2026/`:
+`raw/`, `articles.jsonl` and `last_run.json`. Raw HTML is retained before parsing;
+only parsed articles with publication dates in the requested interval enter JSONL.
+Missing/out-of-window dates are counted and excluded. CDX discovery scans captures
+month by month in that same interval, at most 20 pages of 500 rows per month;
+articles captured only later may be missed. Capture dates never substitute for
+publication dates. CDX failures/page bounds report incomplete coverage and exit 2.
+The article save limit yields `limit_reached`, also incomplete coverage. Reruns
+revisit discovery and deduplicate stored canonical URLs/content; no cursor is
+persisted. Use a separate `--output` directory under `data/` for changed date scopes.
+`last_run.json` describes the latest invocation. Paywalls and access restrictions
+remain respected; candidate articles still require research quality review.
+
+For archive lookup from pasted public Nation URLs, install the optional operator
+dependency with `pip install waybackpy==3.0.6 requests` in the activated environment,
+then run `python scripts/collect_wayback_urls.py --run-name nation-wayback-urls-v1`.
+Paste URLs/a Markdown table and press **Ctrl-D**, or pass `--file
+data/trials/nation-urls.txt`. Default `--selection newest` finds one successful HTML
+capture per URL; `--selection oldest` selects the earliest. `--dry-run` validates
+input without network/cloud access. Sign-in URLs are rejected. The adapter uses
+waybackpy CDX parsing with the shared requests-based, paced, robots-aware HTTP
+client, then existing private cloud collection. Archive lookup still depends on
+CDX availability and does not bypass paywalls. An accessible capture is not
+guaranteed; manually selected inputs remain diagnostic candidates. A changed
+resolved capture list requires a new run name; reruns requery CDX. No Save Page Now
+requests are issued.
+
+For explicit Nation article URLs, run `python scripts/collect_urls.py --run-name
+nation-manual-urls-v1`, paste plain URLs or a Markdown table and press **Ctrl-D**.
+Alternatively use `--file data/trials/nation-urls.txt` or repeat `--url URL`.
+Add `--dry-run` to validate without any network/cloud access. URL files are private
+research material and must stay under ignored `data/`. The script accepts public
+live Nation article URLs and dated Wayback article replay URLs. Sign-in routes
+(including `redirect_to` links) are rejected without following their embedded
+targets; premium/active paywall articles remain inaccessible. It uses existing
+robots checks, pacing, parser, private GCS/Supabase storage and deduplication.
+Use a new run name for a changed input list. No CDX discovery is performed.
+Manually selected/keyword-discovered articles remain diagnostic candidates and
+must not substitute for the broad research sampling frame.
+
+To expand Nation beyond its configured archived Kenya homepage (activated environment):
+
+```bash
+caffeinate -i python scripts/trial_scraper.py \
+  --source nation \
+  --limit 1000 \
+  --max-pages 100 \
+  --delay 3 \
+  --method listing \
+  --run-name nation-expanded-listings-v1
+```
+
+Nation follows linked archived Kenya sections and `?page=N` pagination, bounded
+to 100 listing requests and up to 1,000 new saves here. Existing articles are
+skipped. Inaccessible listings fail the run while preserving prior saves; linked
+pages remaining at the page bound are logged. Matching reruns revisit the homepage
+without a durable listing cursor. Use a new run name when changing limits.
+Actual discovery provenance is retained after capture redirects. Historical
+candidates require publication-date and extraction review before research
+inclusion; 1,000 saves are not guaranteed. This expansion does not use CDX.
 
 Use these commands to collect a small, two-article trial from each configured
-publisher snapshot:
+publisher snapshot with `--method listing`:
 
 ```bash
 python3 scripts/trial_scraper.py --source nation --limit 2
@@ -622,7 +800,36 @@ For GCS/Supabase storage, apply the Taifa Leo migration above before running:
 python3 scripts/trial_scraper.py --source taifaleo --limit 2 --run-name taifaleo-cdx-smoke
 ```
 
-This cloud trial uses one 500-row CDX batch too; `--max-pages` does not expand it.
+With `--method listing --max-pages 1`, the legacy cloud trial requests one 500-row CDX batch. To discover beyond that
+first batch, increase `--max-pages`; the cloud collector follows CDX continuation
+keys and deduplicates article URLs across pages. The standalone local helper above
+still requests a single batch.
+
+#### Expand Taifa Leo cloud collection beyond 500 rows
+
+```bash
+cd /Users/mutua/Documents/Projects/gbv-news-ai
+caffeinate -i .venv/bin/python scripts/trial_scraper.py \
+  --source taifaleo \
+  --limit 2000 \
+  --max-pages 20 \
+  --delay 3 \
+  --run-name taifaleo-expanded-cdx-v1
+```
+
+This requests up to 20 index pages of 500 rows each and saves up to 2,000 new
+articles per invocation in private GCS/Supabase. Index rows can include non-article
+URLs; already indexed URLs/content, inaccessible captures and parsing failures
+reduce new saves. Discovery stops at the save/attempt limits or available index
+pages, so 2,000 saves are not guaranteed. A continuation at the page bound produces
+a warning; a failed index page fails the run while preserving earlier saves.
+
+Use a new run name when changing limits or page settings. Repeating a matching
+run skips indexed duplicates but starts discovery from the first index page;
+this trial collector does not persist a CDX continuation cursor. Discovery spans
+all available capture years. Review publication dates and extraction quality
+before admitting any article to the research corpus.
+
 Monthly collection also accepts `--source taifaleo` and uses that collector's
 capture-month and publication-date filters. New default all-source runs include
 Taifa Leo. To resume older six-source runs, explicitly select the original six
@@ -846,6 +1053,37 @@ A failed or pending scan does not mean that the publisher released no articles. 
 Wayback index is incomplete by nature, and inaccessible, restricted, malformed, or
 undated pages are not stored as valid article records.
 
+The CDX read timeout defaults to 30 seconds per attempt. For slow index responses,
+add `--index-read-timeout 120` (accepted range: 1–300 seconds). This is an operational
+setting: it may change while resuming the same run name without changing dates,
+sources, query scope, delay or limits. Each invocation records its timeout and UTC
+start time in `progress.json` under `execution_settings`, and logs the timeout.
+Connect timeout remains 10 seconds; robots and article-replay read timeouts remain
+30 seconds. Requests still have at most three attempts; 120-second index waits
+can therefore take roughly six minutes per failed query, plus connect/retry time.
+
+Repeated CDX timeouts or HTTP 504 responses mean index discovery is unavailable for
+that scan. After three consecutive index failures the run saves progress and exits
+as `paused_index_unavailable`. A longer client timeout cannot repair an upstream
+gateway failure. Stop repeated immediate retries and resume later with the same
+run/configuration. These states are incomplete coverage, not zero publisher output.
+
+To retry the six-publisher expansion with a longer index wait:
+
+```bash
+caffeinate -i .venv/bin/python scripts/collect_monthly.py \
+  --start-month 2026-01 --end-month 2026-08 \
+  --source nation --source standard --source star \
+  --source citizen --source taifaleo --source tuko \
+  --delay 3 --index-read-timeout 120 \
+  --max-index-pages 0 --max-fetches-per-month 0 \
+  --run-name six-publisher-jan-aug-2026-expansion-v1
+```
+
+Run one process at a time. `caffeinate` prevents macOS idle sleep while the command
+runs; it does not prevent network failures or forced sleep. This collection example
+includes Tuko for development; the finalized codebook and draft sampling protocol specify the formal study scope.
+
 ## January–August 2026 collection
 
 The monthly collector scans all seven registered publishers from August back to January 2026,
@@ -946,8 +1184,7 @@ remain unreviewed trials, and missing/uncertain publication dates remain flagged
 ## Single-snapshot trial data collection
 
 The trial scraper discovers news candidates from Daily Nation, Citizen Digital,
-The Standard, The Star, Tuko, Kenyans.co.ke, and Taifa Leo. It does not filter by GBV keywords
-or assign GBV labels.
+The Standard, The Star, Tuko, Kenyans.co.ke, and Taifa Leo. Optional `--term` filters original URL text; no GBV labels are assigned.
 Publisher-specific URL rules and body selectors live in `scrapers/`; shared HTTP
 and metadata handling lives in `scrapers/common.py`.
 
@@ -961,7 +1198,7 @@ times that limit. `--delay` defaults to two seconds and cannot be below 1.5 seco
 Optionally set `SCRAPER_USER_AGENT` to an honest research-bot identity with your
 actual project contact information. No placeholder contact address is sent.
 
-The `nation` option uses the supplied [archived Daily Nation Kenya homepage](https://web.archive.org/web/20240616131714/https://nation.africa/kenya/).
+Under `--method listing`, the `nation` option uses the supplied [archived Daily Nation Kenya homepage](https://web.archive.org/web/20240616131714/https://nation.africa/kenya/).
 It discovers reporting across news, counties, business, sports, lifestyle, health,
 weekly review, and opinion sections. Records identify `publisher_name: "Daily Nation"`
 and `content_scope: "news_reporting"`. Explicitly premium-labelled links and articles,
@@ -969,7 +1206,7 @@ and active paywalls, are skipped. Nation's inactive hidden paywall template does
 by itself mark an otherwise accessible article as restricted.
 The earlier corporate-news trial record remains preserved with its original
 `content_scope: "corporate_news"`; exclude it when selecting Daily Nation reporting.
-Only article links on that archived listing are followed, without pagination or a
+Linked section/pagination pages are followed within the listing budget, without a
 fallback to the live publisher. Wayback may redirect an article to a nearby capture;
 records retain its actual `archive_url` and `archive_capture_timestamp` separately
 from the original URL and publication date. For example:
@@ -978,7 +1215,7 @@ from the original URL and publication date. For example:
 python3 scripts/trial_scraper.py --source nation --limit 5
 ```
 
-The `star` option uses the supplied [archived Star homepage](https://web.archive.org/web/20251227053140/https://www.the-star.co.ke/).
+Under `--method listing`, the `star` option uses the supplied [archived Star homepage](https://web.archive.org/web/20251227053140/https://www.the-star.co.ke/).
 It follows dated article links across news, counties, business, sports, health,
 lifestyle, politics, opinion, and climate coverage on that snapshot. Kenya relevance
 remains subject to review, including international reporting on the homepage.
@@ -993,7 +1230,7 @@ prefix in the configured raw GCS bucket.
 python3 scripts/trial_scraper.py --source star --limit 5
 ```
 
-The `citizen` option uses the supplied [archived Citizen Digital homepage](https://web.archive.org/web/20260304002240/https://citizen.digital/).
+Under `--method listing`, the `citizen` option uses the supplied [archived Citizen Digital homepage](https://web.archive.org/web/20260304002240/https://citizen.digital/).
 It accepts the snapshot's `/article/` links and supported section URLs ending in
 `-n<article-id>`. The parser handles HTML-escaped structured metadata and nested
 names in author fields, and extracts the article body from Citizen's content container.
@@ -1007,9 +1244,10 @@ Raw Citizen pages use the `citizen/<year>/<month>/` prefix in the raw GCS bucket
 python3 scripts/trial_scraper.py --source citizen --limit 5
 ```
 
-The `standard` option uses the supplied [archived Standard homepage](https://web.archive.org/web/20200812220501/https://standardmedia.co.ke/).
-To expand beyond the homepage, set `--max-pages` (currently supported for Standard
-only). This caps listing fetch attempts including the homepage; the default is one.
+Under `--method listing`, the `standard` option uses the supplied [archived Standard homepage](https://web.archive.org/web/20200812220501/https://standardmedia.co.ke/).
+To expand beyond the homepage, set `--max-pages`. For Standard this caps listing
+fetch attempts including the homepage; pass one for the original single-page trial. Taifa Leo uses the same
+option for CDX index pages, as described above.
 The scraper follows linked category pages and `?page=N` pagination when present,
 visits listings breadth-first, and interleaves their article links before retrieval.
 Domestic category links are prioritized deterministically. Duplicate article URLs
@@ -1030,7 +1268,7 @@ Explicit EAT publication timestamps are normalized to UTC+03:00.
 This single-snapshot command follows pages from the supplied snapshot. Use the
 monthly collector above for the January–August 2026 archive window.
 
-The `tuko` option uses the supplied [archived Tuko homepage](https://web.archive.org/web/20260831023500/https://www.tuko.co.ke/).
+Under `--method listing`, the `tuko` option uses the supplied [archived Tuko homepage](https://web.archive.org/web/20260831023500/https://www.tuko.co.ke/).
 It accepts publisher-hosted story paths containing a numeric article ID beneath one
 to three section components, for example `/kenya/638082-story/` and
 `/people/family/638077-story/`. Section, tag, author, and navigation URLs are rejected.
@@ -1042,7 +1280,7 @@ are removed. Records use parser version `tuko-archive-1.0`.
 python3 scripts/trial_scraper.py --source tuko --limit 2
 ```
 
-The `kenyans` option uses the supplied [archived Kenyans.co.ke homepage](https://web.archive.org/web/20240725032840/https://www.kenyans.co.ke/).
+Under `--method listing`, the `kenyans` option uses the supplied [archived Kenyans.co.ke homepage](https://web.archive.org/web/20240725032840/https://www.kenyans.co.ke/).
 It accepts only `/news/<numeric-id>-<slug>` stories, excluding `/news`, tracker,
 featured, author, and other non-article routes. The inspected Drupal layout provides
 JSON-LD title, author, and date metadata and stores prose in the news-body field.
@@ -1053,7 +1291,7 @@ archived `/news/` stories, although Wayback coverage remains non-exhaustive.
 python3 scripts/trial_scraper.py --source kenyans --limit 2
 ```
 
-Discovery is a bounded sample of configured listings/feeds, not a complete archive.
+Discovery is bounded CDX enumeration by default, or configured pages in explicit live/listing mode; it is not a complete archive.
 The parser uses structured article metadata or publisher body containers.
 The supplied homepages for the original six publishers and linked archived articles were checked
 successfully during development. Other pages and publishers still require live quality

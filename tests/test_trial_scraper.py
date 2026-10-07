@@ -99,6 +99,50 @@ class TrialTests(unittest.TestCase):
         self.assertIn(("runs", "runs/trial-test/trial_counts.csv"), objects.data)
         self.assertEqual(runs.statuses["trial-test"], "completed")
 
+    def test_taifaleo_later_page_failure_preserves_saved_articles_and_marks_run_failed(self):
+        objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()
+        services = (CollectionPersistence(objects, articles), articles, runs)
+        original = "https://taifaleo.nation.co.ke/shule-yapokea-vifaa-vipya/"
+        replay = "https://web.archive.org/web/20221012164549id_/" + original
+        payload = [["timestamp", "original", "statuscode", "mimetype"],
+                   ["20221012164549", original, "200", "text/html"], [], ["next%21"]]
+        html = (Path(__file__).parent / "fixtures/taifaleo_archive_article.html").read_bytes()
+        client = Mock()
+        client.fetch.side_effect = [Mock(json=lambda: payload),
+                                   Mock(content=html, url=replay, status_code=200,
+                                        headers={"Content-Type": "text/html"}), None]
+        with patch.object(trial_scraper, "Client", return_value=client), \
+                self.assertRaisesRegex(RuntimeError, "page 2"):
+            trial_scraper.run_trial_extraction(["taifaleo"], limit=2, max_pages=3,
+                                              run_name="taifaleo-paged", services=services)
+        self.assertEqual(len(articles.versions), 1)
+        self.assertEqual(runs.statuses["taifaleo-paged"], "failed")
+        state = objects.read_json("runs", "runs/taifaleo-paged/progress.json")
+        self.assertEqual(state["sources"]["taifaleo"]["saved"], 1)
+        self.assertEqual(state["status"], "failed")
+        self.assertEqual(state["config"]["max_pages"], 3)
+        self.assertEqual(state["config"]["discovery_versions"], {"taifaleo": "cdx-resume-v1"})
+        self.assertIn("showResumeKey=true", articles.items[0][0]["discovery_url"])
+
+    def test_taifaleo_article_limit_prevents_unnecessary_next_page_fetch(self):
+        objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()
+        services = (CollectionPersistence(objects, articles), articles, runs)
+        original = "https://taifaleo.nation.co.ke/shule-yapokea-vifaa-vipya/"
+        replay = "https://web.archive.org/web/20221012164549id_/" + original
+        payload = [["timestamp", "original", "statuscode", "mimetype"],
+                   ["20221012164549", original, "200", "text/html"], [], ["next%21"]]
+        html = (Path(__file__).parent / "fixtures/taifaleo_archive_article.html").read_bytes()
+        client = Mock()
+        client.fetch.side_effect = [Mock(json=lambda: payload),
+                                   Mock(content=html, url=replay, status_code=200,
+                                        headers={"Content-Type": "text/html"})]
+        with patch.object(trial_scraper, "Client", return_value=client):
+            saved = trial_scraper.run_trial_extraction(["taifaleo"], limit=1, max_pages=2,
+                                                      run_name="taifaleo-limited", services=services)
+        self.assertEqual(saved, 1)
+        self.assertEqual(client.fetch.call_count, 2)
+        self.assertEqual(runs.statuses["taifaleo-limited"], "completed")
+
     def test_robots_denial_blocks_article(self):
         client = Client(citizen.PUBLISHER_HOSTS, delay=0)
         response = Mock(status_code=200, text='User-agent: *\nDisallow: /', headers={'Content-Type': 'text/plain'})

@@ -1,16 +1,20 @@
-"""Taifa Leo article parsing and bounded discovery from the supplied CDX query."""
+"""Taifa Leo article parsing and bounded, optionally paginated CDX discovery."""
 from datetime import datetime
+import logging
 import re
-from urllib.parse import parse_qs, urljoin, urlsplit
+from urllib.parse import parse_qs, unquote_plus, urlencode, urljoin, urlsplit
 
 from bs4 import BeautifulSoup
 
-from scrapers.archive import archive_parts as replay_parts, discover_archive
+from scrapers.archive import archive_parts as replay_parts, discover_archive, article_context, live_result
 from scrapers.common import allowed_url, normalize_url, parse_article
 
 SOURCE = "taifaleo"
+LOGGER = logging.getLogger(__name__)
 HOSTS = ("web.archive.org",)
 PUBLISHER_HOSTS = ("taifaleo.nation.co.ke", "www.taifaleo.nation.co.ke")
+ARCHIVE_PREFIXES = ('https://taifaleo.nation.co.ke/', 'https://www.taifaleo.nation.co.ke/')
+LIVE_LISTINGS = ('https://taifaleo.nation.co.ke/',)
 CDX_URL = (
     "https://web.archive.org/cdx/search/cdx?url=taifaleo.nation.co.ke/*"
     "&output=json&fl=timestamp,original,statuscode,mimetype"
@@ -66,16 +70,25 @@ def discover(html, base_url):
     return discover_archive(html, base_url, PUBLISHER_HOSTS, is_article)
 
 
-def cdx_records(payload):
-    """Validate the four-column CDX response before treating any row as a capture."""
+def cdx_page(payload):
+    """Validate four-column captures and an optional trailing CDX resume key."""
     if not isinstance(payload, list):
         raise ValueError("Expected Taifa Leo CDX JSON array")
     if not payload:
-        return []
+        return [], None
     if payload[0] != ["timestamp", "original", "statuscode", "mimetype"]:
         raise ValueError("Unexpected Taifa Leo CDX columns")
     records = []
-    for row in payload[1:]:
+    resume = None
+    for index, row in enumerate(payload[1:], 1):
+        if row == []:
+            if (index + 2 != len(payload) or not isinstance(payload[index + 1], list)
+                    or len(payload[index + 1]) != 1
+                    or not isinstance(payload[index + 1][0], str)
+                    or not payload[index + 1][0].strip()):
+                raise ValueError("Invalid Taifa Leo CDX continuation")
+            resume = payload[index + 1][0]
+            break
         if (not isinstance(row, list) or len(row) != 4
                 or not all(isinstance(item, str) for item in row)
                 or not re.fullmatch(r"\d{14}", row[0])):
@@ -83,23 +96,55 @@ def cdx_records(payload):
         timestamp, original, status, mime = row
         if status == "200" and mime == "text/html" and is_article(original):
             records.append((timestamp, normalize_url(original)))
-    return records
+    return records, resume
+
+
+def cdx_records(payload):
+    """Return validated captures for existing single-page/local callers."""
+    return cdx_page(payload)[0]
 
 
 def expanded_candidates(client, max_pages=1):
-    """Use one bounded all-date CDX batch; the supplied query has no continuation."""
-    response = client.fetch(CDX_URL, stage="CDX_INDEX")
-    if response is None:
-        raise RuntimeError("Taifa Leo CDX discovery failed; archive coverage is unknown")
-    seen = set()
-    for timestamp, original in cdx_records(response.json()):
-        if original not in seen:
-            seen.add(original)
-            yield f"https://web.archive.org/web/{timestamp}id_/{original}", CDX_URL, "wayback_cdx"
+    """Follow at most max_pages all-date, 500-row batches without offset rescans.
+
+    Default one-page trials retain the original query exactly. Larger trials use
+    CDX resume keys. A failed continuation must not become successful empty coverage.
+    """
+    if max_pages < 1:
+        raise ValueError("Taifa Leo max_pages must be positive")
+    query_base = CDX_URL + ("&showResumeKey=true" if max_pages > 1 else "")
+    query = query_base
+    seen_urls, seen_keys = set(), set()
+    for page_number in range(1, max_pages + 1):
+        response = client.fetch(query, stage="CDX_INDEX")
+        if response is None:
+            raise RuntimeError(f"Taifa Leo CDX page {page_number} failed; archive coverage is unknown")
+        records, resume = cdx_page(response.json())
+        LOGGER.info("Taifa Leo CDX page %d: %d article candidates; continuation=%s",
+                    page_number, len(records), bool(resume))
+        for timestamp, original in records:
+            if original not in seen_urls:
+                seen_urls.add(original)
+                yield f"https://web.archive.org/web/{timestamp}id_/{original}", query, "wayback_cdx"
+        if resume is None:
+            return
+        # Keys are encoded in CDX responses; decode once before query encoding.
+        key = unquote_plus(resume)
+        if key in seen_keys:
+            raise ValueError("Repeated Taifa Leo CDX resume key; coverage is incomplete")
+        seen_keys.add(key)
+        if page_number == max_pages:
+            LOGGER.warning("Taifa Leo CDX page limit reached; additional index results remain")
+            return
+        query = query_base + "&" + urlencode({"resumeKey": key})
 
 
-def parse(html, url):
-    parts = archive_parts(url)
+def parse_live(html, url):
+    return parse(html, url, live=True)
+
+
+def parse(html, url, *, live=False):
+    parts = article_context(url, PUBLISHER_HOSTS, is_article, live)
     if not parts or not is_article(parts[1]):
         return None
     timestamp, original = parts
@@ -171,4 +216,4 @@ def parse(html, url):
         archive_capture_timestamp=timestamp, parser_version="taifaleo-archive-1.1",
         kenya_relevance_basis="Archived Taifa Leo reporting; geographic relevance requires review.",
     )
-    return article
+    return live_result(article) if live else article

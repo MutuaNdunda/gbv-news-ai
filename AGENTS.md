@@ -859,7 +859,7 @@ and monitor (see Section 33). The next priorities are:
 3. Inspect L1 uncertainty and source/language coverage over the agreed eligible corpus.
 4. Validate a stratified/uncertain sample of L0/L1/L2 weak results with separate reviews.
 5. Preserve installed L2 schema and fail-closed leases; development model coverage is complete.
-6. Agree the GBV codebook and a reproducible human-validation sampling protocol.
+6. Preserve researcher-finalized L2 codebook v1.0 (confirmed 7 October 2026); agree the reproducible human-validation sampling protocol.
 7. Plan review batches, initially hidden model output, adjudication and coverage reporting.
 8. Design independent reference membership excluding training articles and related duplicates.
 9. Undertake retraining or later-layer work only as separately authorized and stage gates permit.
@@ -888,6 +888,14 @@ When several implementations are possible, prefer the simplest approach that sat
 
 ## 33. Implemented Progress (Reviewed 6 October 2026)
 
+Documentation update, 7 October 2026: the researcher confirmed L2 codebook v1.0
+finalization. Shared seven-publisher Wayback keyword trials and Citizen parser 1.2
+are implemented; dated smoke evidence and source failures are in the engineering
+log. Expanded operator collection is in progress and final totals are unverified.
+The 536-version/L0/L1/L2 figures below remain historical pre-expansion evidence.
+Sampling protocol/design, real independent validation and research exit gates
+remain pending; codebook completion alone does not satisfy them.
+
 This summary reflects repository implementation and operator documentation. It does
 not establish production deployment, completed collection, or validated research
 results. Read `README.md` for commands and `docs/collection_protocol.md` for sampling
@@ -901,6 +909,14 @@ and coverage limits; source code remains authoritative for behavior.
   timeouts, limited retries, publisher/redirect validation, and paywall detection.
 * `scripts/trial_scraper.py` supports bounded cloud-backed trials. Standard also
   supports bounded category/listing pagination.
+* Trial CLI historical discovery now defaults to shared `waybackpy` for all seven
+  registered publishers. Source modules configure domains/prefixes/routes and
+  archive/live extraction; `--method live` and legacy `--method listing` are explicit.
+  URL-only keyword enrichment uses literal case-insensitive OR filters and remains
+  diagnostic candidate discovery, not GBV labeling or an unbiased sampling frame.
+  Capture dates and optional publication bounds remain separate. Per-publisher
+  record/request/attempt/save budgets and partial-failure counters are documented
+  in README; newest/oldest refers to the bounded observed cohort.
 * `scripts/collect_monthly.py` supports January–August 2026 retrospective collection,
   scanning August backwards to January without GBV keyword filtering. Publication
   metadata determines corpus inclusion and monthly counts; capture dates do not
@@ -1115,7 +1131,8 @@ source-language sampling excludes all 322 actual training records and historical
 hashes; label enrichment is diagnostic only. Protected membership automatically
 excludes future exports, and training CLI rechecks older exports. Missing validation
 schema fails selection closed. Separate A/B assignment/adjudication records and
-near-duplicate grouping remain future work. Approve codebook/design, confirm and
+near-duplicate grouping remain future work. The researcher confirmed L2 codebook
+v1.0 finalization on 7 October 2026; sampling design and execution remain pending. Confirm and
 verify other targets independently, then expand unseen support before a real independent
 batch. See `docs/annotations.md` Section 22 and README operator steps.
 

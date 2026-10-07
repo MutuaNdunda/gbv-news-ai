@@ -43,15 +43,44 @@ publisher/capture-month scan and are recorded as incomplete coverage, not succes
 configuration; choose a new run name to change limits or dates. Existing articles
 and extraction versions remain deduplicated across runs.
 
+Trial CLI defaults to shared waybackpy historical discovery for all seven registered
+publishers; `--sources` selects one or several. Their own domain, prefix, article-route
+and extraction adapters remain authoritative. `--method live` is an explicit current
+publisher-listing/URL path, without automatic fallback after archive failures.
+Repeatable `--term` arguments OR-match escaped, case-insensitive original URL text,
+including hyphenated or encoded spaces. They do not search titles/bodies or assign
+GBV labels. URL enrichment can miss relevant reports and underrepresent Swahili
+or differently worded URLs; use it as diagnostic enrichment alongside broad
+sampling, not the sole research sampling frame. Classification remains downstream.
+
+`--from-date`/`--to-date` are capture bounds; `--publication-start`/`--publication-end`
+independently gate extracted dates. One newest/oldest capture is selected among
+bounded observed records per normalized publisher/article identity. Partial scans
+cannot establish the full archive's newest/oldest capture. `--max-records`,
+`--max-index-requests`, `--max-attempts` and successful-save `--limit` apply separately
+to each publisher; page bounds apply per query. Counters/stopping reasons distinguish
+empty coverage, duplicates, extraction failures and configured bounds. Selected
+publisher failures are reported while others continue. See README for exact commands.
+Returned but rejected records receive `no_valid_candidates`; this is distinct from
+an empty filtered query. The actual seven-publisher smoke saved five Citizen and
+five Kenyans.co.ke articles. Four other sources hit CDX timeouts, while Taifa Leo's
+returned section-prefixed routes were outside the existing root-slug/dated-story
+validator. These failures do not establish absent archive coverage. Modern layouts
+and unsupported routes remain publisher-specific extraction limitations.
+
 Taifa Leo support requires `migrations/20261003_add_taifaleo_source.sql` before
 cloud indexing. Older all-source runs had six publishers; explicitly select those
 original sources to retain their saved configuration when resuming. Taifa Leo's
-local/CDX smoke trial scans at most 500 all-date results and is separate from the
-monthly window. Its dated URLs and capture dates never substitute for publication
+local/CDX smoke trial scans at most 500 all-date results. Its cloud trial counterpart
+can follow continuation pages with `--max-pages N`, each capped at 500 index rows;
+`--limit` bounds new saved articles per invocation. Both are separate from the
+monthly window and require publication-date and extraction review before corpus
+inclusion. Cloud trial reruns deduplicate indexed articles but revisit discovery
+from its first page. Its dated URLs and capture dates never substitute for publication
 metadata. The legacy `en-US` template language is preserved as raw metadata and
 flagged for review rather than treated as an article language label.
 
-The default CDX query uses domain matching and ordinary rewritten HTML replay.
+The monthly collector's default CDX query uses domain matching and ordinary rewritten HTML replay.
 To compare the standalone Wayback trial's approach, add `--index-match prefix
 --replay-mode original` with a new run name. Prefix mode queries `<domain>/*`
 instead of including all subdomains; this is a change in discovery scope, not a
@@ -60,6 +89,18 @@ which avoids Wayback URL rewriting. Both modes retain publisher parsing, access
 checks, publication filtering, cached paginated CDX discovery, and actual replay
 capture provenance. Omitted options preserve legacy saved configurations; explicit
 mode settings are recorded in the configuration and must match on resume.
+
+The index read timeout is configurable with `--index-read-timeout` (default 30
+seconds per attempt; accepted range 1–300). For example, `--index-read-timeout 120`
+allows slower CDX responses. This operational wait may change on an existing run
+without changing its discovery configuration or cached query keys. The UTC start
+time and timeout of each invocation are retained in `progress.json` under
+`execution_settings` and the timeout is logged. Connection waits remain 10 seconds;
+robots-policy and article-replay read waits remain 30 seconds. Retries remain capped
+at three, so a longer timeout also increases time spent on unavailable services.
+HTTP 504 is an upstream gateway failure that cannot be repaired by a larger client
+timeout; preserve the paused checkpoint and retry later rather than treating failed
+discovery as empty coverage. No live fallback or discovery-scope change is automatic.
 
 HTTP 429 and transient server errors have at most three attempts, honoring valid
 `Retry-After` seconds or dates. Waits above 60 seconds defer the request as a failure
@@ -115,7 +156,7 @@ Kenya relevance and language coverage still require human validation.
 ## Annotation handoff — verified 6 October 2026, 00:04 EAT
 
 Collection remains independent of classification and never selects the corpus
-solely from GBV keywords. The current development readback contains 536 extraction
+solely from GBV keywords. The dated pre-expansion development readback contains 536 extraction
 versions: L0 valid 519/needs_review 17; L1 v2 kenya 324/not_kenya 35/ambiguous 160.
 L2 weak bootstrap covers the 324 compatible L1-Kenya versions, with 7 gbv,
 15 not_gbv and 302 borderline. These are provisional research candidates and
@@ -129,12 +170,15 @@ added 24 rows while preserving prior model/weak/human/upstream history. Human ov
 uses 322 binary records, only 10 positive (three reviewed), and no frozen independent
 reference set exists. Operational progress is not independent model evaluation.
 The L2 constraints/index/trigger are installed and behavior-tested in development;
-verify other targets independently before L2 writes. No collector behavior or
-archive sampling scope changed in this update. The proposed next milestone is
-structured human-validation batches, initially hidden predictions, adjudication
-and progress reporting. Source/language strata must account for the archive and
+verify other targets independently before L2 writes. Structured validation batches,
+initially hidden predictions, protected membership and private evaluation are
+implemented; separate adjudication records remain future work. The researcher
+confirmed L2 codebook v1.0 finalization on 7 October. Next, agree sampling/support
+and review-acceptance policy, verify the unseen expanded pool, and execute the
+first protected validation batch. Codebook completion does not establish a
+completed reference set or independent scores. Source/language strata must account for the archive and
 metadata limitations above; training-article reviews cannot establish independent
-model performance. See [the planned validation scope](annotations.md#17-next-steps-future-work).
+model performance. See [the remaining validation work](annotations.md#17-next-steps-future-work).
 
 Use [the annotation specification](annotations.md), [operator commands](../README.md)
 and [dated implementation evidence](roadmap/IMPLEMENTATION_STATUS.md) for downstream

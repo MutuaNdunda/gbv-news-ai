@@ -110,7 +110,8 @@ class MonthlyTests(unittest.TestCase):
 
     def test_cli_omitted_modes_preserve_legacy_resume_configuration(self):
         services = (CollectionPersistence(FakeObjects(), FakeArticles()), FakeArticles(), FakeRuns())
-        for options in ([], ["--index-match", "prefix", "--replay-mode", "original"]):
+        for options in ([], ["--index-read-timeout", "120"],
+                        ["--index-match", "prefix", "--replay-mode", "original"]):
             with self.subTest(options=options), \
                     patch.object(monthly.sys, "argv", ["collect_monthly.py", "--source", "citizen", *options]), \
                     patch.object(monthly, "build_services", return_value=services), \
@@ -119,13 +120,25 @@ class MonthlyTests(unittest.TestCase):
                     patch.object(monthly, "run", return_value={"status": "index_scans_finished"}) as run:
                 self.assertEqual(monthly.main(), 0)
             config = run.call_args.args[0]
-            if options:
+            self.assertEqual(run.call_args.kwargs["index_read_timeout"],
+                             120 if "--index-read-timeout" in options else 30)
+            if "--index-match" in options:
                 self.assertEqual(config["index_match"], "prefix")
                 self.assertEqual(config["replay_mode"], "original")
             else:
                 self.assertEqual(config, {"kind": "monthly", "start_month": "2026-01",
                     "end_month": "2026-08", "sources": ["citizen"], "delay": 2.0,
                     "max_index_pages": 0, "max_fetches_per_month": 0})
+
+    def test_cli_invalid_index_timeout_fails_before_cloud_connections(self):
+        for value in ("0", "301", "nan", "inf"):
+            with self.subTest(value=value), \
+                    patch.object(monthly.sys, "argv", ["collect_monthly.py", "--index-read-timeout", value]), \
+                    patch.object(monthly, "build_services") as services, \
+                    patch("sys.stderr"), self.assertRaises(SystemExit) as error:
+                monthly.main()
+            self.assertEqual(error.exception.code, 2)
+            services.assert_not_called()
 
     def test_reports_cache_and_resume_are_gcs_backed(self):
         objects, articles, runs = FakeObjects(), FakeArticles(), FakeRuns()
@@ -176,8 +189,11 @@ class MonthlyTests(unittest.TestCase):
             self.assertIn(("runs", "runs/test-run/monthly_counts.csv"), objects.data)
             self.assertTrue(any("cdx-cache" in name for role, name in objects.data if role == "runs"))
             first_order = list(order)
-            monthly.run(config, "test-run", services)
+            resumed = monthly.run(config, "test-run", services, index_read_timeout=120)
             self.assertEqual(order, first_order)
+            self.assertEqual(resumed["config"], config)
+            self.assertEqual(resumed["execution_settings"][-1]["index_read_timeout_seconds"], 120)
+            self.assertEqual(len(resumed["execution_settings"]), 2)
             self.assertEqual(len(articles.versions), 48)
             self.assertEqual(len(scans.rows), 48)
             self.assertTrue(all(row["status"] == "index_exhausted" for row in scans.rows.values()))
@@ -195,8 +211,11 @@ class MonthlyTests(unittest.TestCase):
         })
         index_client.fetch.return_value = None
         article_client = Mock(last_request=0)
-        with patch.object(monthly, "Client", side_effect=[index_client, article_client]):
-            result = monthly.run(config, "failure-run", services)
+        with patch.object(monthly, "Client", side_effect=[index_client, article_client]) as clients:
+            result = monthly.run(config, "failure-run", services, index_read_timeout=120)
+        self.assertEqual(clients.call_args_list[0].kwargs["read_timeout"], 120)
+        self.assertNotIn("read_timeout", clients.call_args_list[1].kwargs)
+        self.assertEqual(result["execution_settings"][0]["index_read_timeout_seconds"], 120)
         requested = index_client.fetch.call_args.args[0]
         query = parse_qs(urlsplit(requested).query)
         self.assertEqual(query["url"], ["nation.africa"])

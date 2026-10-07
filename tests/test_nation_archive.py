@@ -13,6 +13,40 @@ HTML = (Path(__file__).parent / 'fixtures/nation_archive_article.html').read_tex
 
 
 class NationArchiveTests(unittest.TestCase):
+    def test_expansion_follows_sections_and_pagination_with_deduplication(self):
+        section = f'https://web.archive.org/web/{nation.CAPTURE}/https://nation.africa/kenya/news'
+        page = section + '?page=2'
+        second = 'https://nation.africa/kenya/news/second-update-2345678'
+        third = 'https://nation.africa/kenya/news/third-update-3456789'
+        responses = [
+            Mock(url=nation.LISTINGS[0], content=f'<a href="{section}">News</a><a href="{ORIGINAL}">Story</a>'.encode()),
+            Mock(url=section, content=f'<a href="{page}">Next</a><a href="{ORIGINAL}">Duplicate</a><a href="{second}">Story</a>'.encode()),
+            Mock(url=page, content=f'<a href="{section}">Back</a><a href="{third}">Story</a>'.encode()),
+        ]
+        client = Mock()
+        client.fetch.side_effect = responses
+        found = list(nation.expanded_candidates(client, 20))
+        self.assertEqual(len(found), 3)
+        self.assertEqual(client.fetch.call_count, 3)
+        self.assertEqual(found[-1][1], page)
+        self.assertTrue(nation.accepts_fetch(page))
+
+    def test_listing_budget_and_failure_are_explicit(self):
+        section = f'https://web.archive.org/web/{nation.CAPTURE}/https://nation.africa/kenya/news'
+        client = Mock()
+        client.fetch.return_value = Mock(url=nation.LISTINGS[0], content=f'<a href="{section}">News</a>'.encode())
+        with self.assertLogs('scrapers.nation', level='WARNING'):
+            self.assertEqual(list(nation.expanded_candidates(client, 1)), [])
+        self.assertEqual(client.fetch.call_count, 1)
+        client.fetch.side_effect = [client.fetch.return_value, None]
+        with self.assertRaisesRegex(RuntimeError, 'coverage is unknown'):
+            list(nation.expanded_candidates(client, 2))
+
+    def test_listing_scope_rejects_unrelated_routes_and_queries(self):
+        for path in ('/kenya/news?page=0', '/kenya/news?search=test',
+                     '/kenya/news?page=1&page=2', '/login', '/kenya/news/sample-1234567'):
+            self.assertFalse(nation.is_listing('https://nation.africa' + path))
+
     def test_original_url_capture_and_publication_dates_remain_distinct(self):
         article = nation.parse(HTML, ARCHIVE)
         self.assertEqual(article['url'], ORIGINAL)

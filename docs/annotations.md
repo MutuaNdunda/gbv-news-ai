@@ -21,12 +21,21 @@ L0/L1/L2 local human-validation storage/workflows are described in Section 20.
 L2 provides separate bootstrap and model infrastructure with protected human review.
 L3–L5 remain future work.
 
+For the finalized human semantic standard and proposed independent sampling design, see
+[L2 GBV Relevance Codebook v1.0](research/l2_gbv_relevance_codebook_v1.0.md) and
+[L2 Validation Sampling Protocol v1.0](research/l2_validation_sampling_protocol_v1.0.md).
+The codebook was finalized by researcher confirmation on 7 October 2026; the
+sampling protocol remains a draft. This completes the semantic-definition subtask,
+not independent validation or runtime guideline configuration. Five-publisher
+formal scope, sampling/support decisions and implementation gaps remain relevant
+before a real batch. No new metrics or completed research gate are asserted.
+
 Technical authority is the current source code, SQL migration and regression
 tests. [AI_CONTEXT.md](AI_CONTEXT.md) provides orientation; [the root
 README](../README.md) provides setup/quick-start instructions;
 [IMPLEMENTATION_STATUS.md](roadmap/IMPLEMENTATION_STATUS.md) records dated runs and
 observations. The public Sheet governs planning and stage gates, not executable
-behavior. The latest anonymous synchronization on 6 October 2026 refreshed all
+behavior. The latest anonymous synchronization on 7 October 2026 refreshed all
 four snapshots. It now supports an initial L2 development model on the current
 usable corpus, iterative retraining toward ≥5,000 articles, and independent
 held-out human evaluation; class support and validation gates remain open.
@@ -349,28 +358,29 @@ page notices explain this scope. Weak and model review results remain separate.
 
 ### L2 label definitions and preparation for the initial model
 
-The working study question is whether an eligible Kenyan article reports or
-substantively discusses GBV. The definitions below explain the current label
-roles; they do not establish a newly approved complete research codebook.
+The study question is whether an eligible Kenyan article reports or substantively
+discusses GBV. The researcher finalized L2 codebook v1.0 on 7 October 2026; it is
+the semantic authority for new review. This summary does not retroactively recode
+historical weak/model/human decisions or change the model's abstention thresholds.
 
 | Label | Working meaning | Synthetic example / boundary |
 | --- | --- | --- |
-| `gbv` | Substantive reporting/discussion of violence or abuse meeting the study GBV definition. | A report about intimate-partner abuse or FGM; proposed categories include physical, sexual, emotional, economic, harmful practices and online harms. Category boundaries still require documented approval. |
+| `gbv` | Substantive reporting/discussion of qualifying violence or abuse under codebook v1.0. | Intimate-partner abuse, sexual violence or FGM with supported context; source, victim gender and keywords alone are insufficient. L2 does not assign a subtype. |
 | `not_gbv` | Reviewed content does not substantively report/discuss GBV under that definition. | A school-opening report with no substantive GBV content; general crime/violence without supported gender-based context must not become positive solely from victim gender or police/court mentions. |
-| `borderline` | Insufficient, conflicting or genuinely unresolved evidence for either binary label. | Ambiguous relationship/harm context; retain uncertainty rather than infer a negative from absent keywords. The two human-confirmed borderline results remain excluded from binary training. |
+| `borderline` | Sufficient readable evidence leaves genuine semantic ambiguity or conflicting qualifying context. | Missing/corrupt evidence instead requires `unable_to_determine` with NULL label; referral requires `needs_adjudication`. Human semantic borderline remains excluded from binary training/metrics. |
 
-Finalize the inclusion/exclusion rules, incidental-mention handling, relevant
-multilingual examples and difficult category boundaries in a versioned codebook
-linked to the actual review guideline. Existing review decisions are authorized;
-a complete approved scientific definition is not inferred from bulk recording.
-Examples here are synthetic and contain no private article excerpts.
+Finalized inclusion/exclusion rules, centrality/incidental handling, genre guidance,
+multilingual examples and uncertainty distinctions are in
+[codebook v1.0](research/l2_gbv_relevance_codebook_v1.0.md). Archive/pin its exact
+content and align the runtime guideline before a real batch; these operational
+steps were not executed by the documentation update. Examples are synthetic.
 
 Reviewed/mixed export, provenance validation and class-weighted training are now
 implemented and executed as recorded above. The legacy `weak-only` mode preserves
 original machine-label selection; it does not consume human corrections.
 `reviewed-only` and `mixed-effective` use `annotations/l2_datasets.py`, reject
 reference/test manifests for training, and record separate controlled provenance.
-No final held-out set exists. Codebook approval, adequate positive support,
+No final held-out set exists. Sampling design, adequate positive support,
 near-duplicate grouping, independent evaluation and L0/L1 validation remain open.
 
 ### Historical verified state — 5 October 2026, 12:44 EAT
@@ -1262,8 +1272,9 @@ Human Review workspace; its additive migration is installed and behavior-verifie
 See [Section 22](#22-l2-validation-and-protected-reference-workflow) for engineering
 scope, operator steps and limitations. No real validation batch was created.
 
-Agree the GBV inclusion/exclusion codebook, reviewer instructions, sampling design,
-uncertainty handling and acceptance criteria before generating validation batches.
+L2 codebook v1.0 is finalized by researcher confirmation. Agree sampling design,
+review-acceptance/adjudication policy, support and performance criteria before
+generating validation batches; pin the finalized guide and exact model lineage.
 Continue inspecting L0 anomalies, L1 ambiguity and language/source quality; model
 coverage does not validate those prerequisites.
 
@@ -1859,7 +1870,7 @@ inference while preserving all historical rows.
 
 **Independent performance is not established:** accuracy, precision, recall, F1,
 AUC and calibration have not been measured on an independent held-out human
-reference set. Before thesis evaluation, approve the codebook, expand independently
+reference set. The codebook is now finalized. Before thesis evaluation, expand independently
 reviewed positives and language/source coverage, validate L0/L1, group near
 duplicates, freeze protected reference membership and agree evaluation/acceptance
 criteria. Threshold tuning must use development validation only. The L2 research
@@ -1911,8 +1922,9 @@ Other targets must independently verify migration installation.
 
 Repository/proposal searches found the research taxonomy in AI_CONTEXT section 5.1
 (`physical`, `sexual`, `emotional`, `economic`, `harmful_practice`, `online`) and the
-roadmap's substantive-relevance question, but **no complete approved GBV inclusion/
-exclusion codebook**. `annotations/resources/gbv_relevance_v1.json` is therefore a
+roadmap's substantive-relevance question, but at bootstrap implementation time no
+complete approved GBV codebook was available. Researcher finalization of codebook
+v1.0 on 7 October does not change `annotations/resources/gbv_relevance_v1.json`: it remains a
 conservative provisional bootstrap resource, not a replacement thesis definition.
 Its categories are signals only; L2 does not assign GBV-type labels.
 
@@ -2267,5 +2279,5 @@ cover deterministic/diagnostic selection, training/protected exclusions, blind a
 final-test feedback, exact lineage, stale forms/security, initial/final pointers,
 progress, reference pinning, evaluator math/private hashes and old-export rejection.
 Fifteen later live PostgreSQL behavior checks passed and were rolled back in development.
-Approve codebook/acceptance criteria, validate prerequisites and expand unseen
+Use finalized codebook v1.0, agree sampling/acceptance criteria, validate prerequisites and expand unseen
 positive/source/language support before independent performance claims.

@@ -2,6 +2,7 @@
 from pathlib import Path
 import unittest
 from unittest.mock import Mock
+from urllib.parse import parse_qs, urlsplit
 
 from scrapers import taifaleo
 from scripts.trial_scraper import candidates
@@ -87,6 +88,59 @@ class TaifaLeoTests(unittest.TestCase):
                           [["timestamp", "original", "statuscode", "mimetype"], ["bad", ORIGINAL, "200", "text/html"]]):
             with self.assertRaises(ValueError):
                 taifaleo.cdx_records(malformed)
+
+    def test_paginated_discovery_reaches_beyond_500_and_deduplicates_across_pages(self):
+        header = ["timestamp", "original", "statuscode", "mimetype"]
+        urls = [f"https://taifaleo.nation.co.ke/synthetic-article-{i}/" for i in range(501)]
+        first = [header, *[["20221012164549", url, "200", "text/html"] for url in urls[:500]],
+                 [], ["next%21"]]
+        second = [header, ["20221012164549", urls[499], "200", "text/html"],
+                  ["20221012164549", urls[500], "200", "text/html"]]
+        client = Mock()
+        client.fetch.side_effect = [Mock(json=lambda: first), Mock(json=lambda: second)]
+        found = list(candidates(taifaleo, client, max_pages=3))
+        self.assertEqual(len(found), 501)
+        self.assertEqual(client.fetch.call_count, 2)
+        self.assertEqual(found[-1][0], "https://web.archive.org/web/20221012164549id_/" + urls[500])
+        second_query = client.fetch.call_args_list[1].args[0]
+        params = parse_qs(urlsplit(second_query).query)
+        self.assertEqual(params["resumeKey"], ["next!"])
+        self.assertEqual(params["limit"], ["500"])
+        self.assertEqual(params["url"], ["taifaleo.nation.co.ke/*"])
+        self.assertEqual(params["showResumeKey"], ["true"])
+        self.assertNotIn("from", params)
+        self.assertTrue(taifaleo.accepts_fetch(second_query))
+        self.assertEqual(found[-1][1], second_query)
+
+    def test_page_limit_and_repeated_resume_keys(self):
+        header = ["timestamp", "original", "statuscode", "mimetype"]
+        first = [header, ["20221012164549", ORIGINAL, "200", "text/html"], [], ["first%21"]]
+        second = [header, [], ["second%21"]]
+        client = Mock()
+        client.fetch.side_effect = [Mock(json=lambda: first), Mock(json=lambda: second)]
+        with self.assertLogs(taifaleo.LOGGER, level="WARNING"):
+            self.assertEqual(len(list(candidates(taifaleo, client, max_pages=2))), 1)
+        self.assertEqual(client.fetch.call_count, 2)
+        client.fetch.side_effect = [Mock(json=lambda: first), Mock(json=lambda: first)]
+        with self.assertRaisesRegex(ValueError, "Repeated"):
+            list(candidates(taifaleo, client, max_pages=3))
+
+    def test_continuation_failure_is_not_silent_success(self):
+        first = [["timestamp", "original", "statuscode", "mimetype"],
+                 ["20221012164549", ORIGINAL, "200", "text/html"], [], ["next%21"]]
+        client = Mock()
+        client.fetch.side_effect = [Mock(json=lambda: first), None]
+        iterator = candidates(taifaleo, client, max_pages=2)
+        self.assertEqual(next(iterator)[0], ARCHIVE)
+        with self.assertRaisesRegex(RuntimeError, "page 2"):
+            next(iterator)
+
+    def test_malformed_continuation_is_rejected(self):
+        header = ["timestamp", "original", "statuscode", "mimetype"]
+        for trailer in ([[]], [[], [""]], [[], [123]], [[], ["a", "b"]],
+                        [[], ["next"], ["extra"]], [["next"]]):
+            with self.subTest(trailer=trailer), self.assertRaises(ValueError):
+                taifaleo.cdx_page([header, *trailer])
 
 
 if __name__ == "__main__":

@@ -6,16 +6,19 @@ import re
 from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup
-from scrapers.archive import archive_parts as replay_parts, discover_archive
+from scrapers.archive import archive_parts as replay_parts, discover_archive, article_context, live_result
 from scrapers.common import allowed_url, normalize_url, parse_article
 
 SOURCE = 'citizen'
 HOSTS = ('web.archive.org',)
 PUBLISHER_HOSTS = ('citizen.digital', 'www.citizen.digital')
+ARCHIVE_PREFIXES = ('https://citizen.digital/', 'https://www.citizen.digital/')
+LIVE_LISTINGS = ('https://citizen.digital/',)
 CAPTURE = '20260304002240'
 LISTINGS = (f'https://web.archive.org/web/{CAPTURE}/https://citizen.digital/',)
 FEEDS = ()
-BODY_SELECTORS = ('.js-article-body', '.article-content-wrapper .the-content')
+BODY_SELECTORS = ('.js-article-body', '.article-content-wrapper .the-content',
+                  '.article-content .the-content')
 
 
 def archive_parts(url):
@@ -44,8 +47,12 @@ def discover(html, base_url):
     return discover_archive(html, base_url, PUBLISHER_HOSTS, is_article)
 
 
-def parse(html, url):
-    parts = archive_parts(url)
+def parse_live(html, url):
+    return parse(html, url, live=True)
+
+
+def parse(html, url, *, live=False):
+    parts = article_context(url, PUBLISHER_HOSTS, is_article, live)
     if not parts or not is_article(parts[1]):
         return None
     timestamp, original = parts
@@ -95,7 +102,7 @@ def parse(html, url):
     article.update(
         publisher_name='Citizen Digital', publisher_domain=urlsplit(original).hostname,
         content_scope='news_reporting', archive_url=normalize_url(url),
-        archive_capture_timestamp=timestamp, parser_version='citizen-archive-1.1',
+        archive_capture_timestamp=timestamp, parser_version='citizen-archive-1.2',
         kenya_relevance_basis='Archived Citizen Digital reporting; geographic relevance requires review.',
     )
-    return article
+    return live_result(article) if live else article

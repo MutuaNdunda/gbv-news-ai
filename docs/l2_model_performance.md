@@ -16,6 +16,13 @@ verified incident counts or validated GBV prevalence. No independent held-out
 human evaluation has been performed; accuracy, precision, recall, F1, AUC and
 calibration are **not established**. L2 research stage gates remain open.
 
+**7 October documentation update:** the researcher confirmed L2 codebook v1.0
+finalization. This semantic milestone does not add model-evaluation evidence.
+Shared archive collection and parser corrections are documented in the
+implementation log; the counts in this report remain the dated development
+baseline. Sampling/acceptance design, independent review and evaluation remain
+the next research work.
+
 ### L2 operational milestone closed — 6 October 2026, 00:04 EAT
 
 **L2 DEVELOPMENT MODEL COVERAGE is complete: 324/324
@@ -251,8 +258,9 @@ Weights, training records, private reports and `.env` remain excluded from Git.
 
 1. Operational closure is complete: schema and 324/324 compatible coverage are
    verified. Preserve fail-closed leases and pending-only recovery for future runs.
-2. Expand independently reviewed positives and source/language coverage; approve
-   the versioned GBV codebook and validate L0/L1 eligibility.
+2. Use L2 codebook v1.0, finalized by researcher confirmation on 7 October 2026.
+   Expand independently reviewed positives/source-language coverage, agree sampling
+   and acceptance criteria, and validate L0/L1 eligibility.
 3. Group near duplicates and freeze an independent human-reference set excluded
    from training and tuning.
 4. Agree evaluation support/acceptance criteria, then measure per-class precision,
@@ -271,8 +279,8 @@ guard checks passed, readiness is true and existing fingerprints are unchanged.
 No real independent batch or research scores were generated.
 All 322 actual training articles/versions/hashes are excluded from independent
 selection; training reviews are diagnostic error analysis. Near-duplicate grouping,
-independent A/B review and separate adjudication records remain pending. Approve the
-codebook/design, verify other targets independently, and collect sufficient unseen
+independent A/B review and separate adjudication records remain pending. Codebook
+finalization is complete; agree sampling design, verify other targets independently, and collect sufficient unseen
 positive support before performance claims. Latest engineering suite: **304 tests
 passed**, including installed-artifact integration, zero failures/skips. No
 retraining or threshold calibration was performed.

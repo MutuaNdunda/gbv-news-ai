@@ -7,12 +7,14 @@ import re
 from urllib.parse import urljoin, urlsplit, parse_qs
 
 from bs4 import BeautifulSoup
-from scrapers.archive import archive_parts as replay_parts, discover_archive
+from scrapers.archive import archive_parts as replay_parts, discover_archive, article_context, live_result
 from scrapers.common import allowed_url, normalize_url, parse_article
 
 SOURCE = 'standard'
 HOSTS = ('web.archive.org',)
 PUBLISHER_HOSTS = ('standardmedia.co.ke', 'www.standardmedia.co.ke')
+ARCHIVE_PREFIXES = ('https://www.standardmedia.co.ke/', 'https://standardmedia.co.ke/')
+LIVE_LISTINGS = ('https://www.standardmedia.co.ke/',)
 CAPTURE = '20200812220501'
 LISTINGS = (f'https://web.archive.org/web/{CAPTURE}/https://standardmedia.co.ke/',)
 FEEDS = ()
@@ -94,8 +96,12 @@ def expanded_candidates(client, max_pages):
                 yield candidate
 
 
-def parse(html, url):
-    parts = archive_parts(url)
+def parse_live(html, url):
+    return parse(html, url, live=True)
+
+
+def parse(html, url, *, live=False):
+    parts = article_context(url, PUBLISHER_HOSTS, is_article, live)
     if not parts or not is_article(parts[1]):
         return None
     timestamp, original = parts
@@ -140,4 +146,4 @@ def parse(html, url):
         archive_capture_timestamp=timestamp, parser_version='standard-archive-1.1',
         kenya_relevance_basis='Archived Standard reporting; geographic relevance requires review.',
     )
-    return article
+    return live_result(article) if live else article

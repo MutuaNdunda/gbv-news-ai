@@ -26,6 +26,19 @@ class CitizenArchiveTests(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIn('final paragraph', result['article_text'])
 
+    def test_article_content_the_content_layout_with_nested_paragraphs(self):
+        # Synthetic counterpart of the inspected 2022–2025 replay layout.
+        html = HTML.replace('class="article-content-wrapper"', 'class="article-content"')
+        result = citizen.parse(html, URL)
+        self.assertIsNotNone(result)
+        self.assertIn('final paragraph', result['article_text'])
+        self.assertNotIn('toolbar', result['article_text'])
+        self.assertNotIn('footer', result['article_text'])
+        self.assertEqual(result['parser_version'], 'citizen-archive-1.2')
+        self.assertEqual(result['archive_capture_timestamp'], '20260309182207')
+        self.assertIsNone(citizen.parse(html.replace('&quot;headline&quot;',
+            '&quot;isAccessibleForFree&quot;:false,&quot;headline&quot;'), URL))
+
     def test_article_and_legacy_news_discovery(self):
         html = f'<a href="{URL}">One</a><a href="{URL}#top">Duplicate</a><a href="/news/another-story-n54321">Two</a><a href="/news">Section</a><a href="https://example.com/article/test-n99">Other</a>'
         urls = citizen.discover(html, citizen.LISTINGS[0])
