@@ -27,6 +27,11 @@ class CollectionRun(Base):
     end_month: Mapped[date | None] = mapped_column(Date)
     configuration: Mapped[dict] = mapped_column(JSONB)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), deferred=True)
+    stop_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), deferred=True)
+    stop_requested_reason: Mapped[str | None] = mapped_column(Text, deferred=True)
+    finalization_reason: Mapped[str | None] = mapped_column(Text, deferred=True)
+    worker_token: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), deferred=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 

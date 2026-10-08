@@ -77,13 +77,17 @@ class Client:
         stage = stage or self.request_stage
         safe_url = self._log_url(url)
         host = urlsplit(url).hostname or 'unknown'
+        from collection.lifecycle import checkpoint
         for attempt in range(3):
+            checkpoint()
             time.sleep(max(0, self.delay - (time.monotonic() - self.last_request)))
+            checkpoint()
             self.last_request = time.monotonic()
             try:
                 # Longer index waits must not lengthen robots-policy requests.
                 read_timeout = 30 if stage == 'ROBOTS' else self.read_timeout
                 response = self.session.get(url, timeout=(10, read_timeout), allow_redirects=False)
+                checkpoint()
             except requests.RequestException as exc:
                 if attempt == 2:
                     raise

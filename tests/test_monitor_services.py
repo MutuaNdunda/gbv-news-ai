@@ -54,7 +54,9 @@ class MonitorServiceTests(unittest.TestCase):
         scans.scalars.return_value.all.return_value = [object()]
         session.execute.return_value = scans
         session.scalar.return_value = 4
-        result = RunService(sessions_with(session)).detail(uuid4())
+        service = RunService(sessions_with(session))
+        service._ready = True
+        result = service.detail(uuid4())
         self.assertIs(result["run"], run)
         self.assertEqual(result["version_count"], 4)
         self.assertEqual(len(result["scans"]), 1)

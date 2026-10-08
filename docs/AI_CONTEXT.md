@@ -752,7 +752,8 @@ logs, continuation after individual failures, and pending-only method-aware sele
 Annotation locking uses a dedicated autocommit direct/session-pooler connection with
 backend-identity checks before writes; a lost lease stops further processing.
 Transaction-pooler connections are rejected. Disconnected cleanup does not mask
-completed checkpoints. Collection locking remains unchanged.
+completed checkpoints. Collection locking now has separate autocommit/backend
+verification and cooperative control; see the 8 October lifecycle update below.
 Current compatible prerequisite/results are fetched once per locked cohort, avoiding
 per-article lookup queries while preserving forced-L0/L1 dependency checks.
 L1 refuses missing/mismatched processed input or a body hash inconsistent with the
@@ -1112,3 +1113,20 @@ machine labels. Dashboard cards separate these totals by weak/model method from
 original automation counts. `label_basis=machine` preserves machine-label inspection.
 This read-only overlay affects counts, filters and navigation, not eligibility,
 predictions, stored history or reference-dataset status.
+
+
+### Collection lifecycle update — 8 October 2026
+
+`/runs` is the collection monitor; annotation runs remain separate. SQL status
+filtering and opt-in token/CSRF Stop are implemented for updated trial/monthly
+workers. `collection/lifecycle.py` owns their shared lock/setup/finalization
+boundary, bounded heartbeat polling and cooperative Ctrl-C-compatible Stop.
+Collection locks now use autocommit backend/key verification, and lost owners
+cannot continue guarded persistence. New nullable control columns are deferred
+so pre-migration read-only monitoring remains usable. Apply the additive
+`20261008_add_collection_run_control.sql` before new collector execution; no
+live installation is asserted. The explicit dry-run-first reconciliation CLI
+requires stale heartbeat plus a managed attempt and acquisition of the actual
+collector lock before repair. Missing legacy evidence is never treated as death.
+See [operator details](collection_run_control.md); no annotation/model/corpus
+methodology behavior was changed.

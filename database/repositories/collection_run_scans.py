@@ -24,6 +24,8 @@ class CollectionRunScanRepository:
         self.sessions = sessions
 
     def update(self, run_id: UUID, source: str, capture_month: str, scan: dict) -> None:
+        from collection.lifecycle import assert_ownership
+        assert_ownership()
         now = datetime.now(timezone.utc)
         values = {
             "collection_run_id": run_id,

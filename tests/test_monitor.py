@@ -35,8 +35,9 @@ class FakeDashboard:
 
 
 class FakeRuns:
-    def list(self, page, per_page):
-        return [(run, 1, 0, 1)], 1
+    def list(self, page, per_page, status=""):
+        self.status = status
+        return ([(run, 1, 0, 1)], 1) if not status or status == run.status else ([], 0)
 
     def detail(self, value):
         return {"run": run, "scans": [scan], "version_count": 1} if value == RUN_ID else None

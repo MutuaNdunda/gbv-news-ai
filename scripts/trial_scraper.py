@@ -24,6 +24,8 @@ from scrapers.wayback_discovery import ArchiveSource, Discovery, term_pattern
 from scrapers.common import Client, discover, normalize_url
 from storage import GCSStorage
 from storage.logging import GCSRunLogHandler
+from database.repositories.collection_runs import CollectionLockLost
+from collection.lifecycle import managed_collection, bind_run, checkpoint, terminal_status, interruption_reason, register_progress
 from storage.persistence import CollectionPersistence, IndexingError
 
 
@@ -104,6 +106,7 @@ def live_candidates(publisher, client, max_pages, urls=None):
                 yield url, response.url, 'live_listing'
 
 
+@managed_collection
 def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                          run_name=None, services=None, input_urls=None, wayback=False,
                          wayback_urls=None, wayback_start=None, wayback_end=None, wayback_section=None,
@@ -155,7 +158,8 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
         config["discovery_versions"] = {"taifaleo": "cdx-resume-v1"}
     if "nation" in selected and max_pages > 1 and method == 'listing':
         config.setdefault("discovery_versions", {})["nation"] = "archive-listings-v1"
-    run_id = runs.resolve(run_name, config)
+    run_id = runs.resolve(run_name, config, managed=True)
+    bind_run(run_id)
     prefix = f"runs/{run_name}"
     state = persistence.objects.read_json("runs", f"{prefix}/progress.json") or {
         "config": config,
@@ -166,10 +170,12 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
     }
     if state["config"] != config:
         raise ValueError("Resume configuration differs from saved run")
+    register_progress(state, persistence.objects, f"{prefix}/progress.json")
     state["status"] = "running"
     state.setdefault("pending_index", [])
     persistence.objects.write_json("runs", f"{prefix}/progress.json", state)
     for pending in list(state["pending_index"]):
+        checkpoint(force=True)
         persistence.retry_index(pending, run_id)
         state["pending_index"].remove(pending)
         persistence.objects.write_json("runs", f"{prefix}/progress.json", state)
@@ -177,6 +183,7 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
     total = 0
     try:
         for name in selected:
+            checkpoint(force=True)
             publisher = SOURCES[name]
             discovery = None
             adapter = ArchiveSource(publisher)
@@ -237,6 +244,7 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                 attempt_limit = max_attempts or limit * 5
                 source_state['stop_reason'] = 'candidates_exhausted'
                 while saved < limit and attempted < attempt_limit:
+                    checkpoint()
                     try:
                         url, discovery_url, discovery_method = next(candidate_iterator)
                     except StopIteration:
@@ -249,7 +257,9 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                         continue
                     attempted += 1
                     state["sources"][name]["attempted"] += 1
+                    checkpoint()
                     response = client.fetch(url, stage="ARTICLE_FETCH")
+                    checkpoint()
                     if response is None or "html" not in response.headers.get("Content-Type", "").lower():
                         state['sources'][name]['fetch_failed'] = state['sources'][name].get('fetch_failed', 0) + 1
                         continue
@@ -262,6 +272,8 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                             archive_capture_month(publisher, response.url),
                         )
                         source_state['raw_stored'] += 1
+                    except CollectionLockLost:
+                        raise
                     except Exception:
                         source_state['storage_failed'] = source_state.get('storage_failed', 0) + 1
                         LOGGER.exception("Raw GCS persistence failed for %s", url)
@@ -297,12 +309,15 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
                         article.update(discovery_terms=list(terms), candidate_sampling='url_keyword_enrichment')
                     if not article["published_at"]:
                         article["publication_date_needs_review"] = True
+                    checkpoint(force=True)
                     try:
                         created = persistence.persist_article(article, raw, run_id)
                     except IndexingError as exc:
                         source_state['storage_failed'] = source_state.get('storage_failed', 0) + 1
                         state["pending_index"].append(exc.pending)
                         persistence.objects.write_json("runs", f"{prefix}/progress.json", state)
+                        raise
+                    except CollectionLockLost:
                         raise
                     except Exception:
                         source_state['storage_failed'] += 1
@@ -338,14 +353,19 @@ def run_trial_extraction(sources=None, limit=20, delay=2.0, max_pages=1,
             LOGGER.info('%s counters: %s', name, source_state)
             state['updated_at'] = datetime.now(timezone.utc).isoformat()
             persistence.objects.write_json('runs', f'{prefix}/progress.json', state)
-        runs.set_status(run_id, "completed")
+        checkpoint(force=True)
+        terminal_status("completed")
         state["status"] = "completed"
         if any(item.get('discovery', {}).get('index_failures') or item.get('storage_failed')
                or item.get('stop_reason', '').startswith('unsupported') for item in state['sources'].values()):
             state['status'] = 'finished_with_gaps'
-            runs.set_status(run_id, 'finished_with_gaps')
+            terminal_status('finished_with_gaps')
+    except KeyboardInterrupt:
+        terminal_status("interrupted")
+        state["status"] = "interrupted"
+        state["stop_reason"] = interruption_reason()
     except BaseException:
-        runs.set_status(run_id, "failed")
+        terminal_status("failed")
         state["status"] = "failed"
         raise
     finally:
@@ -464,14 +484,13 @@ def main(argv=None):
     )
     log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler(), log_handler])
-    with services[2].lock(run_name):
-        run_trial_extraction(
-            args.source, args.limit, args.delay, args.max_pages, run_name, services,
-            method=args.method, wayback_urls=args.url, terms=args.term, selection=args.selection,
-            max_records=args.max_records, max_index_requests=args.max_index_requests, max_attempts=args.max_attempts,
-            wayback_start=args.wayback_start, wayback_end=args.wayback_end, wayback_section=args.wayback_section,
-            publication_start=args.publication_start, publication_end=args.publication_end
-        )
+    run_trial_extraction(
+        args.source, args.limit, args.delay, args.max_pages, run_name, services,
+        method=args.method, wayback_urls=args.url, terms=args.term, selection=args.selection,
+        max_records=args.max_records, max_index_requests=args.max_index_requests, max_attempts=args.max_attempts,
+        wayback_start=args.wayback_start, wayback_end=args.wayback_end, wayback_section=args.wayback_section,
+        publication_start=args.publication_start, publication_end=args.publication_end
+    )
 
 
 if __name__ == "__main__":

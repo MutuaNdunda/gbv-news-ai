@@ -186,7 +186,7 @@ remain future work. See [the annotation specification](docs/annotations.md#22-l2
 
 ## Corpus Collection Monitor
 
-The implemented Flask monitor provides a read-only operational view of collection state.
+The implemented Flask monitor provides an operational view of collection state, with opt-in protected cooperative Stop.
 It provides corpus totals, grouped source/month counts, run and source/month scan
 progress, searchable article metadata, complete extraction lineage, and infrastructure
 health. Counts come from Supabase; GCS is consulted only for read-only bucket health.
@@ -243,8 +243,8 @@ For local development with debug mode and automatic reload, use:
 flask --app main:app run --debug --port 8080
 ```
 
-Stop either server with Ctrl-C. The monitor has no collection controls; annotation
-execution is disabled by default. If startup or `/health` fails, rerun
+Stop either server with Ctrl-C. Collection Stop and annotation execution are
+disabled by default; see the collection run control instructions below. If startup or `/health` fails, rerun
 `python3 scripts/test_infrastructure_connections.py` and verify the configured database,
 bucket, and ADC access before changing application code.
 
@@ -1319,3 +1319,28 @@ Run offline regression checks with:
 ```bash
 python3 -m unittest discover -s tests -v
 ```
+
+
+### Collection run filtering, Stop and orphan recovery
+
+The collection Runs page supports `/runs?status=running` and other persisted
+status filters, pagination, worker heartbeat/elapsed display and opt-in protected
+cooperative Stop. Annotation runs retain their separate controls. Updated workers
+require `migrations/20261008_add_collection_run_control.sql`; install it in filename
+order before starting them and restart the monitor. Never assume it is installed
+on every target.
+
+Enable Stop with private `COLLECTION_CONTROL_ENABLED=1`, a strong
+`COLLECTION_CONTROL_TOKEN`, and `FLASK_SECRET_KEY`. Stop uses POST, token and
+signed-session CSRF; it requests cancellation rather than killing a process.
+Completed work survives; the worker checkpoints and ends as `interrupted`.
+Older workers cannot honor Stop and are shown without that control. Exact-config
+same-name resume remains supported.
+
+Heartbeat writes occur at most every 30 seconds at worker checkpoints; page loads
+never renew them. `Possibly stalled` is informational. Diagnose with
+`.venv/bin/python scripts/reconcile_runs.py --dry-run`; explicit `--apply` repairs
+only managed attempts with stale heartbeat and a provably unowned collector lock.
+Legacy missing-heartbeat rows remain unchanged. See
+[collection run control and recovery](docs/collection_run_control.md) for migration,
+status semantics, security, cancellation latency, reconciliation and limitations.

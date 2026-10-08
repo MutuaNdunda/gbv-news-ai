@@ -1500,3 +1500,35 @@ actual annotation CLI help/options, offline gazetteer verification and
 `git diff --check`. The latest full-suite result remains the previously executed
 249 tests (248 passed, one optional model integration test skipped); tests and
 research pipelines were not rerun for documentation-only edits.
+
+
+### Collection Runs UI and lifecycle reliability — 8 October 2026
+
+User-requested operational change for `/runs` (collection only): SQL status
+filter/count/pagination, heartbeat/elapsed and derived liveness display, and
+opt-in token/CSRF-protected POST cooperative Stop. Trial and monthly collectors
+share an execution boundary covering setup failures, zero work and finalization;
+30-second bounded heartbeats, safe cancellation checkpoints and autocommit exact
+advisory-key/backend verification preserve current resume/data lineage. Lost
+owners refuse guarded persistence; cleanup cannot overwrite a durable terminal
+row. Explicit dry-run-first maintenance repairs only managed stale-heartbeat rows
+while holding the actual collector lock and rechecking current state. Legacy
+missing evidence remains untouched. Annotation execution was inspected and left
+unchanged.
+
+The additive migration is `20261008_add_collection_run_control.sql`; **not applied
+in this task**. The read-only development diagnostic found one running legacy row,
+started 7 October 14:10:30 EAT, zero indexed versions/scans and no lock owner at
+probe. No heartbeat/attempt evidence was available, so no row was repaired. No
+model, annotation, collector execution, roadmap CSV or public Sheet write occurred.
+See [operational documentation](../collection_run_control.md). This operational
+change does not close any research validation gate.
+
+Validation for the 8 October collection-control change: **382 tests run, 381
+passed, one optional installed-model integration test skipped**, zero failures.
+The 28 new regressions cover executed SQL/UI, Stop/security, heartbeat cadence,
+stale/owner reconciliation, counter preservation, pre-migration read-only display,
+worker cancellation/finalization and lease/cleanup failures. `git diff --check`
+passed; `git ls-files data` is empty. Live development work was diagnostic only;
+control enablement, migration installation and collector restart remain operator
+activation steps, not an asserted deployment.

@@ -545,7 +545,12 @@ The Flask interface provides read-only collection monitoring, automated L0/L1/L2
 results, and optional protected bounded L0/L1 execution. A separate protected local
 Human Review workspace now supports L0/L1/L2 confirmation, correction, uncertainty
 and append-only review history. Only unlocked direct-local sessions retrieve verified
-full article text; remote review is blocked. It provides no collection controls.
+full article text; remote review is blocked. Collection launch remains CLI-only.
+The collection Runs monitor now supports opt-in token/CSRF cooperative Stop for
+updated trial/monthly workers, bounded worker heartbeats and explicit ownership-
+checked orphan reconciliation. Apply `20261008_add_collection_run_control.sql`
+before new worker execution; legacy missing-heartbeat rows are not automatically
+repaired. See `docs/collection_run_control.md` for controls and limitations.
 The final analytical GBV dashboard, NER/geocoding and mapping remain planned.
 
 The Flask application already supports article browsing, automated results and

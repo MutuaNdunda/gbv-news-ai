@@ -8,6 +8,8 @@ from typing import Any
 from uuid import UUID
 
 from storage.gcs import ObjectReference
+from collection.lifecycle import assert_ownership
+from database.repositories.collection_runs import CollectionLockLost
 
 
 class IndexingError(RuntimeError):
@@ -62,11 +64,14 @@ class CollectionPersistence:
         processed = self.objects.write_json(
             "processed", name, processed_article, create_only=True
         )
+        assert_ownership()
         try:
             _, created = self.articles.persist(
                 article, run_id, raw.uri, raw.generation,
                 processed.uri, processed.generation,
             )
+        except CollectionLockLost:
+            raise
         except Exception as exc:
             raise IndexingError({
                 "processed_object_name": name,
@@ -84,6 +89,7 @@ class CollectionPersistence:
         )
         if article is None:
             raise RuntimeError("Pending processed GCS object is missing")
+        assert_ownership()
         _, created = self.articles.persist(
             article,
             run_id,

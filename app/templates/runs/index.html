@@ -1,4 +1,23 @@
-{% extends "base.html" %}{% block title %}Runs{% endblock %}{% block content %}<h1 class="h3">Collection runs</h1>
-<div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Run</th><th>Status</th><th>Window</th><th>Started</th><th>Finished</th><th>Articles</th><th>Scans</th></tr></thead><tbody>
-{% for run, articles, complete, scans in rows %}<tr><td><a href="{{ url_for('runs.detail', run_id=run.id) }}">{{ run.run_name }}</a></td><td>{{ run.status }}</td><td>{{ run.start_month or '—' }}–{{ run.end_month or '—' }}</td><td>{{ run.started_at }}</td><td>{{ run.finished_at or '—' }}</td><td>{{ articles }}</td><td>{{ complete }}/{{ scans }}</td></tr>{% else %}<tr><td colspan="7">No runs</td></tr>{% endfor %}</tbody></table></div>
-<p class="text-secondary">Page {{ page }} · {{ total }} total</p>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Runs{% endblock %}
+{% block content %}
+<h1 class="h3">Collection runs</h1>
+<form method="get" action="{{ url_for('runs.index') }}" class="row g-2 align-items-end mb-4">
+<div class="col-sm-6 col-md-4"><label class="form-label" for="run-status">Status</label>
+<select id="run-status" name="status" class="form-select"><option value="">All</option>
+{% for value, label in status_options.items() %}<option value="{{ value }}" {{ 'selected' if status == value }}>{{ label }}</option>{% endfor %}</select></div>
+<div class="col-auto"><button class="btn btn-primary">Filter</button></div></form>
+<div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>Run</th><th>Status</th><th>Window</th><th>Started / finished</th><th>Last activity</th><th>Elapsed</th><th>Articles</th><th>Scans</th><th>Actions</th></tr></thead><tbody>
+{% for run, articles, complete, scans in rows %}{% set state = states[run.id] %}
+<tr><td><a href="{{ url_for('runs.detail', run_id=run.id) }}">{{ run.run_name }}</a></td>
+<td><span class="badge {{ 'text-bg-warning' if state.possibly_stalled else 'text-bg-secondary' }}">{{ state.label }}</span><div class="small text-secondary">{{ run.status }}</div></td>
+<td>{{ run.start_month or '—' }}–{{ run.end_month or '—' }}</td><td class="small">{{ run.started_at }}<br>{{ run.finished_at or '—' }}</td>
+<td class="small">{{ state.heartbeat or 'No heartbeat recorded' }}</td><td>{{ state.elapsed }}</td><td>{{ articles }}</td><td>{{ complete }}/{{ scans }}</td>
+<td>{% include 'runs/_stop.html' %}</td></tr>
+{% else %}<tr><td colspan="9">No runs match</td></tr>{% endfor %}</tbody></table></div>
+<p class="text-secondary">Page {{ page }} · {{ total }} total</p>
+<nav aria-label="Run pages">{% if page > 1 %}<a class="btn btn-outline-secondary" href="{{ url_for('runs.index', status=status, page=page-1) }}">Previous</a>{% endif %}
+{% if page < last_page %}<a class="btn btn-outline-secondary" href="{{ url_for('runs.index', status=status, page=page+1) }}">Next</a>{% endif %}</nav>
+<p class="small text-secondary mt-3">Possibly stalled means no recent worker heartbeat is available. It does not prove that a run has stopped.</p>
+<script src="{{ url_for('static', filename='js/collection-runs.js') }}" defer></script>
+{% endblock %}

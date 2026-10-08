@@ -1,6 +1,7 @@
 from collections import defaultdict
 from contextlib import nullcontext
 from uuid import uuid4
+from types import SimpleNamespace
 
 from storage.gcs import ObjectReference
 
@@ -11,6 +12,8 @@ class FakeObjects:
         self.writes = []
 
     def write_bytes(self, role, name, payload, content_type, create_only=False):
+        from collection.lifecycle import assert_ownership
+        assert_ownership()
         key = (role, name)
         if create_only and key in self.data and self.data[key] != payload:
             raise RuntimeError("object collision")
@@ -70,18 +73,33 @@ class FakeRuns:
         self.ids = {}
         self.configs = {}
         self.statuses = {}
+        self.tokens = {}
+        self.stops = {}
+        self.heartbeats = []
+        self.reasons = {}
 
-    def resolve(self, name, config):
+    def resolve(self, name, config, **kwargs):
         if name in self.configs and self.configs[name] != config:
             raise ValueError("Resume configuration differs from saved run")
         self.configs[name] = config
         self.ids.setdefault(name, uuid4())
         self.statuses[name] = "running"
+        self.tokens[self.ids[name]] = uuid4()
+        self.stops.pop(self.ids[name], None)
         return self.ids[name]
 
-    def set_status(self, run_id, status):
+    def control(self, run_id):
+        name = next(name for name, value in self.ids.items() if value == run_id)
+        return SimpleNamespace(status=self.statuses[name], worker_token=self.tokens[run_id],
+                               stop_requested_at=self.stops.get(run_id))
+
+    def heartbeat(self, run_id, worker_token, now):
+        self.heartbeats.append((run_id, now))
+
+    def set_status(self, run_id, status, **kwargs):
         name = next(name for name, value in self.ids.items() if value == run_id)
         self.statuses[name] = status
+        self.reasons[name] = kwargs.get("reason")
 
     def lock(self, run_name):
         return nullcontext()

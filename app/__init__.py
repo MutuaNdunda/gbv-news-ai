@@ -18,7 +18,10 @@ from app.services.annotation_service import AnnotationService
 def create_app(config=None, services=None):
     app = Flask(__name__)
     load_environment()
-    app.config.from_mapping(PER_PAGE=25, ANNOTATION_UI_ENABLED=os.environ.get("ANNOTATION_UI_ENABLED") == "1",
+    app.config.from_mapping(PER_PAGE=25,
+                            COLLECTION_CONTROL_ENABLED=os.environ.get("COLLECTION_CONTROL_ENABLED") == "1",
+                            COLLECTION_CONTROL_TOKEN=os.environ.get("COLLECTION_CONTROL_TOKEN", ""),
+                            COLLECTION_STALE_SECONDS=int(os.environ.get("COLLECTION_STALE_SECONDS", "1800")), ANNOTATION_UI_ENABLED=os.environ.get("ANNOTATION_UI_ENABLED") == "1",
                             ANNOTATION_UI_TOKEN=os.environ.get("ANNOTATION_UI_TOKEN", ""),
                             HUMAN_REVIEW_ENABLED=os.environ.get("HUMAN_REVIEW_ENABLED") == "1",
                             HUMAN_REVIEW_TOKEN=os.environ.get("HUMAN_REVIEW_TOKEN", ""),

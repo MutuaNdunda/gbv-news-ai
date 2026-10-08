@@ -47,6 +47,8 @@ class GCSStorage:
         *,
         create_only: bool = False,
     ) -> ObjectReference:
+        from collection.lifecycle import assert_ownership
+        assert_ownership()
         blob = self.client.bucket(self.buckets[role]).blob(name)
         try:
             blob.upload_from_string(

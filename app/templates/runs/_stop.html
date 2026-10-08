@@ -1,0 +1,11 @@
+{% if run.status == 'running' %}
+{% if state.stop_requested %}<button class="btn btn-sm btn-secondary" disabled>Stop requested</button>
+{% elif control_enabled and state.managed %}
+<details><summary class="btn btn-sm btn-outline-danger">Stop Run</summary>
+<form method="post" action="{{ url_for('runs.stop', run_id=run.id) }}" class="collection-stop mt-2">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<label class="form-label small" for="control-{{ run.id }}">Collection control token</label>
+<input class="form-control form-control-sm mb-2" id="control-{{ run.id }}" name="execution_token" type="password" required autocomplete="off">
+<button class="btn btn-sm btn-danger" type="submit">Stop Run</button>
+</form></details>
+{% elif not state.managed %}<span class="small text-secondary">Worker control unavailable</span>{% endif %}{% endif %}

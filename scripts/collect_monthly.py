@@ -24,6 +24,8 @@ from scrapers.common import Client, normalize_url
 from scripts.trial_scraper import SOURCES, build_services
 from database.repositories.collection_run_scans import CollectionRunScanRepository
 from storage.logging import GCSRunLogHandler
+from database.repositories.collection_runs import CollectionLockLost
+from collection.lifecycle import managed_collection, bind_run, checkpoint, terminal_status, interruption_reason, register_progress
 from storage.persistence import IndexingError
 
 
@@ -142,6 +144,7 @@ def report(run_name, run_id, state, objects, articles, scans):
     return rows
 
 
+@managed_collection
 def run(config, run_name, services=None, *, index_read_timeout=30.0):
     """Resume the same discovery configuration with a recorded operational timeout."""
     if not math.isfinite(index_read_timeout) or not 1 <= index_read_timeout <= 300:
@@ -151,12 +154,14 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
     scans = supplied[3] if len(supplied) > 3 else CollectionRunScanRepository(articles.sessions)
     objects = persistence.objects
     months = months_descending(config["start_month"], config["end_month"])
-    run_id = runs.resolve(run_name, config)
+    run_id = runs.resolve(run_name, config, managed=True)
+    bind_run(run_id)
     progress_name = f"runs/{run_name}/progress.json"
     state = objects.read_json("runs", progress_name)
     if state is not None and state["config"] != config:
         raise ValueError("Resume configuration differs from saved run")
     state = state or initial_state(config, months)
+    register_progress(state, objects, progress_name)
     state["status"] = "running"
     state.setdefault("pending_index", [])
     state.setdefault("execution_settings", []).append({
@@ -166,6 +171,7 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
     LOG.info("CDX index read timeout: %s seconds per attempt; up to three attempts",
              index_read_timeout)
     for pending in list(state["pending_index"]):
+        checkpoint(force=True)
         persistence.retry_index(pending, run_id)
         state["pending_index"].remove(pending)
         objects.write_json("runs", progress_name, state)
@@ -182,7 +188,9 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
     report(run_name, run_id, state, objects, articles, scans)
     try:
         for month in months:
+            checkpoint(force=True)
             for name in config["sources"]:
+                checkpoint(force=True)
                 key = f"{name}/{month}"
                 scan = state["scans"][key]
                 if scan["status"] == "index_exhausted":
@@ -198,6 +206,7 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
                 attempts_this_scan = pages_this_scan = 0
                 LOG.info("Starting %s capture month %s", name, month)
                 while True:
+                    checkpoint()
                     query = index_url(publisher, month, resume,
                                       config.get("index_match", "domain"))
                     digest = hashlib.sha256(query.encode()).hexdigest()
@@ -205,7 +214,9 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
                     index_client.last_request = max(index_client.last_request, article_client.last_request)
                     payload = objects.read_json("runs", cache_name)
                     if payload is None:
+                        checkpoint()
                         response = index_client.fetch(query)
+                        checkpoint()
                         if response is None:
                             scan["failed"] += 1
                             scan.update(status="index_failed", error=index_client.last_failure)
@@ -229,6 +240,7 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
                     pages_this_scan += 1
                     scan["index_pages"] += 1
                     for timestamp, original in records:
+                        checkpoint()
                         original = normalize_url(original)
                         if not publisher.is_article(original) or original in seen_originals:
                             continue
@@ -245,13 +257,17 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
                         attempts_this_scan += 1
                         scan["attempted"] += 1
                         article_client.last_request = max(article_client.last_request, index_client.last_request)
+                        checkpoint()
                         response = article_client.fetch(replay)
+                        checkpoint()
                         if response is None or "html" not in response.headers.get("Content-Type", "").lower():
                             scan["failed"] += 1
                             LOG.warning("Article fetch failed: %s reason=%s", replay, article_client.last_failure)
                             continue
                         try:
                             raw = persistence.store_raw(name, original, response.content, month)
+                        except CollectionLockLost:
+                            raise
                         except Exception:
                             scan["failed"] += 1
                             LOG.exception("Raw GCS persistence failed: %s", replay)
@@ -279,6 +295,7 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
                                        discovery_method="wayback_cdx", http_status=response.status_code,
                                        publication_month=published, collection_run=run_name,
                                        discovery_capture_month=month)
+                        checkpoint(force=True)
                         try:
                             created = persistence.persist_article(article, raw, run_id)
                         except IndexingError as exc:
@@ -314,24 +331,32 @@ def run(config, run_name, services=None, *, index_read_timeout=30.0):
                          scan["status"], scan["saved"], scan["failed"])
                 report(run_name, run_id, state, objects, articles, scans)
                 if failures >= 3:
+                    checkpoint(force=True)
                     state["status"] = "paused_index_unavailable"
                     LOG.error("Three index failures in succession; leaving remaining scans pending")
                     return state
+        checkpoint(force=True)
         state["status"] = "finished_with_gaps" if any(
             scan["status"] != "index_exhausted" or scan["failed"] or scan["unknown_date"]
             for scan in state["scans"].values()) else "index_scans_finished"
         return state
     except KeyboardInterrupt:
+        state["stop_reason"] = interruption_reason()
         state["status"] = "interrupted"
         return state
     except BaseException:
         state["status"] = "failed"
         raise
     finally:
-        rows = report(run_name, run_id, state, objects, articles, scans)
-        runs.set_status(run_id, state["status"])
-        index_client.session.close()
-        article_client.session.close()
+        terminal_status(state["status"])
+        for scan in state["scans"].values():
+            if scan["status"] == "running":
+                scan["status"] = "pending"
+        try:
+            rows = report(run_name, run_id, state, objects, articles, scans)
+        finally:
+            index_client.session.close()
+            article_client.session.close()
         for row in rows:
             LOG.info("MONTHLY %s %s new=%s total=%s scan=%s", row["source"],
                      row["publication_month"], row["new_articles_this_run"],
@@ -379,8 +404,7 @@ def main():
     log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler(), log_handler])
     LOG.info("Run name: %s", run_name)
-    with services[2].lock(run_name):
-        result = run(config, run_name, services, index_read_timeout=args.index_read_timeout)
+    result = run(config, run_name, services, index_read_timeout=args.index_read_timeout)
     LOG.info("Run status: %s", result["status"])
     return 0 if result["status"] == "index_scans_finished" else 2
 
