@@ -85,13 +85,12 @@ class AnnotationService:
 
     def results(self, layer, filters, page, per_page):
         current = self.result_current(filters) if layer == "L2" else self.current()
-        query = select(AutomatedAnnotation, Article).join(Article, Article.id == AutomatedAnnotation.article_id).where(
-            AutomatedAnnotation.id.in_(select(current.c.id)), AutomatedAnnotation.layer == layer)
+        query = select(AutomatedAnnotation, Article).join(
+            current, current.c.id == AutomatedAnnotation.id).join(
+            Article, Article.id == AutomatedAnnotation.article_id).where(AutomatedAnnotation.layer == layer)
         query = self.filter_review_status(query, AutomatedAnnotation.id, filters, layer)
         if filters.get("label"):
             label = current.c.result_label if layer == "L2" else AutomatedAnnotation.label
-            if layer == "L2":
-                query = query.join(current, current.c.id == AutomatedAnnotation.id)
             query = query.where(label == filters["label"])
         if filters.get("source"): query = query.where(Article.source == filters["source"])
         if layer == "L2":

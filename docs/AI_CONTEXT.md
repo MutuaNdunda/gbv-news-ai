@@ -4,6 +4,19 @@
 
 ## 1. Project Summary
 
+Current dated operational observation: **8 October 2026, audit beginning 22:50 EAT**:
+2,119 articles/versions; current L0 2,076 valid / 39 review / 4 invalid;
+L1 1,417 Kenya / 130 non-Kenya / 529 ambiguous; dev-v1 model 246 GBV /
+1,049 non-GBV / 122 borderline, with compatible eligible coverage complete.
+No annotation run was persisted as running. Validation schema is ready; zero
+batches/members exist. Metadata-only screened formal-source unseen support is
+1,089, before private object/language/period/near-duplicate checks, with Standard
+zero. See [dataset creation](research/validation_dataset_creation.md) and the
+engineering log. Never substitute historical 536/324 counts for this dated state,
+or equate automated coverage with research validation. The separate collection
+control migration remains uninstalled on the observed development target.
+
+
 Before real L2 validation, consult the [L2 GBV Relevance Codebook v1.0](research/l2_gbv_relevance_codebook_v1.0.md)
 and [L2 Validation Sampling Protocol v1.0](research/l2_validation_sampling_protocol_v1.0.md).
 The codebook is researcher-finalized on 7 October 2026, by explicit user confirmation.
@@ -16,8 +29,8 @@ registered publishers, literal URL keyword enrichment, per-publisher budgets,
 separate live collection, cloud provenance and per-source reports. The actual
 seven-source smoke saved ten articles, with four CDX-timeout sources and unsupported
 Taifa Leo routes. Citizen parser 1.2 fixes the five reported older replay layouts;
-all five diagnostic re-parses succeeded and 50 relevant tests passed. Expanded
-operator runs are ongoing/reported at discovery stage; final totals are unverified.
+all five diagnostic re-parses succeeded and 50 relevant tests passed. Expanded corpus counts and eligible annotation coverage are now observed above;
+complete archive coverage and final validated research data remain unestablished.
 The 536-version/annotation figures below remain dated pre-expansion baselines.
 
 GBV News AI is a postgraduate research project for an ethical, human-supervised,
@@ -25,8 +38,9 @@ near-real-time multilingual system that will identify, classify, geotag, and map
 gender-based violence (GBV) reporting in Kenyan digital news. The repository is in
 the **Automated Annotation Pipeline — L0/L1 validation** roadmap milestone, with
 user-authorized L2 engineering work implemented after the collection MVP.
-Current State records 536 versions; 407 was an older planning snapshot.
-Supabase still contained 536 article versions on 5 October 2026. Neither count
+Current State retains the historical 536-version planning observation; 407 was an
+older snapshot. Supabase contained 536 versions on 5 October and 2,119 at the
+8 October read-only audit. Neither count
 establishes a validated final corpus. Broad
 news sources are Daily Nation, Citizen Digital, The Standard, The Star Kenya, Tuko,
 Kenyans.co.ke, and Taifa Leo. Automated L0/L1 engines are implemented, with human
@@ -58,8 +72,14 @@ objects absent at the initial check; no automatic migration. A later read-only
 run with OperationalError followed by AnnotationLockLost. The later operational closure installed all four required schema objects and
 verified rolled-back behavior; previous schema gaps are historical. See `docs/l2_model_performance.md`; independent
 performance remains unmeasured.
-Latest executed full suite including installed-model integration: **304 passed**,
-zero failures/skips, on 6 October 2026. L2 validation batches, blinded initial review,
+Historical full suite including installed-model integration: **304 passed**,
+zero failures/skips, on 6 October. Latest 8 October suite: **387 run, 386 passed,
+one optional installed-model integration skipped**, zero failures. The later 8 October
+repair separates validation management CSRF from article review, renews access after
+successful preview, restores settings after expired submissions and removes duplicate
+L2 results selection using a single join/shared upstream CTEs. The local app was
+restarted and its reported L2 filter returned HTTP 200; no real batch was created.
+L2 validation batches, blinded initial review,
 protected membership and deterministic private evaluation are implemented. The
 additive `20261006_add_l2_validation_batches.sql` was **installed in development**
 on 6 October at 23:48 EAT after user authorization; standalone readiness is true

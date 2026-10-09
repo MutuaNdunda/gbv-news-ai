@@ -55,6 +55,20 @@ class L2ReviewFixture(ReviewFixture):
 
 
 class L2UITests(L2ReviewFixture):
+    def test_results_database_timeout_returns_retry_page_without_sql_details(self):
+        from sqlalchemy.exc import OperationalError
+        failure=OperationalError('private SQL', {'private':'value'}, Exception('statement timeout'))
+        for method in ('results','l2_label_counts','review_statuses','l2_result_labels'):
+            with self.subTest(method=method), patch.object(self.service,method,side_effect=failure):
+                response=self.client.get('/annotations/l2?label=not_gbv&source=citizen')
+                self.assertEqual(response.status_code,503)
+                html=response.get_data(as_text=True)
+                self.assertIn('Retry these results',html)
+                self.assertIn('label=not_gbv',html)
+                self.assertNotIn('private SQL',html)
+                self.assertNotIn('statement timeout',html)
+        self.objects.read_json.assert_not_called()
+
     def test_dashboard_live_counts_clickable_labels_pending_and_no_body_reads(self):
         data = self.service.overview()
         self.assertEqual(data["counts"]["L2"], {"gbv": 1, "not_gbv": 1, "borderline": 1})

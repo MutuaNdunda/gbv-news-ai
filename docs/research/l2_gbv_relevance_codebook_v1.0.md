@@ -14,6 +14,7 @@
 | Draft prepared | 7 October 2026 |
 | Researcher finalization date | **7 October 2026** |
 | Guideline identifier | `l2-gbv-relevance-codebook-v1.0` |
+| Operator guide | [Create the first independent L2 validation dataset](validation_dataset_creation.md) — operational support; no semantic-rule change |
 | Companion document | [L2 Validation Sampling Protocol v1.0](l2_validation_sampling_protocol_v1.0.md) |
 
 ## 1. Authority, scope and limits

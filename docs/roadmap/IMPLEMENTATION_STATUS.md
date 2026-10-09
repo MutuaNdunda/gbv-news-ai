@@ -4,6 +4,109 @@ This engineering log records executed code and observations. The public Sheet
 remains the planning source of truth; synchronized CSVs were not edited manually.
 No private article content, victim information or reference labels belong here.
 
+## L2 draft creation and filtered-results repair — 8 October 2026, 23:40 EAT
+
+The researcher reported an immediate Forbidden response after a cloud-backed
+validation preview and draft submission, plus a PostgreSQL statement timeout on
+`/annotations/l2?mode=model&label_basis=effective&label=not_gbv`. The pasted trace
+establishes the results-query timeout; it does not identify the exact original
+403 security branch. Both review-session expiry and cross-form CSRF rotation
+are now covered by regression tests and recovery handling.
+
+* Validation management uses a separate signed-session CSRF token from article
+  review. Ordinary review saves no longer invalidate preview/create forms.
+* An explicitly authorized successful preview renews the 30-minute review window
+  after its cloud work finishes. An expired submission requires another unlock,
+  preserves only small batch settings, performs no mutation and returns to a fresh
+  preview. Missing/invalid CSRF and remote/proxied requests still fail closed.
+  Old open forms must be reloaded after this repair; stale CSRF responses explain
+  the recovery step. No credentials or article content enter the saved settings.
+* Filtered results join the compatible annotation selection once, replacing a
+  duplicated `IN` plus join. Shared L0/upstream CTEs avoid repeated ranking inside
+  L2 selection. Exact method/prerequisite matching and effective review labels
+  remain unchanged. SQL/storage failures across results/counts/review overlays
+  now return a 503 retry page without raw SQL or private exception details.
+
+Verification: **77 targeted tests passed**; full suite **387 run, 386 passed,
+one optional installed-model integration skipped**, zero failures. Read-only
+development verification at 23:37 EAT used an eight-second per-statement timeout:
+the reported filter returned 1,049 results and 25 page rows in 8.614 seconds
+(including connections/count/page), label counts in 1.253 seconds and page review
+overlays in 2.366 seconds. The same observation found **zero real validation
+batches/members**. No draft, reference review, inference, training or migration
+was performed for this repair.
+
+The inspected non-debug local Flask monitor was restarted gracefully on
+`127.0.0.1:8080`. Live GET checks returned HTTP 200 for the reported L2 filter
+(9.614 seconds for the complete page) and the validation creation/unlock page
+(0.004 seconds). Collector processes were not stopped. Training exclusion,
+preview digest rechecks and freeze protection remain in place.
+
+## Validation-dataset readiness — read-only audit beginning 8 October 2026, 22:50 EAT
+
+The configured development database now contains **2,119 articles / 2,119
+extraction versions**, not the historical 536-version baseline. Source counts are
+Nation 558, Citizen 466, Standard 20, Star 502, Taifa Leo 486, Tuko 80 and
+Kenyans.co.ke 7. These are research candidates, not validated incidents or gold labels.
+
+| Current compatible layer | Observed counts | Pending in its eligible cohort |
+| --- | --- | --- |
+| L0 | 2,076 valid; 39 needs_review; 4 invalid | 0 of 2,119 versions |
+| L1 v2 | 1,417 kenya; 130 not_kenya; 529 ambiguous | 0 of 2,076 L0-valid versions |
+| Configured dev-v1 L2 model | 246 gbv; 1,049 not_gbv; 122 borderline | 0 of 1,417 current L1-Kenya versions |
+| Independent validation | 0 batches; 0 members | No independent metrics |
+
+No annotation run was persisted as running at the audit. The validation schema
+preflight reports **ready: true / missing: []**. The separate collection-control
+migration remains absent; its installation is required for updated collection
+workers, not for validation-batch creation. No migration or processing was run by
+this documentation audit.
+
+Verified local training membership remains **322 records**. Metadata-only screening
+using current gates/model identity, training article/version/historical body hashes,
+protected exclusions and exact-body deduplication found **1,095 seven-source
+candidates**, of which **1,089** are in the formal-source filter:
+
+| Formal source | Potential unseen candidates |
+| --- | ---: |
+| Nation | 285 |
+| Citizen Digital | 113 |
+| The Star | 392 |
+| Taifa Leo | 299 |
+| The Standard | **0** |
+
+The other six screened candidates are Tuko 1 and Kenyans.co.ke 5. This screening
+retrieved no article bodies and created no batch. Counts are **upper bounds before
+GCS content/language verification, approved publication-window restrictions,
+near-duplicate/syndication checks and review-exposure controls**. Separate read-only
+transactions supplied these observations; they are not a frozen full-frame archive.
+A real UI preview must recheck the actual pool before creation. Five-publisher
+representation is not satisfied by a four-publisher pool: resolve Standard support
+under the agreed design before claims about all five formal publishers.
+
+The codebook is researcher-finalized; the sampling protocol remains a draft.
+The next operation is the design/frame readiness check, then preview/create/freeze
+`L2-VALIDATION-V1` under the agreed protocol. See the
+[dataset-creation guide](../research/validation_dataset_creation.md) for exact UI,
+configuration, protection, review, completion and private-evaluation steps.
+
+### Technical handoff and annotation documentation aligned — 8 October 2026
+
+Updated the private `data/private_reports/supervisor_handoff_2026-10-07/technical_handoff.md`
+and [annotation specification](../annotations.md) to use the latest audit above for
+current coverage and validation readiness. The private handoff retains the original
+7 October evidence JSON and explicitly dates the historical source/parser and
+collection-run observations. No new private evidence snapshot was manufactured.
+It now covers collection Runs status filtering and lifecycle controls, the pending
+collection migration, unseen-source support, and the first development-validation
+preview/draft/freeze/blind-review/completion/evaluation sequence.
+
+This is a documentation update: no runtime configuration, schema, pipeline,
+review decision, batch or model changed. The handoff remains ignored private
+research material. The codebook remains researcher-finalized, the sampling protocol
+remains draft, and independent research validation remains pending. Existing
+runtime test results are dated evidence; no runtime suite was rerun for these edits.
+
 ## Read-only expanded-corpus observation — 7 October 2026, 16:05:10 EAT
 
 A repeatable-read, read-only PostgreSQL snapshot verified **2,052 articles and
@@ -42,12 +145,12 @@ timestamped observation, not final L0 results.
 
 ## Current Milestone
 
-**L0/L1 implemented and executed; L2 weak bootstrap covers the current eligible
-corpus; training/inference infrastructure and local L0/L1/L2 Human Review implemented.
+**L0/L1 implemented and executed over the expanded observed corpus; historical
+L2 weak bootstrap covers the earlier 324-member eligible cohort; training/inference infrastructure and local L0/L1/L2 Human Review implemented.
 Human review is recorded for all 302 originally borderline L2 weak results.
 The first real AfroXLMR development artifact is trained/configured locally;
-L2 development model coverage of the earlier eligible cohort is complete: 324/324 compatible predictions, zero
-pending; required L2 annotation schema is installed. L2 validation-batch, blind-review,
+L2 development model coverage now spans 1,417/1,417 compatible predictions
+(246 gbv / 1,049 not_gbv / 122 borderline), zero pending at the 8 October audit; required L2 annotation schema is installed. L2 validation-batch, blind-review,
 protected-reference and private-evaluator engineering is implemented; its new
 validation migration is installed and behavior-verified in development.
 Independent research validation remains pending.**
@@ -71,9 +174,10 @@ by this documentation update.
 | Shared historical collection | All seven registered adapters use bounded shared waybackpy discovery, literal OR URL terms, separate capture/publication dates, supplied originals/replays, deduplication, raw-first private GCS and Supabase lineage, per-source counters and explicit live mode. |
 | Actual collection smoke | Ten new saves: Citizen five, Kenyans.co.ke five; all raw/normalized objects and DB lineage verified. Nation/Standard/Star/Tuko had CDX timeouts; Taifa Leo returned unsupported routes. No exhaustive coverage claim. |
 | Citizen extraction correction | Parser 1.2 recognizes the older article container; all five reported warning pages parsed successfully after actual retrieval. Fifty relevant mocked tests passed. No new cloud insertion was performed by that diagnostic fix. |
-| Expanded operator collection | User logs show continued paginated discovery and a 100-new-save target per publisher. No completed expanded-run totals were provided or verified; targets/CDX record counts are not achieved sample sizes. |
+| Expanded corpus observation | Read-only 8 October audit: 2,119 versions; current L0/L1/L2 eligibility coverage complete. Collection totals do not establish full archive coverage, completed research validation or five-publisher unseen support. |
 
-Next: agree the sampling protocol, sample size, coverage and review/acceptance
+Next: use the 8 October readiness observation and dataset-creation guide; agree
+the sampling protocol, sample size, missing Standard support and review/acceptance
 policy; check the real unseen L0-valid/L1-Kenya pool after collection and eligible
 L2 predictions; archive/pin the finalized guide and model identity; then preview,
 freeze and execute `L2-VALIDATION-V1` under its own authorization. Complete blinded
@@ -957,38 +1061,36 @@ in each run's configuration.
   Existing-result reads were subsequently batched per locked cohort to remove
   per-article lookups, with forced dependency/version behavior unchanged.
 
-## In Progress
+## In Progress — updated 8 October 2026
 
-Automated implementation and authorized L0/L1 execution are complete. Human
-review of all 302 originally borderline L2 weak results is recorded; 22 originally
-binary weak results remain unreviewed. Independent sampled validation, codebook
-finalization and protected independent evaluation remain pending. Reviewed/mixed
-export and first-model weighted training are complete. Readiness gates
-have not been passed through automation or review coverage alone.
+Current compatible L0/L1/model execution covers the expanded eligible cohorts,
+while independent human-reference validation remains unexecuted. Codebook v1.0
+is finalized. Sampling/support, review acceptance/adjudication and numerical
+acceptance criteria remain to be agreed. Historical weak development reviews and
+322-record training provenance do not establish independent reference labels.
 
-## Next
+## Next — create the first protected validation dataset
 
-1. Inspect L0 anomalies by publisher and resolve extraction defects through versioned
-   reprocessing, retaining flagged records and original evidence.
-2. Preserve exact dynamically queried membership for any corpus expansion or pilot;
-   the old 407-record planning snapshot is already superseded by 536 versions.
-3. Review initial rules/gazetteer and agree error thresholds, sample sizes and an
-   uncertainty/stratification protocol. Engineering thresholds are not calibrated.
-4. Inspect L1 ambiguity, evidence and source/language coverage over the eligible corpus.
-5. Keep installed-schema/lease safeguards enabled; completed model coverage does
-   not close independent research-validation gates.
-6. Plan structured human validation: reproducible source/language/label batches,
-   initially hidden model output, separate adjudication and private progress/export
-   reporting. Agree codebook/sampling first; these additions are not implemented.
-7. Under a later authorized research milestone, store independent reference labels
-   separately, exclude training articles/related duplicates, freeze membership and report defensible
-   accuracy/F1, false-pass/false-fail, calibration and subgroup evidence before
-   claiming research exit-gate completion.
+1. Agree the draft sampling protocol and acceptance/reference policy; resolve the
+   zero unseen Standard support under the formal five-publisher design.
+2. Audit the actual frame's publication dates, independently verified languages,
+   extraction flags, L1 ambiguity, duplicate families and reviewer exposure.
+3. Recheck validation schema and configured immutable dev-v1/training identity.
+4. Use the [dataset-creation guide](../research/validation_dataset_creation.md)
+   to preview the actual unseen pool, then create and freeze `L2-VALIDATION-V1`
+   with training protection once the design/frame requirements are satisfied.
+5. Perform initial blind batch review, preserve separate append-only references,
+   handle referrals under the agreed policy and seal accepted pointers on completion.
+6. Privately evaluate pinned reference/model pairs, reporting support, exclusions,
+   abstentions and limits alongside conditional binary metrics. Design any required
+   supplementary analysis explicitly; native macro-F1/AUC/subgroup metrics are absent.
+7. Keep reference membership out of future training. Retraining, threshold tuning,
+   a separate final test, L3–L5, NER/geocoding and mapping remain later gated work.
 
-L2 infrastructure, reviewed/mixed exports and the initial real development model
-are implemented. Full eligible inference and installed L2 schema readiness are
-complete. Independent model validation, L3–L5, NER, geocoding and mapping remain pending. Automated outputs
-are not gold labels; execution alone does not satisfy sampled-validation gates.
+The historical 407/536 planning figures do not determine today's frame or N.
+Current 1,089 formal-source metadata-screened candidates are an upper bound before
+full verification; the real preview and agreed research design determine readiness.
+No new reference batch is created by these documentation changes.
 
 ## Blockers / Limitations
 
@@ -1010,16 +1112,28 @@ are not gold labels; execution alone does not satisfy sampled-validation gates.
   Annotation-specific locking now uses autocommit and backend-identity heartbeats,
   fails closed on lost leases, and logs cleanup disconnects without hiding completed
   results. Direct/session-pooler connections are required; transaction pooling is rejected.
-  Existing collection code was not changed. The long full run was not force-repeated.
+  That historical annotation repair did not change collection. The separately
+  requested 8 October collection-control change is documented below; its migration
+  remains uninstalled. The long historical annotation run was not force-repeated.
 
 ## Last Roadmap Sync
 
-Latest anonymous synchronization succeeded on **5 October 2026 (Africa/Nairobi)**
-during operational closure; all four exports were refreshed. The
-latest refreshed Sheet records the trained model and 300/324 pre-closure coverage;
-repository closure now records 324/324. Final research validation remains pending
-in both accounts; the public Sheet was not modified by this task. Required headers
-matched and no canonical planning rows or synchronized CSVs were manually edited.
+Anonymous check and synchronization succeeded on **8 October 2026**, with all four
+snapshots already current. No Sheet write or manual CSV edit was made. The canonical
+Sheet retains the historical 536/324 baseline; the fresh 2,119/1,417 operational
+observation is recorded above without claiming a new research gate.
+
+| Snapshot | Current planning rows | SHA-256 |
+| --- | ---: | --- |
+| `roadmap.csv` | 33 | `2d79eb16b6ef110ae9f2ca097c4369fae11751c020b4fb3a079144f76a82e85a` |
+| `current_state.csv` | 12 | `b1d8c53abebfc370c761d75ab60e2fb86624419058ebb6b87b4144d545352871` |
+| `stage_gates.csv` | 12 | `c5c1f9484a214f70608d03fc1c256475305e4c5bc4e94acb5001d87dec69009e` |
+| `annotation_layers.csv` | 8 | `51d47b278883d2661d59c60a068842c3dee906c42d0aa51d19db78c4f7050013` |
+
+### Historical 5 October synchronization evidence
+
+The following recorded snapshot hashes belong to the earlier operational closure;
+they are preserved as historical evidence, not today's snapshot fingerprints.
 
 | Snapshot | Planning rows | SHA-256 |
 | --- | ---: | --- |
@@ -1532,3 +1646,33 @@ worker cancellation/finalization and lease/cleanup failures. `git diff --check`
 passed; `git ls-files data` is empty. Live development work was diagnostic only;
 control enablement, migration installation and collector restart remain operator
 activation steps, not an asserted deployment.
+
+### Documentation alignment and Git diagnostic — 8 October 2026
+
+Updated current operator/research/implementation Markdown around the 2,119-version
+read-only audit, completed compatible expanded L0/L1/L2 coverage, installed validation
+schema, absent collection-control migration and 1,089 formal-source metadata-screened
+potential reference candidates (Standard zero). Retained historical observations as
+dated evidence. Added the validation dataset-creation and Git diagnostic guides;
+no real batch/reference labels, annotation rerun, model change, migration or repair
+was executed. The first development validation remains distinct from a final test.
+
+Roadmap check/synchronization found all four snapshots current on 8 October; the
+canonical Sheet still carries older 536/324 planning observations. No public Sheet
+write or manual CSV edit was made. Source code and the fresh dated audit govern
+current operational facts; the Sheet remains the sequencing/stage-gate authority.
+
+`git push --dry-run origin main` succeeded outside the restricted agent network:
+`f3a2c72..13a2260 main -> main`. The user confirmed no current push error. At that initial check main was one commit ahead and Runs work was uncommitted.
+During documentation work the repository advanced to `25342a7` ("Updated the app")
+and `main` now matches `origin/main`; the Runs changes are committed. Only this
+new Markdown alignment remains uncommitted. This agent performed no actual
+commit/push or Git configuration/authentication change.
+
+Documentation verification: **119 local links checked across 14 changed Markdown
+files**, no missing local targets; `git diff --check` passed; `git ls-files data`
+returned empty. No runtime code changed in this alignment, so the previously
+recorded 382-test collection-control suite was the latest runtime validation at that audit;
+it was not rerun solely for Markdown edits. HEAD/remote tracking was rechecked:
+`main` at `25342a7` matches `origin/main`, with only these documentation edits/new
+Markdown files pending. No reference dataset or cloud write was created.

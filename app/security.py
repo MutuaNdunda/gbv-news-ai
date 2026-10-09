@@ -16,7 +16,7 @@ def require_csrf(key):
     expected = session.get(key, "")
     supplied = request.form.get("csrf_token", "")
     if not expected or not hmac.compare_digest(expected.encode(), supplied.encode()):
-        abort(403)
+        abort(403, description="This form is no longer valid. Reload the page and unlock review again if requested before resubmitting.")
 
 
 def local_review_request():

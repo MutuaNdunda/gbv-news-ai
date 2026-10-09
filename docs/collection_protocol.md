@@ -15,12 +15,29 @@ quality review. The 5,000 target in the proposal is a minimum **annotated** corp
 including GBV and non-GBV reporting; it is not an ingestion stopping rule.
 Annotation and validation are separate downstream workflows; automated L0/L1,
 L2 weak supervision, local review and the first real AfroXLMR development model
-now exist. A bounded private review-priority report is available; automated
-stratified sampling and an executed active-learning cycle remain later stages.
+now exist. Seeded independent/diagnostic batch sampling, blinded first review,
+protected membership and private evaluation are implemented; no real reference
+batch or active-learning cycle has been executed. Use the
+[validation dataset-creation guide](research/validation_dataset_creation.md).
 
 This is retrospective archive collection. It does not implement prospective
 continuous ingestion or demonstrate near-real-time discovery latency. The archive
 corpus and its coverage limitations should be documented in the study methodology.
+
+## Current handoff to validation — 8 October 2026
+
+The read-only audit beginning 22:50 EAT observed 2,119 article versions and complete
+compatible eligible L0/L1/model coverage. It did not establish exhaustive archive
+coverage or validated labels. Formal-source independent metadata screening finds
+1,089 candidates, with Standard zero, before GCS/language/period/near-duplicate
+and exposure checks. Historical collection counts are not a current sampling frame.
+Agree the validation design and address missing source support before freezing.
+
+Updated cloud trial/monthly collectors require the additive collection-control
+migration; it remains uninstalled on the observed development target. Existing
+validation-batch schema is separately ready. See
+[collection run control](collection_run_control.md) for safe Stop, heartbeat,
+explicit orphan repair and preserved exact-config resume semantics.
 
 ## Running
 

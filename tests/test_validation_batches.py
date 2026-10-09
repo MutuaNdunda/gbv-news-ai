@@ -26,6 +26,10 @@ class ValidationBatchTests(L2ReviewFixture):
     def preview(self,name='synthetic-v1',purpose='development_validation',size=3,strategy='random',seed=42,protect=True):
         return self.repo.preview(name,purpose,size,strategy,seed,'synthetic-test-guide',protect)
 
+    def management_csrf(self):
+        with self.client.session_transaction() as session:
+            return session['validation_management_csrf']
+
     def batch(self,**kwargs):
         batch=self.repo.create(self.preview(**kwargs));self.repo.freeze(batch.id);return batch
 
@@ -152,18 +156,93 @@ class ValidationBatchTests(L2ReviewFixture):
 
     def test_batch_list_preview_draft_freeze_next_ui_and_no_accuracy(self):
         self.unlock(self.l2[0]);self.client.get('/annotations/validation/new')
-        values=dict(action='preview',csrf_token=self.csrf(),name='ui-v1',purpose='development_validation',strategy='random',size='2',seed='42',protect='1')
+        values=dict(action='preview',csrf_token=self.management_csrf(),name='ui-v1',purpose='development_validation',strategy='random',size='2',seed='42',protect='1')
         response=self.client.post('/annotations/validation/new',data=values)
         self.assertEqual(response.status_code,200);self.assertIn('Create this draft',response.get_data(as_text=True))
         preview=self.preview(name='ui-v1',size=2)
         values.update(action='create',preview_digest=preview['configuration']['membership_sha256'])
         response=self.client.post('/annotations/validation/new',data=values);self.assertEqual(response.status_code,303)
         self.client.get(response.location)
-        freeze=self.client.post(response.location,data={'action':'freeze','csrf_token':self.csrf()});self.assertEqual(freeze.status_code,303)
+        freeze=self.client.post(response.location,data={'action':'freeze','csrf_token':self.management_csrf()});self.assertEqual(freeze.status_code,303)
         page=self.client.get(freeze.location).get_data(as_text=True)
         self.assertIn('PROTECTED FROM TRAINING: YES',page);self.assertIn('Review Next',page)
         self.assertNotIn('confusion_matrix',page)
         self.assertIn('ui-v1',self.client.get('/annotations/validation').get_data(as_text=True))
+
+    def test_preview_create_survives_unrelated_review_token_rotation(self):
+        self.unlock(self.l2[0]);self.client.get('/annotations/validation/new')
+        values=dict(action='preview',csrf_token=self.management_csrf(),name='separate-form-v1',
+            purpose='development_validation',strategy='random',size='2',seed='42',protect='1')
+        response=self.client.post('/annotations/validation/new',data=values)
+        self.assertEqual(response.status_code,200)
+        # A successful ordinary review rotates its own CSRF token in another tab.
+        self.client.get(self.url(self.l2[0]))
+        response=self.save(self.l2[0])
+        self.assertEqual(response.status_code,303)
+        preview=self.preview(name=values['name'],size=2)
+        values.update(action='create',preview_digest=preview['configuration']['membership_sha256'])
+        response=self.client.post('/annotations/validation/new',data=values)
+        self.assertEqual(response.status_code,303)
+        self.assertEqual(len(self.repo.list()),1)
+
+    def test_expired_create_requires_unlock_and_restores_only_settings_without_write(self):
+        self.unlock(self.l2[0]);self.client.get('/annotations/validation/new')
+        values=dict(action='create',csrf_token=self.management_csrf(),name='expiry-v1',
+            purpose='development_validation',strategy='random',size='2',seed='42',protect='1',
+            preview_digest='old',review_token='must-not-be-preserved')
+        with self.client.session_transaction() as session:
+            session['human_review_started']=0
+        with patch.object(self.repo,'preview',wraps=self.repo.preview) as preview:
+            response=self.client.post('/annotations/validation/new',data=values)
+            preview.assert_not_called()
+        self.assertEqual(response.status_code,200)
+        self.assertIn('session expired',response.get_data(as_text=True))
+        self.assertEqual(self.repo.list(),[])
+        with self.client.session_transaction() as session:
+            pending=session['validation_pending_form']
+            self.assertEqual(pending['name'],'expiry-v1')
+            self.assertNotIn('review_token',pending)
+            self.assertNotIn('preview_digest',pending)
+        response=self.client.post('/annotations/validation/new',data=dict(action='unlock',
+            csrf_token=self.management_csrf(),review_token='r'*40))
+        self.assertEqual(response.status_code,303)
+        response=self.client.get(response.location)
+        self.assertIn('value="expiry-v1"',response.get_data(as_text=True))
+        self.assertIn('value="2"',response.get_data(as_text=True))
+        self.assertNotIn('Create this draft',response.get_data(as_text=True))
+        self.assertEqual(self.repo.list(),[])
+
+    def test_slow_successful_preview_renews_review_window(self):
+        import time
+        started=time.time()
+        self.unlock(self.l2[0]);self.client.get('/annotations/validation/new')
+        values=dict(action='preview',csrf_token=self.management_csrf(),name='slow-v1',
+            purpose='development_validation',strategy='random',size='2',seed='42',protect='1')
+        with self.client.session_transaction() as session:
+            session['human_review_started']=started
+        with patch('app.routes.validation.time',SimpleNamespace(time=lambda:started+1900)):
+            response=self.client.post('/annotations/validation/new',data=values)
+        self.assertEqual(response.status_code,200)
+        with self.client.session_transaction() as session:
+            self.assertEqual(session['human_review_started'],started+1900)
+        preview=self.preview(name='slow-v1',size=2)
+        values.update(action='create',preview_digest=preview['configuration']['membership_sha256'])
+        with patch('app.security.time',SimpleNamespace(time=lambda:started+1901)):
+            response=self.client.post('/annotations/validation/new',data=values)
+        self.assertEqual(response.status_code,303)
+
+    def test_management_csrf_remote_proxy_and_missing_auth_still_block_writes(self):
+        self.unlock(self.l2[0]);self.client.get('/annotations/validation/new')
+        values=dict(action='preview',csrf_token=self.management_csrf(),name='secure-v1',
+            purpose='development_validation',strategy='random',size='2',seed='42',protect='1')
+        for extra in ({'environ_overrides':{'REMOTE_ADDR':'203.0.113.5'}},
+                      {'headers':{'Forwarded':'for=203.0.113.5'}}):
+            self.assertEqual(self.client.post('/annotations/validation/new',data=values,**extra).status_code,403)
+        values['csrf_token']='bad'
+        response=self.client.post('/annotations/validation/new',data=values)
+        self.assertEqual(response.status_code,403)
+        self.assertIn('Reload the page',response.get_data(as_text=True))
+        self.assertEqual(self.repo.list(),[])
 
     def test_final_test_evaluation_requires_explicit_final_experiment(self):
         batch=self.batch(purpose='final_test')

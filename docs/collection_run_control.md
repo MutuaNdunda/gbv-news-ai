@@ -202,3 +202,17 @@ No collected datasets, secrets, model weights or temporary diagnostics were
 committed. Stop is disabled until private configuration enables it; the new
 migration and updated workers must be in place before it can operate. No live
 Stop request or repair was sent in this task.
+
+
+## Validation handoff — 8 October documentation alignment
+
+Run control protects collection operations; it is separate from the implemented
+reference-batch lifecycle. The validation schema is ready on the audited development
+target, while the collection-control migration remains absent. Its absence does
+not block creation of a validation batch from existing eligible predictions. If
+more collection is required to address missing unseen Standard coverage, install
+the control migration before updated collector execution. See
+[the validation dataset-creation guide](research/validation_dataset_creation.md)
+and the current engineering observation for design/support and frame verification.
+The app changes are now in observed commit `25342a7`, matching `origin/main`;
+this does not establish migration installation or enabled controls.

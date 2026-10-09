@@ -5,8 +5,9 @@ GBV News AI is a postgraduate research project that aims to develop an ethical, 
 The collection pipeline and automated L0 extraction-quality / L1 Kenya-relevance
 layers are operational. L2 weak supervision, training/inference infrastructure and
 protected local L0/L1/L2 Human Review are implemented. No validated final research
-dataset is available yet. The roadmap now records 536 article versions; its older
-407-record figure was a planning snapshot. Automated results still require sampled
+dataset is available yet. The 8 October read-only audit observes 2,119 article
+versions; the public roadmap retains a historical 536-version planning observation
+and 407 was an older snapshot. Automated results still require sampled
 human validation. Reporting sources include Daily Nation, Citizen Digital, The
 Standard, The Star Kenya, Tuko, Kenyans.co.ke, and Taifa Leo, with collection
 intended to include both GBV-related and non-GBV reporting. Current trials use
@@ -21,7 +22,30 @@ extraction, geocoding and mapping interfaces. Data collection and validation
 come first. Privacy, provenance, reproducibility, and human oversight will guide
 development throughout.
 
-## Current progress — verified 6 October 2026, 00:04 EAT
+## Current progress — read-only audit beginning 8 October 2026, 22:50 EAT
+
+The development corpus contains **2,119 articles / versions**. Compatible L0 covers
+all versions (2,076 valid / 39 needs_review / 4 invalid); L1 covers all 2,076 eligible
+versions (1,417 kenya / 130 not_kenya / 529 ambiguous). The unchanged dev-v1 model
+has **1,417/1,417** compatible predictions (246 gbv / 1,049 not_gbv / 122 borderline),
+zero pending within that eligible cohort. Validation schema is ready; zero real
+validation batches/members exist. These outputs are not independently validated labels.
+
+Training/exact-hash metadata screening found **1,089 potential unseen candidates**
+in the formal five-source filter: Nation 285, Citizen 113, Star 392, Taifa Leo 299,
+**Standard 0**. This is an upper bound before verified GCS content/language, study
+period and near-duplicate/exposure checks. Resolve Standard support under the agreed
+sampling design; do not claim five-publisher coverage from four represented sources.
+Follow [Create the first independent L2 validation dataset](docs/research/validation_dataset_creation.md)
+for design decisions, local setup, preview/create/freeze, review and private export.
+
+The latest offline suite is **382 run / 381 passed / 1 optional integration skipped**,
+zero failures. `/runs` supports SQL status filters and opt-in cooperative Stop;
+its separate collection-control migration is not installed in the observed target.
+It is required before updated collectors, not before reference-batch creation.
+See [collection run control](docs/collection_run_control.md).
+
+### Historical development baseline — verified 6 October 2026, 00:04 EAT
 
 **Documentation update — 7 October 2026:** the researcher confirmed that
 [L2 Codebook v1.0](docs/research/l2_gbv_relevance_codebook_v1.0.md) is finalized.
@@ -30,8 +54,8 @@ publishers, with GCS/Supabase persistence and explicit live collection. The actu
 seven-source smoke saved ten articles (five Citizen, five Kenyans.co.ke); four
 sources hit CDX timeouts and Taifa Leo returned unsupported routes. The Citizen
 body-layout fix subsequently extracted all five operator-reported warning pages;
-that diagnostic check did not insert new article records. Current expanded runs
-have shown discovery progress, but their final saved totals have not been verified.
+that diagnostic check did not insert new article records. The later 7–8 October audits verified expanded corpus counts, summarized above;
+this smoke record remains dated evidence and does not certify complete archive coverage.
 The 536-version and annotation counts below are dated pre-expansion observations.
 Sampling design, independent review/evaluation and the research exit gate remain
 open; codebook finalization does not establish model accuracy.
@@ -48,7 +72,7 @@ implemented. Twenty-record in-memory inference passed: 0 gbv / 19 not_gbv /
 1 borderline, zero failures. **No reliable independent validation metrics exist.**
 No final held-out human reference set is frozen; L2 research gates remain open.
 
-L2 operational closure verifies **324/324 compatible Transformer predictions**:
+The historical 6 October L2 operational closure verified **324/324 compatible Transformer predictions**:
 **11 gbv / 307 not_gbv / 6 borderline**, with **zero pending**. The additive L2
 migration is installed and behavior-tested in development. Pending-only resume
 added 24 predictions without changing existing model, weak, human or L1 history.
@@ -112,8 +136,10 @@ was **installed in the configured development database on 6 October 2026 at
 23:48 EAT**, after user authorization. The standalone checker returns `ready: true`
 and `missing: []`; 15 rollback-only synthetic database checks passed. Existing
 article, prediction and review fingerprints were unchanged. No real batch was created.
-For this target, skip installation and start at step 4 below. Other targets must
-complete steps 1–3 independently before creating `L2-VALIDATION-V1`:
+The 8 October read-only preflight again found this target ready, with no batches.
+Run step 2 before every new operational session; skip installation only when that
+intended target is ready. Follow the [dataset-creation guide](docs/research/validation_dataset_creation.md)
+for current frame/support and protocol checks. Other targets require steps 1–3 independently:
 
 1. Confirm the intended development database and existing annotation/human-review
    migrations. Do not infer installation from migration files.
@@ -480,6 +506,12 @@ and unlock directly on its L2 review page. Choose Confirm, Correct, Unable to de
 or Needs adjudication; use Save Review or Save & Next. The server records the configured identity and guideline version; the browser
 cannot choose them. Access lasts 30 minutes and can be locked explicitly. Keep
 notes private and avoid unnecessary victim identifiers. All labels are reviewable.
+
+For L2 validation, a successful authorized Preview renews the 30-minute review
+window after cloud verification. Management forms use a separate CSRF token from
+article-review forms. Reload old forms after app updates. If a creation submission
+finds an expired session, unlock again and preview the restored batch settings;
+no mutation is replayed automatically. Invalid/stale form tokens remain blocked.
 
 Human Review is disabled by default. Remote/proxied review is blocked even over
 HTTPS; this local capability token is not multi-user authentication. Authenticated
@@ -1344,3 +1376,11 @@ only managed attempts with stale heartbeat and a provably unowned collector lock
 Legacy missing-heartbeat rows remain unchanged. See
 [collection run control and recovery](docs/collection_run_control.md) for migration,
 status semantics, security, cancellation latency, reconciliation and limitations.
+
+
+### Git push readiness
+
+The 8 October GitHub dry-run push succeeded; the user confirmed no current error.
+Main subsequently advanced to `25342a7` and matches `origin/main`; the Runs
+changes are committed, while this new Markdown alignment remains uncommitted. Review and commit intended source/documentation before pushing; Git
+push does not publish uncommitted files. See [the diagnostic and safe steps](docs/git_push_diagnostic.md).

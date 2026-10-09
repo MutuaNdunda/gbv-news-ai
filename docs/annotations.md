@@ -1,5 +1,23 @@
 # Automated Annotation Pipeline
 
+## Current validation entry — read-only audit beginning 8 October 2026, 22:50 EAT
+
+The latest observed development corpus has **2,119 versions** with complete
+compatible eligible L0/L1/model coverage: L0 2,076 valid / 39 review / 4 invalid;
+L1 1,417 Kenya / 130 non-Kenya / 529 ambiguous; dev-v1 model 246 GBV /
+1,049 non-GBV / 122 borderline. No annotation run was persisted as running.
+Validation schema is ready, but there are no real validation batches or members.
+Training provenance remains the same 322-record development dataset. Metadata-only
+screening finds 1,089 potential unseen formal-source candidates, Standard zero,
+before GCS/language/period/near-duplicate and review-exposure checks. The unchanged
+model's increased prediction coverage is not retraining or independent accuracy.
+
+Use [the dataset-creation guide](research/validation_dataset_creation.md) before
+preview/create/freeze; the codebook is finalized and the protocol remains draft.
+The separate collection-control migration is not installed and is not a prerequisite
+for validation creation. The latest full suite ran 387 tests: 386 passed, one optional
+installed-model integration skipped. Earlier counts/tests below are historical.
+
 ## 1. Purpose and scope
 
 This document is the technical and research reference for L0 extraction quality,
@@ -35,8 +53,9 @@ tests. [AI_CONTEXT.md](AI_CONTEXT.md) provides orientation; [the root
 README](../README.md) provides setup/quick-start instructions;
 [IMPLEMENTATION_STATUS.md](roadmap/IMPLEMENTATION_STATUS.md) records dated runs and
 observations. The public Sheet governs planning and stage gates, not executable
-behavior. The latest anonymous synchronization on 7 October 2026 refreshed all
-four snapshots. It now supports an initial L2 development model on the current
+behavior. The latest anonymous check and synchronization on 8 October 2026 found all
+four snapshots already current; no public Sheet writes or manual CSV edits occurred.
+The preceding 7 October synchronization refreshed all four snapshots. The plan supports an initial L2 development model on the current
 usable corpus, iterative retraining toward ≥5,000 articles, and independent
 held-out human evaluation; class support and validation gates remain open.
 The previous synchronization on 4 October 2026 refreshed Roadmap, Current State
@@ -1174,10 +1193,10 @@ in Section 1. No collection, retraining or human-review writes were performed.
 
 ## 14. Corpus coverage: current and historical
 
-The current 6 October closure is summarized in Section 1 and the engineering
+The historical 6 October closure is summarized in Section 1 and the engineering
 log: L1 v2 324 kenya/35 not_kenya/160 ambiguous; L2 weak 7 gbv/15 not_gbv/302
-borderline over all 324 eligible versions. Current compatible transformer coverage
-is 324/324: 11 gbv, 307 not_gbv, 6 borderline; zero pending. Weak human overlay
+borderline over all 324 then-eligible versions. Compatible transformer coverage
+at that closure was 324/324: 11 gbv, 307 not_gbv, 6 borderline; zero pending. Weak human overlay
 is 10/312/2. Section 1 records the final 00:04 EAT verification; these are separate
 weak/model cohorts, not independent accuracy measurements.
 The following older table is retained as historical v1 execution evidence.
@@ -1264,9 +1283,9 @@ validation and calibrated thresholds have not been independently established.
 
 ## 17. Next steps (future work)
 
-L2 development model coverage and installed development schema are complete:
-324/324 compatible predictions, zero pending, verified on 6 October 2026 at
-00:04 EAT. Independent research validation remains open. The structured L2
+At the 8 October audit, compatible expanded dev-v1 coverage is 1,417/1,417, zero
+eligible pending; installed development validation schema is ready. The earlier
+324/324 closure is historical. Independent research validation remains open. The structured L2
 validation/protected-reference workflow is now implemented in the existing local
 Human Review workspace; its additive migration is installed and behavior-verified in development.
 See [Section 22](#22-l2-validation-and-protected-reference-workflow) for engineering
@@ -1286,7 +1305,7 @@ coverage does not validate those prerequisites.
 | Validation progress and private export | Report batch completion and source/language/label coverage; separate model predictions, human decisions, unresolved cases and reference membership. Keep identities and research text out of Git and public planning files. |
 
 Reviewing the present development/training articles supports error analysis but
-cannot establish independent test performance of the current artifact. A future
+cannot establish independent test performance of the current artifact. The first real
 protected reference set must exclude training articles and related duplicates;
 near-duplicate grouping and frozen membership are needed before independent
 accuracy/precision/recall/F1/AUC or calibration claims. Any sample enriched for
@@ -2148,12 +2167,16 @@ They also exclude conflicts with existing frozen protected batches. Exact body
 duplicates are deduplicated. Missing or mismatched provenance fails closed.
 If support is insufficient, preview refuses with **“Only N unseen eligible records
 are available. Collect additional articles before creating this validation batch.”**
-No cloud query in this task establishes the current unseen pool size.
+The initial implementation did not establish the unseen pool size. The 8 October
+metadata-only screen above is an upper bound; the real preview verifies private
+objects and language before establishing the actual eligible pool.
 
 | Mode | Design and interpretation |
 | --- | --- |
 | Representative `random` | Stable candidate ordering then seeded random sampling; no predicted-label enrichment. Estimates apply to the eligible unseen pool, subject to sampling support and corpus bias. |
-| Representative `stratified` | Proportional publisher × language-metadata allocation using largest remainders, seeded sampling within strata and shuffled review order. Store pool/selection counts, strata and inclusion probabilities. No label enrichment; metrics are unweighted and finite allocation rounding is disclosed. |
+| Representative `stratified` | Proportional publisher × language-metadata allocation using largest remainders, seeded sampling within strata and shuffled review order. Store the eligible-pool size, selected membership, strata and observed stratum
+selection fractions. For random sampling these stored fractions are not design
+inclusion probabilities; see the draft sampling protocol. No label enrichment; metrics are unweighted and finite allocation rounding is disclosed. |
 | `diagnostic` / `enriched` | May include training records and prioritize predicted GBV/borderline or uncertainty. Visibly marked error analysis. Enrichment is prohibited for independent purposes; evaluator suppresses representative accuracy/precision/recall/F1. |
 
 Optional source/language filters narrow the eligible population. Language remains
@@ -2207,6 +2230,16 @@ identities, verified object generation/hash, escaped text, private no-store resp
 and text-free logs are retained. Resolved batch reference decisions require verified
 article text; missing/unverifiable text permits only unresolved/adjudication decisions.
 Batch codebook must match server configuration.
+Validation management forms use a separate signed-session CSRF token from article
+review forms. A successful authorized preview renews the 30-minute review window
+after cloud verification. Expired management submissions return to token unlock
+without performing a mutation; creation settings are restored for a fresh preview.
+Old open forms require a reload after app updates, and missing/invalid CSRF still
+returns 403 with a reload explanation. Draft creation still rebuilds the actual
+preview and checks its membership digest; this repair does not cache or weaken
+training/protected exclusions. The 8 October repair also replaces duplicate results
+selection with a single join/shared upstream CTEs and supplies a safe retry page
+for SQL/storage failures; see the dated implementation log for live timings/tests.
 Blinding is a workflow boundary: this local operator application still has ordinary
 machine-result pages. Reviewers must avoid those results before independent review;
 it does not enforce independent reviewer-role isolation or remove prior exposure.
@@ -2252,6 +2285,29 @@ There is no threshold tuning or training-loss-as-accuracy conversion.
 
 ### Installation, tests and research readiness
 
+The first real dataset is a **development-validation reference**, provisionally
+named `L2-VALIDATION-V1`; it is separate from training exports and a later final
+thesis test. The [dataset-creation guide](research/validation_dataset_creation.md)
+specifies the operator sequence: agree design/frame and reference policy, verify
+schema/configuration, preview, create draft, freeze/protect, review initially blind,
+complete, then evaluate accepted final references privately. Draft creation does
+not enable training protection; freezing does. Completion may include unresolved
+records, so it does not itself establish an accepted research reference dataset.
+
+At the 8 October audit, current compatible eligible automation is complete and
+the validation schema is ready. The remaining readiness issues are the agreed
+sampling design and verified frame, including **zero unseen Standard candidates**
+in the metadata-only formal-source screen. Resolve required source support,
+publication dates, verified languages, duplicate families and reviewer exposure
+before freezing. Recheck the actual UI preview rather than choosing N from the
+1,089-candidate upper bound. Pin new reviews to `l2-gbv-relevance-codebook-v1.0`
+without rewriting historical guideline identities.
+
+The collection Runs status filter/Stop/reconciliation implementation belongs to
+the separate [collection-control guide](collection_run_control.md). Its uninstalled
+`20261008_add_collection_run_control.sql` migration is needed for updated collection
+workers and does not block validation batches or control annotation runs.
+
 Use the [README operator steps](../README.md#l2-validation-and-protected-reference)
 to confirm the target, preflight, apply the exact additive SQL once and verify
 readiness before creating a batch. The preflight is read-only:
@@ -2260,6 +2316,10 @@ readiness before creating a batch. The preflight is read-only:
 .venv/bin/python scripts/check_l2_validation_schema.py
 ```
 
+The following installation/fingerprint and 304-test evidence is **historical**;
+the latest full suite ran 387 tests (386 passed, one optional integration skipped).
+Those runtime checks belong to the later 8 October draft/results repair; no real
+batch operations were performed for that repair or the preceding Markdown update.
 The initial engineering implementation performed no live database reads/writes.
 The later user-authorized installation applied the exact additive migration to the
 configured development database and passed 15 synthetic database checks, with all

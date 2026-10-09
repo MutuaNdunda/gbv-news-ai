@@ -51,7 +51,7 @@ def current_annotations(methods):
     ).where(AutomatedAnnotation.layer == "L0", AutomatedAnnotation.method_version == methods["L0"]).subquery()
     l0 = select(l0_ranked.c.id, l0_ranked.c.article_version_id, l0_ranked.c.label).where(
         l0_ranked.c.position == 1
-    ).subquery()
+    ).cte()
     # Filter L1 dependencies before ranking. A newer result for a custom L0
     # method must not hide an older result tied to the current default L0.
     ranked = select(
@@ -66,7 +66,9 @@ def current_annotations(methods):
                  AutomatedAnnotation.method_name == methods["L1_method_name"] if methods.get("L1_method_name") else True,
                  l0.c.label == "valid", AutomatedAnnotation.prerequisite_annotation_id == l0.c.id)),
     ).subquery()
-    upstream = select(ranked).where(ranked.c.position == 1).subquery()
+    # L0/L1 feed both the result union and the L2 prerequisite check. A shared
+    # CTE keeps PostgreSQL from expanding/re-evaluating this ranking twice.
+    upstream = select(ranked).where(ranked.c.position == 1).cte()
     if "L2" not in methods:
         return upstream
     # Match identity AND current dependency before ranking. Bootstrap rows and

@@ -1,5 +1,18 @@
 # L2 transformer development performance
 
+## Current coverage observation — 8 October 2026, audit beginning 22:50 EAT
+
+The same configured dev-v1 artifact now has **1,417/1,417** compatible eligible
+predictions: **246 gbv / 1,049 not_gbv / 122 borderline**, zero eligible pending.
+Upstream L0/L1 covers the expanded 2,119-version observation. Training remains
+322 records; no retraining or model/threshold change is asserted by this audit.
+Validation schema is ready; zero real reference batches/members exist and independent
+accuracy/precision/recall/F1/calibration remain unmeasured. Metadata screening
+finds 1,089 potentially unseen formal-source candidates, with Standard zero, before
+full object/language/period/duplicate-family/exposure checks. See
+[dataset creation](research/validation_dataset_creation.md) for the next assessment.
+The historical 324-prediction operational closure below is retained as dated evidence.
+
 ## Scope and evidence
 
 This report covers `l2-afroxlmr-dev-v1`, method
@@ -7,7 +20,7 @@ This report covers `l2-afroxlmr-dev-v1`, method
 Final development verification: **6 October 2026, 00:04 EAT**: 324/324 compatible
 model results, zero pending, schema ready. Earlier read-only observations at
 22:43/22:59 EAT on 5 October are retained below as historical evidence.
-Evidence is the current compatible annotation aggregate, persisted annotation-run
+Evidence for the historical baseline is its dated compatible annotation aggregate, persisted annotation-run
 summary, private training manifest and bounded offline-reload report. No private
 article text, reviewer identities or per-article identifiers are published here.
 
@@ -281,6 +294,6 @@ All 322 actual training articles/versions/hashes are excluded from independent
 selection; training reviews are diagnostic error analysis. Near-duplicate grouping,
 independent A/B review and separate adjudication records remain pending. Codebook
 finalization is complete; agree sampling design, verify other targets independently, and collect sufficient unseen
-positive support before performance claims. Latest engineering suite: **304 tests
+positive support before performance claims. The 6 October engineering suite: **304 tests
 passed**, including installed-artifact integration, zero failures/skips. No
 retraining or threshold calibration was performed.

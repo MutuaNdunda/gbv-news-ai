@@ -1,4 +1,5 @@
 """Protected validation operations inside the existing annotation/review workspace."""
+import time
 from uuid import UUID
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 from sqlalchemy.exc import SQLAlchemyError
@@ -32,24 +33,35 @@ def unavailable_response(message):
     return response
 
 
-def access():
+MANAGEMENT_CSRF = 'validation_management_csrf'
+FORM_FIELDS = ('name', 'purpose', 'size', 'strategy', 'seed', 'protect', 'sources', 'languages', 'model_version')
+
+
+def access(csrf_key='human_review_csrf'):
     """Return an unlock response or None; use the existing token/CSRF session."""
     if not review_enabled() or not local_review_request():abort(403)
     if request.method=='POST':
-        require_csrf('human_review_csrf')
+        require_csrf(csrf_key)
         if request.form.get('action')=='unlock':
             unlock_review(request.form.get('review_token',''))
-            session.pop('human_review_csrf',None)
+            session.pop(csrf_key,None)
             return redirect(request.full_path.rstrip("?"),code=303)
-        if not review_authenticated():abort(403)
+        if not review_authenticated():
+            # Preserve only small form settings, never credentials, article text
+            # or a mutation to replay. Unlock returns to GET for a fresh preview.
+            if request.endpoint == 'validation.new':
+                session['validation_pending_form'] = {
+                    key: request.form[key][:120] for key in FORM_FIELDS if key in request.form}
+            return private_response('annotations/validation_unlock.html',csrf=csrf_token(csrf_key),
+                message='Your review session expired. Unlock again; nothing was saved. Your batch settings will be restored.')
     if not review_authenticated():
-        return private_response('annotations/validation_unlock.html',csrf=csrf_token('human_review_csrf'))
+        return private_response('annotations/validation_unlock.html',csrf=csrf_token(csrf_key))
     return None
 
 
 @blueprint.route('',methods=['GET','POST'])
 def index():
-    locked=access()
+    locked=access(MANAGEMENT_CSRF)
     if locked is not None:return locked
     repo=repository();error=None;batches=[]
     try:
@@ -61,9 +73,9 @@ def index():
 
 @blueprint.route('/new',methods=['GET','POST'])
 def new():
-    locked=access()
+    locked=access(MANAGEMENT_CSRF)
     if locked is not None:return locked
-    error=None;preview=None;form=request.form if request.method=='POST' else {}
+    error=None;preview=None;form=request.form if request.method=='POST' else session.pop('validation_pending_form',{})
     from annotations.l2_config import L2Config
     configured_model = L2Config.from_env().model_version
     if request.method=='POST':
@@ -81,20 +93,23 @@ def new():
                 if form.get('preview_digest')!=preview['configuration']['membership_sha256']:
                     raise ValueError('Candidate membership changed. Preview again before creating the draft.')
                 batch=repository().create(preview)
-                session.pop('human_review_csrf',None)
+                session.pop(MANAGEMENT_CSRF,None)
                 return redirect(url_for('validation.detail',batch_id=batch.id),code=303)
             if form.get('action')!='preview':abort(400)
+            # Preview was explicitly authorized at request entry. Give the user
+            # a full 30-minute review window after a slow cloud-backed response.
+            session['human_review_started'] = time.time()
         except (ValueError,RuntimeError) as exc:error=str(exc);preview=None
         except SQLAlchemyError:
             error='Validation storage is unavailable; verify migration installation.';preview=None
     return private_response('annotations/validation_new.html',form=form,error=error,preview=preview,
-                            csrf=csrf_token('human_review_csrf'),guideline=current_app.config['HUMAN_REVIEW_GUIDELINE_VERSION'],
+                            csrf=csrf_token(MANAGEMENT_CSRF),guideline=current_app.config['HUMAN_REVIEW_GUIDELINE_VERSION'],
                             configured_model=configured_model)
 
 
 @blueprint.route('/<uuid:batch_id>',methods=['GET','POST'])
 def detail(batch_id):
-    locked=access()
+    locked=access(MANAGEMENT_CSRF)
     if locked is not None:return locked
     error=None
     try:
@@ -103,7 +118,7 @@ def detail(batch_id):
             if action=='freeze':repository().freeze(batch_id)
             elif action=='complete':repository().complete(batch_id)
             else:abort(400)
-            session.pop('human_review_csrf',None)
+            session.pop(MANAGEMENT_CSRF,None)
             return redirect(url_for('validation.detail',batch_id=batch_id),code=303)
         data=repository().detail(batch_id)
     except LookupError:abort(404)
@@ -111,7 +126,7 @@ def detail(batch_id):
         error=str(exc);data=repository().detail(batch_id)
     except RuntimeError as exc:return unavailable_response(str(exc))
     except SQLAlchemyError:return unavailable_response('Validation storage unavailable; verify schema installation.')
-    return private_response('annotations/validation_detail.html',**data,error=error,csrf=csrf_token('human_review_csrf'))
+    return private_response('annotations/validation_detail.html',**data,error=error,csrf=csrf_token(MANAGEMENT_CSRF))
 
 
 @blueprint.get('/<uuid:batch_id>/next')

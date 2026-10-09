@@ -36,7 +36,23 @@ The observed 20-version synchronous trial exceeded the current 30-second Gunicor
 worker timeout. Use the CLI for large runs, and keep the existing App Engine
 deployment read-only until bounded execution is configured deliberately.
 
-## Annotation and review readiness — verified 6 October 2026, 00:04 EAT
+## Current deployment limits — 8 October 2026
+
+Local development now observes 2,119 versions and 1,417 compatible dev-v1 model
+predictions; validation schema preflight is ready, with zero real batches. These
+local facts do not prove App Engine schema/artifact availability or production
+readiness. Validation creation and article review remain direct-local only. Follow
+[the dataset-creation guide](research/validation_dataset_creation.md) locally.
+
+`/runs` has status filters and optional cooperative Stop. Keep
+`COLLECTION_CONTROL_ENABLED=0` on the existing read-only deployment unless control
+access/HTTPS is deliberately configured. Stop requires a strong token and signed-
+session CSRF; it cannot launch collection or kill a process. The new nullable
+collection-control migration is uninstalled on the observed development target;
+pre-migration monitoring defers its fields, while updated collectors need installation.
+See [collection control](collection_run_control.md). No deployment was performed.
+
+## Historical annotation and review readiness — verified 6 October 2026, 00:04 EAT
 
 The repository now implements L0/L1/L2 monitoring, separate L2 weak/model result
 views and protected local Human Review. Development weak labels cover all 324
@@ -57,6 +73,8 @@ Verify each target database independently. Required migrations include:
 | `20261004_add_human_validations.sql` | Separate append-only review history | Installed |
 | `20261005_add_l2_annotations.sql` | L2 labels/prerequisites, identity index and same-version L1-Kenya trigger | Installed and behavior-tested in development; all four readiness checks true |
 | `20261005_add_l2_human_validations.sql` | Extend existing review labels to L2 | Installed |
+| `20261006_add_l2_validation_batches.sql` | Frozen reference membership, batch review and protection | Installed/behavior-tested 6 October; readiness reconfirmed 8 October |
+| `20261008_add_collection_run_control.sql` | Updated collector heartbeat/cooperative Stop and managed orphan repair | Not installed in the 8 October observed development target |
 
 Apply missing migrations to the intended target using the operator guide; do not
 blindly rerun installed migrations or infer production readiness from development.
@@ -81,7 +99,7 @@ the existing UI trigger remains bounded L0/L1 only. Do not place model weights,
 research text, credentials or reviewer information in public deployment artifacts.
 
 The proposed next human-validation milestone is documented in
-[the annotation specification](annotations.md#17-next-steps-future-work). Review
-batches, initially hidden model output, adjudication and progress reporting are
-planned local-workspace additions; they do not authorize remote review or establish
+[the annotation specification](annotations.md#17-next-steps-future-work). Seeded batches, initially hidden model output, protection and progress reporting
+are implemented local-workspace additions. Independent A/B review and dedicated
+adjudication remain future work; these features do not authorize remote review or establish
 production authentication.

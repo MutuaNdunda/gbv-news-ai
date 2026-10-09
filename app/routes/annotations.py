@@ -83,17 +83,22 @@ def results(layer):
             rows, total = service().pending_l2(filters, page, current_app.config["PER_PAGE"])
         else:
             rows, total = service().results(layer.upper(), filters, page, current_app.config["PER_PAGE"])
-    except RuntimeError:
-        abort(503)
+        if layer == "l2":
+            label_counts = (service().l2_label_counts(filters)
+                            if not filters.get("pending") else None)
+            statuses = service().review_statuses(rows) if not filters.get("pending") else {}
+            labels = service().l2_result_labels(rows, filters) if not filters.get("pending") else {}
+        else:
+            statuses = service().review_statuses(rows) if hasattr(service(), "review_statuses") else {}
+    except (RuntimeError, SQLAlchemyError) as exc:
+        current_app.logger.warning("annotation_results_unavailable layer=%s error_type=%s", layer, type(exc).__name__)
+        return render_template('annotations/results_unavailable.html', layer=layer.upper(),
+            retry_url=url_for('annotations.results',layer=layer,page=page,**filters)), 503
     if layer == "l2":
-        label_counts = (service().l2_label_counts(filters)
-                        if not filters.get("pending") else None)
         return render_template("annotations/l2_results.html", rows=rows, total=total, filters=filters,
                                page=page, per_page=current_app.config["PER_PAGE"], label_counts=label_counts,
-                               review_statuses=service().review_statuses(rows) if not filters.get("pending") else {},
-                               result_labels=service().l2_result_labels(rows, filters) if not filters.get("pending") else {},
+                               review_statuses=statuses, result_labels=labels,
                                status_labels=STATUSES, review_filter_options=REVIEW_FILTERS)
-    statuses = service().review_statuses(rows) if hasattr(service(), "review_statuses") else {}
     return render_template("annotations/results.html", layer=layer.upper(), filters=filters,
                            rows=rows, total=total, page=page, review_statuses=statuses, status_labels=STATUSES,
                            review_filter_options=REVIEW_FILTERS, label_options=LABELS[layer.upper()], per_page=current_app.config["PER_PAGE"],

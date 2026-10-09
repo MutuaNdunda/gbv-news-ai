@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h3">{{ layer }} results temporarily unavailable</h1>
+<p class="alert alert-warning">The results could not be loaded because the database request failed or the required storage is unavailable. Your saved annotations and reviews have not changed.</p>
+<a class="btn btn-primary" href="{{ retry_url }}">Retry these results</a>
+{% endblock %}

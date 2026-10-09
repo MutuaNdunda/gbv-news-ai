@@ -842,6 +842,20 @@ When uncertain about a research assumption, document the uncertainty rather than
 
 ## 31. Current Development Priority
 
+
+Current read-only development audit beginning **8 October 2026, 22:50 EAT**:
+2,119 article versions; compatible L0 covers all (2,076 valid / 39 needs_review /
+4 invalid), L1 covers all eligible versions (1,417 kenya / 130 not_kenya /
+529 ambiguous), and dev-v1 model covers all 1,417 eligible versions
+(246 gbv / 1,049 not_gbv / 122 borderline). Validation schema is ready; zero batches
+and members exist. Metadata-only independent candidate screening found 1,089
+formal-source candidates, with Standard zero; GCS/language/period/near-duplicate
+and review-exposure checks remain before a real freeze. This is not independent
+performance or a validated final dataset. Follow `docs/research/validation_dataset_creation.md`
+for the next dataset-creation operation; agree the draft protocol and required
+support first. Collection-control migration is separately uninstalled in this target.
+The 536/324 figures below are historical; canonical Sheet sequencing remains binding.
+
 The roadmap milestone remains **Automated Annotation Pipeline — L0 and L1 validation**;
 user-authorized L2 weak supervision, local review, reviewed/mixed export and the
 first real AfroXLMR development artifact are also implemented. The public
@@ -851,8 +865,8 @@ stage gates (see Section 34). Current State now records 536 article versions;
 The operational closure verified 536 article versions on 6 October 2026 at
 00:04 EAT, with 324/324 compatible L2 model predictions and zero pending. The user
 authorized L0 over all 536 after a successful 20-version L0/L1 trial, then explicitly
-authorized L1 on the remaining 499 L0-valid versions. All 519 eligible versions now
-have L1 decisions; the 17 L0 review cases remain gated.
+authorized L1 on the remaining 499 L0-valid versions. All 519 historical eligible versions received L1 decisions; that baseline had
+17 L0 review cases. Use the newer dated totals above for current eligibility.
 
 Collection, normalization, cloud persistence, and operational monitoring are now
 implemented for seven publishers, and automated L0/L1/L2 share a versioned service
@@ -863,9 +877,9 @@ and monitor (see Section 33). The next priorities are:
 2. Review annotation specification, gazetteer, thresholds and corpus membership.
 3. Inspect L1 uncertainty and source/language coverage over the agreed eligible corpus.
 4. Validate a stratified/uncertain sample of L0/L1/L2 weak results with separate reviews.
-5. Preserve installed L2 schema and fail-closed leases; development model coverage is complete.
+5. Preserve installed L2 schema and fail-closed leases; compatible expanded model coverage is complete at the 8 October audit.
 6. Preserve researcher-finalized L2 codebook v1.0 (confirmed 7 October 2026); agree the reproducible human-validation sampling protocol.
-7. Plan review batches, initially hidden model output, adjudication and coverage reporting.
+7. Use implemented batch preview/create/freeze/blind review/coverage; agree review acceptance and resolve required independent adjudication gaps.
 8. Design independent reference membership excluding training articles and related duplicates.
 9. Undertake retraining or later-layer work only as separately authorized and stage gates permit.
 ```
@@ -896,7 +910,9 @@ When several implementations are possible, prefer the simplest approach that sat
 Documentation update, 7 October 2026: the researcher confirmed L2 codebook v1.0
 finalization. Shared seven-publisher Wayback keyword trials and Citizen parser 1.2
 are implemented; dated smoke evidence and source failures are in the engineering
-log. Expanded operator collection is in progress and final totals are unverified.
+log. The expanded corpus and compatible eligibility coverage were audited on 8 October
+as recorded in Section 31; exhaustive collection and final research quality remain
+unestablished.
 The 536-version/L0/L1/L2 figures below remain historical pre-expansion evidence.
 Sampling protocol/design, real independent validation and research exit gates
 remain pending; codebook completion alone does not satisfy them.

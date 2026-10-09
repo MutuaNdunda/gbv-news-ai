@@ -22,6 +22,18 @@ review acceptance, support and execution controls have not been confirmed as
 completed. Codebook finalization alone does not create `L2-VALIDATION-V1` or
 establish independent metrics.
 
+**Readiness update — 8 October 2026, audit beginning 22:50 EAT:** the development
+corpus now contains 2,119 versions with complete compatible eligible L0/L1/model
+coverage; dev-v1 has 1,417 results (246/1,049/122), and validation schema is ready.
+There are zero validation batches/members. Training/historical/exact-hash metadata
+screening finds 1,089 potential unseen formal-source candidates: Nation 285,
+Citizen 113, Star 392, Taifa Leo 299, Standard zero. This is not the full verified
+sampling frame: GCS content/language, agreed dates, duplicate families and prior
+exposure remain to be checked. Resolve Standard support under the agreed design.
+The earlier at-most-two statement below applies only to the historical 324 cohort.
+This update does **not** approve N, strategy, review/adjudication or acceptance policy.
+Follow [the dataset-creation guide](validation_dataset_creation.md) for operator steps.
+
 ## 1. Objective, authority and present status
 
 Obtain the first defensible, independent human-reference assessment of the development model's L2 article relevance decisions. Distinguish representative assessment of an explicitly defined unseen eligible frame from diagnostic error exploration. This first batch is **development validation, not the final thesis test**. No independent accuracy, precision, recall, F1, calibration or multilingual fairness result is established by this draft.
