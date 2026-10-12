@@ -3,7 +3,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import inspect, select, text
+from sqlalchemy import func, inspect, select, text
 from sqlalchemy.exc import IntegrityError
 
 from annotations.l2_config import MODEL_METHOD
@@ -208,40 +208,196 @@ class ValidationBatchRepository:
         data['member']=member
         return data
 
-    def save_decision(self, batch_id, member_id, choice, reason, identity, guideline, expected_final=None):
-        """Translate a blind label into existing review vocabulary only after submission."""
+    def bulk_page(self, batch_id, *, page=1, per_page=20, status='unreviewed'):
+        """Bounded metadata projection: machine predictions never enter bulk pages."""
+        self.require_schema()
+        if per_page not in (10, 20, 50, 100) or page < 1:
+            raise ValueError('Choose a supported page size and positive page number.')
+        if status not in ('unreviewed', 'reviewed', 'needs_adjudication', 'all'):
+            raise ValueError('Unknown review filter.')
+        with self.sessions() as session:
+            batch = session.get(ValidationBatch, batch_id)
+            if batch is None:
+                raise LookupError('Batch not found.')
+            counts = dict(session.execute(select(ValidationBatchMember.status, func.count()).where(
+                ValidationBatchMember.validation_batch_id == batch_id).group_by(ValidationBatchMember.status)).all())
+            total = sum(counts.values())
+            progress = dict(total=total, reviewed=total-counts.get('pending', 0),
+                            pending=counts.get('pending', 0))
+            query = select(ValidationBatchMember.id, ValidationBatchMember.selection_order,
+                ValidationBatchMember.article_id, ValidationBatchMember.article_version_id,
+                ValidationBatchMember.source, ValidationBatchMember.language, ValidationBatchMember.status,
+                ValidationBatchMember.final_human_validation_id, Article.title, Article.published_at,
+                HumanValidation.human_label, HumanValidation.review_decision).join(
+                    Article, Article.id == ValidationBatchMember.article_id).outerjoin(
+                    HumanValidation, HumanValidation.id == ValidationBatchMember.final_human_validation_id
+                ).where(ValidationBatchMember.validation_batch_id == batch_id)
+            if status == 'unreviewed':
+                query = query.where(ValidationBatchMember.status == 'pending')
+            elif status == 'reviewed':
+                query = query.where(ValidationBatchMember.status != 'pending')
+            elif status == 'needs_adjudication':
+                query = query.where(ValidationBatchMember.status == 'needs_adjudication')
+            filtered = session.scalar(select(func.count()).select_from(query.subquery()))
+            last_page = max(1, (filtered + per_page - 1) // per_page)
+            page = min(page, last_page)
+            rows = [dict(r) for r in session.execute(query.order_by(
+                ValidationBatchMember.selection_order).offset((page-1)*per_page).limit(per_page)).mappings()]
+            # Exclude model identity/configuration even from the template context.
+            summary = {k: getattr(batch, k) for k in ('id', 'name', 'status', 'purpose', 'guideline_version')}
+        return dict(batch=summary, rows=rows, progress=progress, filtered=filtered,
+                    page=page, per_page=per_page, last_page=last_page, review_filter=status)
+
+    def bulk_content_record(self, batch_id, member_id):
+        """Fetch only a pinned member's article/extraction, without machine outputs."""
+        self.require_schema()
+        with self.sessions() as session:
+            row = session.execute(select(ValidationBatch, ValidationBatchMember, Article, ArticleVersion,
+                HumanValidation.human_label, HumanValidation.review_decision).join(
+                ValidationBatchMember, ValidationBatchMember.validation_batch_id == ValidationBatch.id).join(
+                Article, Article.id == ValidationBatchMember.article_id).join(
+                ArticleVersion, ArticleVersion.id == ValidationBatchMember.article_version_id).outerjoin(
+                HumanValidation, HumanValidation.id == ValidationBatchMember.final_human_validation_id).where(
+                ValidationBatch.id == batch_id, ValidationBatchMember.id == member_id)).one_or_none()
+            if row is None:
+                raise LookupError('Batch member not found.')
+            batch, member, article, version, human_label, review_decision = row
+            if batch.status == 'draft':
+                raise ValueError('Freeze membership before review.')
+            if member.content_hash != version.content_hash or version.article_id != member.article_id:
+                raise ValueError('Pinned extraction lineage changed.')
+            return dict(batch=batch, member=member, article=article, version=version,
+                        human_choice=human_label or review_decision or 'Unreviewed')
+
+    def save_decision(self, batch_id, member_id, choice, reason, identity, guideline, expected_final=None,
+                      *, body_receipt=None, body_signer=None):
+        """Single-article review shares the same append-only decision contract."""
         with self.sessions.begin() as session:
             self.serialize(session)
             batch=session.scalar(select(ValidationBatch).where(ValidationBatch.id==batch_id).with_for_update())
             member=session.scalar(select(ValidationBatchMember).where(ValidationBatchMember.id==member_id,
                 ValidationBatchMember.validation_batch_id==batch_id).with_for_update())
-            if not batch or not member or batch.status not in ('frozen','in_review'):
-                raise ValueError('Only frozen/in-review batch members can be reviewed.')
-            if guideline!=batch.guideline_version:
-                raise ValueError('Configured guideline must match the frozen batch codebook version.')
-            if str(member.final_human_validation_id or '')!=str(expected_final or ''):
-                raise ReviewConflict('Batch decision changed; reload before saving.')
-            annotation=session.scalar(select(AutomatedAnnotation).where(AutomatedAnnotation.id==member.automated_annotation_id).with_for_update())
-            latest=session.scalar(select(HumanValidation).where(HumanValidation.automated_annotation_id==annotation.id).order_by(
-                HumanValidation.created_at.desc(),HumanValidation.id.desc()).limit(1))
-            decision=choice if choice in ('unable_to_determine','needs_adjudication') else 'confirmed' if choice==annotation.label else 'corrected'
-            values={'decision':decision,'human_label':None if decision in ('unable_to_determine','needs_adjudication') else choice,
-                    'error_category':'other' if decision=='corrected' else '', 'reason':reason, 'notes':''}
-            from annotations.validation import validate_review
-            fields=validate_review(annotation,**values)
-            now=datetime.now(timezone.utc)
-            if latest:
-                from datetime import timedelta
-                now=max(now,latest.created_at.replace(tzinfo=timezone.utc)+timedelta(microseconds=1))
-            review=HumanValidation(id=uuid4(),automated_annotation_id=annotation.id,article_id=annotation.article_id,
-                article_version_id=annotation.article_version_id,layer='L2',machine_label=annotation.label,
-                machine_confidence=annotation.confidence,reviewer_identity=identity,guideline_version=guideline,
-                created_at=now,supersedes_validation_id=latest.id if latest else None,**fields)
-            session.add(review);session.flush()
-            if member.initial_human_validation_id is None:member.initial_human_validation_id=review.id
-            member.final_human_validation_id=review.id
-            member.status=decision if decision in ('unable_to_determine','needs_adjudication') else 'resolved'
-            batch.status='in_review'
+            annotation = session.scalar(select(AutomatedAnnotation).where(
+                AutomatedAnnotation.id == member.automated_annotation_id).with_for_update()) if member else None
+            version = session.get(ArticleVersion, member.article_version_id) if member else None
+            latest = session.scalar(select(HumanValidation).where(
+                HumanValidation.automated_annotation_id == annotation.id).order_by(
+                    HumanValidation.created_at.desc(), HumanValidation.id.desc()).limit(1)) if annotation else None
+            review = self._append_decision(session, batch, member, annotation, version, latest,
+                choice, reason, identity, guideline, expected_final, body_receipt, body_signer)
+        return review
+
+    def save_bulk_decisions(self, batch_id, rows, identity, guideline, body_signer):
+        """Prefetch/lock once; isolate row errors with savepoints; report only after commit."""
+        self.require_schema()
+        if not 1 <= len(rows) <= 100 or len({r['member_id'] for r in rows}) != len(rows):
+            raise ValueError('Submit at most 100 unique member decisions.')
+        results = []
+        with self.sessions.begin() as session:
+            self.serialize(session)
+            batch = session.scalar(select(ValidationBatch).where(ValidationBatch.id == batch_id).with_for_update())
+            members = {m.id: m for m in session.scalars(select(ValidationBatchMember).where(
+                ValidationBatchMember.validation_batch_id == batch_id,
+                ValidationBatchMember.id.in_([r['member_id'] for r in rows])).order_by(
+                    ValidationBatchMember.id).with_for_update())}
+            annotations = {a.id: a for a in session.scalars(select(AutomatedAnnotation).where(
+                AutomatedAnnotation.id.in_([m.automated_annotation_id for m in members.values()])).order_by(
+                    AutomatedAnnotation.id).with_for_update())}
+            versions = {v.id: v for v in session.scalars(select(ArticleVersion).where(
+                ArticleVersion.id.in_([m.article_version_id for m in members.values()])))}
+            ranked = select(HumanValidation.id, func.row_number().over(
+                partition_by=HumanValidation.automated_annotation_id,
+                order_by=(HumanValidation.created_at.desc(), HumanValidation.id.desc())).label('position')).where(
+                    HumanValidation.automated_annotation_id.in_(list(annotations))).subquery()
+            latest = {r.automated_annotation_id: r for r in session.scalars(select(HumanValidation).where(
+                HumanValidation.id.in_(select(ranked.c.id).where(ranked.c.position == 1))))}
+            from sqlalchemy.exc import SQLAlchemyError
+            for row in rows:
+                result = {'member_id': str(row['member_id'])}
+                if row.get('choice') in ('', 'skip', None):
+                    result['status'] = 'skipped'
+                else:
+                    try:
+                        with session.begin_nested():
+                            if not all(isinstance(row.get(k, ''), str) for k in ('choice', 'reason', 'expected_final', 'body_receipt')):
+                                raise ValueError('Decision fields must be text.')
+                            member = members.get(row['member_id'])
+                            annotation = annotations.get(member.automated_annotation_id) if member else None
+                            review = self._append_decision(session, batch, member, annotation,
+                                versions.get(member.article_version_id) if member else None,
+                                latest.get(annotation.id) if annotation else None, row.get('choice'), row.get('reason'),
+                                identity, guideline, row.get('expected_final', ''), row.get('body_receipt', ''), body_signer)
+                            session.flush()
+                            result.update(status='saved', final_id=str(review.id),
+                                          human_choice=review.human_label or review.review_decision)
+                    except ReviewConflict as exc:
+                        result.update(status='conflict', error=str(exc))
+                    except (ValueError, RuntimeError) as exc:
+                        result.update(status='failed', error=str(exc))
+                    except SQLAlchemyError:
+                        result.update(status='failed', error='Decision could not be saved. Keep the draft and check its current version before retrying.')
+                results.append(result)
+        return results
+
+    def _append_decision(self, session, batch, member, annotation, version, latest,
+                         choice, reason, identity, guideline, expected_final, body_receipt, body_signer):
+        """Append a review and advance only the permitted member decision pointers."""
+        batch_id = batch.id if batch else None
+        member_id = member.id if member else None
+        if not batch or not member or batch.status not in ('frozen','in_review'):
+            raise ValueError('Only frozen/in-review batch members can be reviewed.')
+        if guideline!=batch.guideline_version:
+            raise ValueError('Configured guideline must match the frozen batch codebook version.')
+        if str(member.final_human_validation_id or '')!=str(expected_final or ''):
+            raise ReviewConflict('Batch decision changed; reload before saving.')
+        if choice not in ('gbv', 'not_gbv', 'borderline', 'unable_to_determine', 'needs_adjudication'):
+            raise ValueError('Choose a supported independent human decision.')
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError('Record an independent decision reason.')
+        notes = ''
+        if body_signer is not None:
+            opened = False
+            if body_receipt:
+                from itsdangerous import BadSignature
+                try:
+                    receipt = body_signer.loads(body_receipt, max_age=1800)
+                except BadSignature as exc:
+                    raise ValueError('Article-body access expired; reopen the body before saving.') from exc
+                expected = dict(batch=str(batch_id), member=str(member_id),
+                    version=str(member.article_version_id), hash=member.content_hash,
+                    final=str(expected_final or ''), identity=identity, guideline=guideline)
+                if receipt != expected:
+                    raise ReviewConflict('Article-body access no longer matches this review; reopen the body.')
+                opened = True
+            if opened:
+                notes = 'Bulk review: verified body opened.'
+            elif choice in ('gbv', 'not_gbv', 'borderline'):
+                notes = 'Bulk review: title-only decision; verified body not opened.'
+            else:
+                notes = 'Bulk review: body not opened; unresolved decision.'
+        if (annotation is None or version is None or annotation.layer != 'L2'
+                or annotation.article_id != member.article_id
+                or annotation.article_version_id != member.article_version_id
+                or version.article_id != member.article_id or version.content_hash != member.content_hash):
+            raise ValueError('Pinned membership lineage changed.')
+        decision=choice if choice in ('unable_to_determine','needs_adjudication') else 'confirmed' if choice==annotation.label else 'corrected'
+        values={'decision':decision,'human_label':None if decision in ('unable_to_determine','needs_adjudication') else choice,
+                'error_category':'other' if decision=='corrected' else '', 'reason':reason, 'notes':notes}
+        from annotations.validation import validate_review
+        fields=validate_review(annotation,**values)
+        now=datetime.now(timezone.utc)
+        if latest:
+            from datetime import timedelta
+            now=max(now,latest.created_at.replace(tzinfo=timezone.utc)+timedelta(microseconds=1))
+        review=HumanValidation(id=uuid4(),automated_annotation_id=annotation.id,article_id=annotation.article_id,
+            article_version_id=annotation.article_version_id,layer='L2',machine_label=annotation.label,
+            machine_confidence=annotation.confidence,reviewer_identity=identity,guideline_version=guideline,
+            created_at=now,supersedes_validation_id=latest.id if latest else None,**fields)
+        session.add(review);session.flush()
+        if member.initial_human_validation_id is None:member.initial_human_validation_id=review.id
+        member.final_human_validation_id=review.id
+        member.status=decision if decision in ('unable_to_determine','needs_adjudication') else 'resolved'
+        batch.status='in_review'
         return review
 
     def complete(self,batch_id):

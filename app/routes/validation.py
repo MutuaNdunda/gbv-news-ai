@@ -1,7 +1,9 @@
 """Protected validation operations inside the existing annotation/review workspace."""
+import json
 import time
 from uuid import UUID
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, session, url_for
+from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.security import csrf_token, local_review_request, require_csrf, review_authenticated, review_enabled, unlock_review
@@ -195,3 +197,123 @@ def review_member(annotation_id):
         initial=initial,error=error,csrf=csrf_token('human_review_csrf'))
     response.status_code=status
     return response
+
+
+BULK_CSRF = 'validation_bulk_csrf'
+
+
+def private_json(data, status=200):
+    response = jsonify(data)
+    response.status_code = status
+    response.headers.update({'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer',
+        'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff', 'X-Robots-Tag': 'noindex, noarchive'})
+    return response
+
+
+def bulk_api_access():
+    if not review_enabled() or not local_review_request():
+        abort(403)
+    if request.method == 'POST':
+        require_csrf(BULK_CSRF)
+    if not review_authenticated():
+        return private_json({'error': 'Review session expired. Keep this page open and unlock review in another tab, then retry.'}, 401)
+    return None
+
+
+def body_signer():
+    return URLSafeTimedSerializer(current_app.secret_key, salt='validation-bulk-body-v1')
+
+
+@blueprint.route('/<uuid:batch_id>/bulk', methods=['GET', 'POST'])
+def bulk(batch_id):
+    locked = access(BULK_CSRF)
+    if locked is not None:
+        return locked
+    if request.method != 'GET':
+        abort(400)
+    try:
+        data = repository().bulk_page(batch_id, page=request.args.get('page', 1, type=int),
+            per_page=request.args.get('per_page', 20, type=int), status=request.args.get('status', 'unreviewed'))
+        if data['batch']['status'] == 'draft':
+            abort(409)
+    except LookupError:
+        abort(404)
+    except ValueError as exc:
+        abort(400, description=str(exc))
+    except RuntimeError as exc:
+        return unavailable_response(str(exc))
+    except SQLAlchemyError:
+        return unavailable_response('Validation storage unavailable; verify schema installation.')
+    return private_response('annotations/validation_bulk.html', **data, csrf=csrf_token(BULK_CSRF))
+
+
+@blueprint.get('/<uuid:batch_id>/bulk/<uuid:member_id>/body')
+def bulk_body(batch_id, member_id):
+    locked = bulk_api_access()
+    if locked is not None:
+        return locked
+    try:
+        data = repository().bulk_content_record(batch_id, member_id)
+        content = service().review_content(data)
+        payload = {'title': content.get('content_article', {}).get('title') or data['article'].title,
+                   'article_text': content.get('article_text'), 'content_issue': content.get('content_issue'),
+                   'body_receipt': None, 'expected_final': str(data['member'].final_human_validation_id or ''),
+                   'human_choice': data['human_choice']}
+        if content.get('article_text'):
+            member = data['member']
+            payload['body_receipt'] = body_signer().dumps(dict(batch=str(batch_id), member=str(member_id),
+                version=str(member.article_version_id), hash=member.content_hash,
+                final=str(member.final_human_validation_id or ''),
+                identity=current_app.config['HUMAN_REVIEWER_ID'],
+                guideline=current_app.config['HUMAN_REVIEW_GUIDELINE_VERSION']))
+        return private_json(payload)
+    except LookupError:
+        return private_json({'error': 'Batch member not found.'}, 404)
+    except (ValueError, RuntimeError) as exc:
+        return private_json({'error': str(exc)}, 409)
+    except SQLAlchemyError:
+        return private_json({'error': 'Article storage is unavailable. Retry without discarding drafts.'}, 503)
+
+
+@blueprint.post('/<uuid:batch_id>/bulk/save')
+def bulk_save(batch_id):
+    # Keep the existing 16 KiB limit elsewhere; allow 100 bounded reasons/receipts here.
+    request.max_content_length = 1_200_000
+    request.max_form_memory_size = 1_200_000
+    if request.content_length is not None and request.content_length > request.max_content_length:
+        abort(413)
+    locked = bulk_api_access()
+    if locked is not None:
+        return locked
+    try:
+        raw = request.form.get('decisions', '')
+        if len(raw) > 200_000:
+            abort(413)
+        rows = json.loads(raw)
+        if not isinstance(rows, list) or not 1 <= len(rows) <= 100:
+            raise ValueError('Submit between 1 and 100 rows.')
+        ids = [UUID(str(row['member_id'])) for row in rows if isinstance(row, dict)]
+        if len(ids) != len(rows) or len(set(ids)) != len(ids):
+            raise ValueError('Each member may appear only once per submission.')
+    except (ValueError, TypeError, KeyError):
+        return private_json({'error': 'Invalid submission. Submit at most 100 unique member decisions.'}, 400)
+    repo = repository()
+    for member_id, row in zip(ids, rows):
+        row['member_id'] = member_id
+    try:
+        results = repo.save_bulk_decisions(batch_id, rows, current_app.config['HUMAN_REVIEWER_ID'],
+            current_app.config['HUMAN_REVIEW_GUIDELINE_VERSION'], body_signer())
+    except (ValueError, RuntimeError) as exc:
+        return private_json({'error': str(exc)}, 409)
+    except SQLAlchemyError:
+        return private_json({'error': 'Save could not commit. Drafts retained; check saved versions before retrying.'}, 503)
+    for result in results:
+        if result['status'] == 'saved':
+            current_app.logger.info('human_review_completed validation_batch_id=%s member_id=%s', batch_id, result['member_id'])
+    progress = None
+    try:
+        progress = repo.bulk_page(batch_id)['progress']
+    except (LookupError, RuntimeError, SQLAlchemyError):
+        pass  # Committed per-row results remain authoritative even if counters are unavailable.
+    return private_json({'results': results, 'saved': sum(r['status'] == 'saved' for r in results),
+        'failed': sum(r['status'] in ('failed', 'conflict') for r in results), 'progress': progress})

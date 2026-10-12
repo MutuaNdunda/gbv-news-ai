@@ -118,6 +118,21 @@ flight; immutable raw/processed objects and existing retry lineage remain in use
 
 ## Diagnostics and reconciliation
 
+On 9 October 2026 the collection-control migration was installed in the observed
+development database. Other targets still require independent verification.
+
+Legacy runs without a heartbeat are never repaired automatically. Once the
+operator confirms the original worker has exited, target one explicitly:
+
+```bash
+.venv/bin/python scripts/reconcile_runs.py --dry-run --legacy-run-id UUID --reason 'Worker exit evidence'
+.venv/bin/python scripts/reconcile_runs.py --apply --legacy-run-id UUID --reason 'Worker exit evidence'
+```
+
+The migration must be installed first. Recovery holds the exact collector lock,
+rechecks the row, preserves counters and records `legacy_run_reconciled` with the
+operator reason. An active lock blocks recovery. GCS checkpoints remain untouched.
+
 Run read-only diagnostics first:
 
 ```bash

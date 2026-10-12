@@ -1,0 +1,8 @@
+.bulk-row { border-left: 4px solid transparent; }
+.bulk-row.bulk-focused { border-left-color: #0d6efd; background: #f0f6ff; }
+.bulk-row:focus-visible { outline: 3px solid #0d6efd; outline-offset: 2px; }
+.bulk-row .bulk-headline { line-height: 1.4; overflow-wrap: anywhere; }
+.bulk-row p { overflow-wrap: anywhere; }
+.bulk-labels button[aria-pressed="true"] { color: white; background: #0d6efd; }
+.bulk-toolbar { position: sticky; top: 0; z-index: 2; background: #f6f7f9; padding: .75rem 0; }
+.bulk-row-message { white-space: pre-wrap; }

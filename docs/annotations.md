@@ -2255,6 +2255,16 @@ from binary metrics rather than relabeled as certainty.
 
 ### Deterministic private evaluation
 
+Frozen batches support **Bulk Review** with 10/20/50/100 paginated headline cards,
+inline draft decisions, lazy verified bodies, keyboard shortcuts and transactional
+per-row save results. Model feedback stays withheld throughout bulk review.
+Existing review vocabulary, initial/final pointers and completed-batch protection
+are preserved. Body access is recorded in existing review notes; bulk resolved
+labels can also be saved from titles alone and are explicitly recorded as title-only.
+Open verified full text when more context is needed. See [bulk review details](bulk_l2_validation.md)
+for access controls, draft/resume behavior, concurrency and limits. This interface
+does not change sampling methodology or create a real validation batch.
+
 After every member has an initial decision, complete the batch to freeze accepted
 final decisions. Completion can include unresolved cases, which remain explicit.
 

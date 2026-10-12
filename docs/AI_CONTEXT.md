@@ -1092,6 +1092,16 @@ repository.
 
 ## Protected local Human Review — 4 October 2026
 
+Frozen L2 validation batches also offer bulk review at
+`/annotations/validation/<batch_id>/bulk`: bounded metadata pages, lazy verified
+body expansion, keyboard/inline decisions and transactional saves with row
+savepoints. Bulk responses withhold machine outputs even after review. Shared
+append-only decision logic preserves initial/final pointers and stale-version
+checks; notes distinguish verified body access from title-only resolved decisions.
+Bulk review allows title-only labeling at the researcher's request; full-context
+reading remains recommended for uncertain headlines. Existing local auth/CSRF and schema are reused;
+no new migration or model execution is needed. See [bulk operator guide](bulk_l2_validation.md).
+
 All machine count cards open paginated label-filtered result lists. Rows and article
 history entries open GET/POST `/annotations/review/<uuid:annotation_id>`. Only an
 unlocked local session fetches the exact processed extraction using the existing

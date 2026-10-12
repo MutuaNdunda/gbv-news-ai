@@ -177,8 +177,14 @@ for current frame/support and protocol checks. Other targets require steps 1–3
    body hashes are excluded. If only N unseen eligible records remain, the app
    refuses a larger sample. Collect/validate additional unseen articles under a
    separate agreed collection plan; do not relabel training data as independent.
-6. Select **Review Next**, record the independent human label and reason, then
-   inspect the pinned model comparison after saving. Review all members and
+6. Select **Review Next** for single-article review, or **Bulk Review** for 10/20/50/100
+   headline cards with lazy body expansion, inline decisions and one bulk save.
+   Bulk review keeps model feedback withheld throughout; single-article review
+   offers the existing permitted comparison after the initial decision. Record an
+   independent reason. Bulk review allows title-only labels and records that basis;
+   open verified body context when the headline is insufficient. See the
+   [bulk review guide](docs/bulk_l2_validation.md) for shortcuts, partial failures,
+   draft warnings and resume. Review all members and
    complete the batch to freeze accepted final pointers. Unresolved/adjudication
    and human/model borderline remain explicit exclusions from binary evaluation.
 7. Evaluate a completed representative batch into a new private directory:
@@ -1373,7 +1379,11 @@ Heartbeat writes occur at most every 30 seconds at worker checkpoints; page load
 never renew them. `Possibly stalled` is informational. Diagnose with
 `.venv/bin/python scripts/reconcile_runs.py --dry-run`; explicit `--apply` repairs
 only managed attempts with stale heartbeat and a provably unowned collector lock.
-Legacy missing-heartbeat rows remain unchanged. See
+Legacy missing-heartbeat rows remain unchanged by default. After confirming the
+original worker has exited, recover one explicitly with
+`scripts/reconcile_runs.py --apply --legacy-run-id UUID --reason 'Worker exit evidence'`.
+This still acquires and rechecks the collector lock, preserves counters and records
+the operator reason; it requires the control migration. See
 [collection run control and recovery](docs/collection_run_control.md) for migration,
 status semantics, security, cancellation latency, reconciliation and limitations.
 

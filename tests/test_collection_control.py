@@ -147,6 +147,23 @@ class CollectionControlSQLTests(unittest.TestCase):
             results = self.repo.reconcile_stale_runs(apply=True, now=NOW)
         self.assertTrue(all(item['action'] == 'unchanged' for item in results))
 
+    def test_explicit_legacy_recovery_requires_reason_and_unowned_lock(self):
+        value = self.ids[0]
+        with self.sessions.begin() as session:
+            run = session.get(CollectionRun, value)
+            run.worker_token = run.last_heartbeat_at = None
+        with self.assertRaises(ValueError):
+            self.repo.reconcile_stale_runs(legacy_run_id=value)
+        with patch.object(self.repo, 'lock', self.lock_probe(busy=True)):
+            self.repo.reconcile_stale_runs(apply=True, legacy_run_id=value, reason='Worker exited', now=NOW)
+        self.assertEqual(self.repo.control(value).status, 'running')
+        with patch.object(self.repo, 'lock', self.lock_probe()):
+            self.repo.reconcile_stale_runs(legacy_run_id=value, reason='Worker exited', now=NOW)
+            self.assertEqual(self.repo.control(value).status, 'running')
+            self.repo.reconcile_stale_runs(apply=True, legacy_run_id=value, reason='Worker exited', now=NOW)
+        self.assertEqual(self.repo.control(value).status, 'interrupted')
+        self.assertEqual(self.repo.control(value).finalization_reason, 'legacy_run_reconciled: Worker exited')
+
     def app(self, enabled=True):
         return create_app(dict(TESTING=True, PER_PAGE=1, SECRET_KEY='s'*32,
             COLLECTION_CONTROL_ENABLED=enabled, COLLECTION_CONTROL_TOKEN='t'*32), {'runs': self.service})

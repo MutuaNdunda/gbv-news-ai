@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 import json
 import sys
+from uuid import UUID
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sqlalchemy import inspect, text
@@ -49,9 +50,14 @@ def main(argv=None):
     group.add_argument('--dry-run', action='store_true', help='Default: never change rows')
     group.add_argument('--apply', action='store_true', help='Interrupt only stale managed runs with no lock owner')
     parser.add_argument('--stale-seconds', type=int, default=1800)
+    parser.add_argument('--legacy-run-id', type=UUID,
+                        help='Explicitly recover this legacy run only after confirming its worker has exited')
+    parser.add_argument('--reason', help='Required operator evidence/reason for legacy recovery')
     args = parser.parse_args(argv)
     if args.stale_seconds < 60:
         parser.error('stale-seconds must be at least 60')
+    if args.legacy_run_id and not (args.reason and args.reason.strip()):
+        parser.error('--legacy-run-id requires --reason describing why the worker is known to have exited')
     sessions = create_session_factory()
     columns = {c['name'] for c in inspect(sessions.kw['bind']).get_columns('collection_runs', schema='public')}
     missing = CONTROL_COLUMNS - columns
@@ -61,7 +67,8 @@ def main(argv=None):
         rows = diagnose_legacy(sessions)
     else:
         rows = CollectionRunRepository(sessions).reconcile_stale_runs(
-            apply=args.apply, stale_seconds=args.stale_seconds)
+            apply=args.apply, stale_seconds=args.stale_seconds,
+            legacy_run_id=args.legacy_run_id, reason=args.reason)
     print(json.dumps(dict(dry_run=not args.apply, running_count=len(rows),
                           missing_columns=sorted(missing), runs=rows), default=str, indent=2))
     return 0

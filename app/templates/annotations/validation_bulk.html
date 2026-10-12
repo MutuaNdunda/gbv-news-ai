@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Bulk L2 review{% endblock %}
+{% block content %}
+<div id="bulk-review" data-save-url="{{ url_for('validation.bulk_save', batch_id=batch.id) }}" data-csrf="{{ csrf }}">
+<div class="d-flex justify-content-between flex-wrap gap-2"><h1 class="h3">{{ batch.name }} · Bulk Review</h1><a href="{{ url_for('validation.detail', batch_id=batch.id) }}">Batch progress / single-article review</a></div>
+<p>{{ batch.purpose }} · {{ batch.status }} · Codebook {{ batch.guideline_version }}</p>
+{% if batch.purpose == 'diagnostic' %}<p class="alert alert-warning">Diagnostic error analysis; this batch does not establish independent model performance.</p>{% endif %}
+<p class="alert alert-info">You can save GBV, Not GBV or Borderline from the title alone when it provides enough evidence. Open the full article when context is needed. Reviews record whether verified full text was opened or the decision was title-only. Use Unsure when evidence or language competence is insufficient; request adjudication when another qualified decision is required. Record a brief independent reason without names or copied passages. Model answers remain withheld throughout bulk review.</p>
+<div class="card card-body mb-3" aria-live="polite">
+<div class="d-flex flex-wrap gap-3"><span>Total: <strong>{{ progress.total }}</strong></span><span>Saved human reviews: <strong id="bulk-saved">{{ progress.reviewed }}</strong></span><span>Remaining initial reviews: <strong id="bulk-remaining">{{ progress.pending }}</strong></span><span>Current page: <strong>{{ rows|length }}</strong></span><span>Unsaved decisions: <strong id="bulk-unsaved">0</strong></span></div>
+<progress id="bulk-progress" class="w-100 mt-2" max="{{ progress.total or 1 }}" value="{{ progress.reviewed }}" aria-label="Saved human reviews"></progress>
+<small>Saved includes unresolved human decisions; drafts never count as saved reviews.</small>
+</div>
+<form method="get" class="d-flex align-items-end flex-wrap gap-2 mb-3">
+<div><label for="bulk-status">Members</label><select class="form-select" id="bulk-status" name="status">{% for value,label in [('unreviewed','Unreviewed'),('reviewed','Reviewed'),('needs_adjudication','Needs adjudication'),('all','All members')] %}<option value="{{ value }}" {{ 'selected' if review_filter == value }}>{{ label }}</option>{% endfor %}</select></div>
+<div><label for="bulk-size">Articles per page</label><select class="form-select" id="bulk-size" name="per_page">{% for size in [10,20,50,100] %}<option value="{{ size }}" {{ 'selected' if per_page == size }}>{{ size }}</option>{% endfor %}</select></div>
+<button class="btn btn-outline-primary">Apply filters</button></form>
+<p class="small">Shortcuts: <kbd>G</kbd> GBV · <kbd>N</kbd> Not GBV · <kbd>U</kbd> Unsure · <kbd>J</kbd> Next · <kbd>K</kbd> Previous · <kbd>Space</kbd> Expand/collapse. Click or focus a row first. Shortcuts pause while typing.</p>
+<form id="bulk-decisions">
+<div class="bulk-toolbar mb-3"><button type="submit" class="btn btn-primary" id="bulk-save" {{ 'disabled' if batch.status == 'completed' or not rows }}>Save Selected Labels</button><span id="bulk-message" class="ms-2" role="status" aria-live="polite"></span></div>
+{% for row in rows %}
+<article class="bulk-row card card-body mb-2" tabindex="0" data-member-id="{{ row.id }}" data-expected-final="{{ row.final_human_validation_id or '' }}" data-body-url="{{ url_for('validation.bulk_body', batch_id=batch.id, member_id=row.id) }}" aria-label="Article {{ row.selection_order }}">
+<div class="d-flex justify-content-between gap-2"><h2 class="h5 bulk-headline">{{ row.selection_order }}. {{ row.title }}</h2><button type="button" class="btn btn-sm btn-outline-secondary bulk-expand" aria-expanded="false" aria-controls="body-{{ row.id }}">Read article</button></div>
+<p class="small text-secondary mb-2">{{ row.source }} · {{ row.published_at or 'Publication date unavailable' }} · Language metadata: {{ row.language or 'unknown' }}<br>Article: {{ row.article_id }} · Version: {{ row.article_version_id }}</p>
+<p class="small mb-2">Saved: <strong class="bulk-saved-choice">{{ row.human_label or row.review_decision or 'Unreviewed' }}</strong> · <span class="bulk-body-state">Body not opened in this session</span></p>
+{% if batch.status != 'completed' %}
+<div class="d-flex flex-wrap gap-1 bulk-labels" role="group" aria-label="Independent human decision">
+{% for value,label in [('gbv','GBV'),('not_gbv','Not GBV'),('unable_to_determine','Unsure / insufficient evidence'),('borderline','Borderline relevance'),('needs_adjudication','Needs adjudication'),('skip','Skip')] %}<button type="button" class="btn btn-sm btn-outline-primary" data-choice="{{ value }}" aria-pressed="false">{{ label }}</button>{% endfor %}</div>
+<label class="small mt-2" for="reason-{{ row.id }}">Independent reason {{ '(required for a revision)' if row.final_human_validation_id else '(required)' }}</label><textarea id="reason-{{ row.id }}" class="form-control form-control-sm bulk-reason" rows="1" maxlength="1000" placeholder="Conduct/context and why it is substantive, absent or uncertain"></textarea>
+{% endif %}
+<p class="bulk-row-message small mt-2 mb-0" role="status" aria-live="polite"></p>
+{% if batch.status != 'completed' %}<button type="button" class="btn btn-sm btn-outline-secondary bulk-refresh mt-2" hidden>Refresh saved version · keep draft</button>{% endif %}
+<div class="bulk-body mt-2" id="body-{{ row.id }}" hidden><p class="bulk-content-issue text-warning"></p><div class="article-text border rounded p-3"></div></div>
+</article>
+{% else %}<p>No members match this filter. Choose All members to revisit saved decisions.</p>{% endfor %}
+</form>
+<nav class="d-flex gap-3 mt-3" aria-label="Bulk review pages">
+{% if page > 1 %}<a href="{{ url_for('validation.bulk',batch_id=batch.id,page=page-1,per_page=per_page,status=review_filter) }}">Previous page</a>{% endif %}
+<span>Page {{ page }} of {{ last_page }} · {{ filtered }} matching members</span>
+{% if page < last_page %}<a href="{{ url_for('validation.bulk',batch_id=batch.id,page=page+1,per_page=per_page,status=review_filter) }}">Next page</a>{% endif %}
+<a href="{{ url_for('validation.bulk',batch_id=batch.id,per_page=per_page,status='unreviewed') }}">Continue from first unreviewed</a>
+</nav>
+<p class="small mt-3">Drafts stay only in this page; there is no draft autosave. Successful decisions are durable. Failed rows retain their drafts. Completed batches are read-only. Opening a body records access, not proof that it was read.</p>
+</div>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/validation_bulk.css') }}">
+<script src="{{ url_for('static', filename='js/validation_bulk.js') }}" defer></script>
+{% endblock %}

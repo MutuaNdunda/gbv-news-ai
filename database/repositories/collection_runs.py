@@ -159,14 +159,19 @@ class CollectionRunRepository:
                     connection.invalidate()
                     LOGGER.warning('collection_lock_release_failed')
 
-    def reconcile_stale_runs(self, *, apply=False, stale_seconds=1800, now=None):
+    def reconcile_stale_runs(self, *, apply=False, stale_seconds=1800, now=None,
+                             legacy_run_id=None, reason=None):
         """Dry-run by default. Acquire the collector's exact key, then recheck."""
         if stale_seconds < 60:
             raise ValueError('Stale threshold must be at least 60 seconds')
+        if legacy_run_id is not None and not (reason and reason.strip()):
+            raise ValueError('Explicit legacy recovery requires an operator reason')
         now = now or datetime.now(timezone.utc)
         with self.sessions() as session:
-            runs = session.execute(select(CollectionRun).where(
-                CollectionRun.status == 'running').options(undefer('*'))).scalars().all()
+            statement = select(CollectionRun).where(CollectionRun.status == 'running')
+            if legacy_run_id is not None:
+                statement = statement.where(CollectionRun.id == legacy_run_id)
+            runs = session.execute(statement.options(undefer('*'))).scalars().all()
         summary = []
         for run in runs:
             item = dict(run_id=str(run.id), started_at=run.started_at.isoformat(),
@@ -186,12 +191,16 @@ class CollectionRunRepository:
                         current = session.execute(select(CollectionRun).where(
                             CollectionRun.id == run.id).with_for_update()).scalar_one()
                         # Restrict repairs to new managed attempts, never legacy missing evidence.
-                        if current.worker_token and stale(current, now, stale_seconds):
+                        legacy = (current.id == legacy_run_id and current.status == 'running'
+                                  and current.worker_token is None
+                                  and current.last_heartbeat_at is None)
+                        if legacy or (current.worker_token and stale(current, now, stale_seconds)):
                             item['action'] = 'would_interrupt'
                             if apply:
                                 lease.check()
                                 current.status, current.finished_at = 'interrupted', now
-                                current.finalization_reason = 'stale_run_reconciled'
+                                current.finalization_reason = ('legacy_run_reconciled: ' + reason.strip()
+                                                               if legacy else 'stale_run_reconciled')
                                 session.execute(update(CollectionRunScan).where(
                                     CollectionRunScan.collection_run_id == current.id,
                                     CollectionRunScan.status == 'running').values(

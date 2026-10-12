@@ -1676,3 +1676,74 @@ recorded 382-test collection-control suite was the latest runtime validation at 
 it was not rerun solely for Markdown edits. HEAD/remote tracking was rechecked:
 `main` at `25342a7` matches `origin/main`, with only these documentation edits/new
 Markdown files pending. No reference dataset or cloud write was created.
+
+### Bulk L2 human validation — 9 October 2026
+
+Implemented the user-requested bulk extension to existing frozen validation batches:
+10/20/50/100 SQL-paginated headline cards, lazy generation/hash-verified body
+expansion, inline controlled human decisions, keyboard shortcuts, saved/draft
+counters, filter/resume navigation and unsaved-draft warnings. Bulk pages and JSON
+omit all model/weak outputs throughout review. Existing direct-local reviewer
+identity/session and dedicated CSRF protect every operation.
+
+A shared append-only decision helper preserves initial/final member pointers,
+review identity/codebook/timestamps and supersession history. Bulk persistence
+prefetches and locks the cohort, uses per-row savepoints and returns success only
+after the outer transaction commits; failed drafts remain in the page. Signed
+30-minute access receipts bind verified body access to exact membership, extraction
+hash, expected final review, identity and guideline. Resolved labels require body
+opening; unresolved decisions can record no body access in existing review notes.
+No migration or dependency is introduced; frozen membership, model/thresholds and
+research meanings remain unchanged. Single-article review remains supported.
+
+Roadmap synchronization on 9 October returned all four snapshots current. Canonical
+planning still contains historical 536/324 totals; no public Sheet or manual CSV
+write was performed and no independent-validation research gate was closed.
+This completes bulk-review engineering within the structured L2 validation
+workflow, not execution of L2-VALIDATION-V1 or independent performance evaluation.
+No real human decisions or cloud writes were made during this implementation.
+
+Verification: 406 Python-discovered tests ran, 405 passed, one optional installed-
+model integration test skipped, zero failures. New coverage includes 17 Flask/SQL
+bulk regressions and a Python runner for five executed Node.js handler tests.
+SQL query-count checks verify bounded page reads and bulk prefetch reads for
+10 versus 100 rows; a 100-row Unicode-reason save succeeds. Chrome verification
+used only a synthetic 123-member in-memory batch, including full-body expansion,
+keyboard labeling, one-success/one-failure feedback and correction without losing
+the failed draft. See [bulk operator guide](../bulk_l2_validation.md). Browser
+extension content access and full-body reading/competence remain operator concerns;
+software access receipts do not establish that a reviewer read or understood text.
+
+Bulk save feedback correction, 9 October: the client had discarded every body's
+access receipt on any row failure, unnecessarily requiring re-expansion after a
+reason/storage error. Valid receipts now survive those errors; stale-member
+conflicts still invalidate access. The aggregate save message includes per-reason
+row counts and explicitly states that drafts are retained. Added an executed
+JavaScript regression for correcting a reason and retrying with the same verified
+access. All six handler tests, the Python wrapper, JavaScript syntax and diff checks
+pass. This frontend-only correction made no human/database decisions; the latest
+full-suite result remains the 406-test run above.
+
+### Bulk title-only review — 12 October 2026
+
+The researcher explicitly requested saving GBV/non-GBV decisions from headlines
+without opening full text. Bulk saves now allow resolved GBV, Not GBV and Borderline
+labels without a body-access receipt. Existing human-review notes distinguish
+title-only resolved decisions, verified body access and unresolved decisions without
+body access. Reasons, local authentication/CSRF, frozen lineage, conflict checks,
+append-only history and completed-batch immutability remain enforced. Submitted
+invalid receipts still fail verification. Single-article review retains its existing
+full-text requirement. No migration or dependency is needed.
+
+The interface and operator guidance describe optional body reading when more
+context is needed. This user-authorized bulk evidence procedure differs from the
+codebook's original full-context instructions; the codebook was not silently edited.
+Title-only decisions must be identified in methodology when interpreting evaluation.
+No real labels were saved by this change, no model/threshold or membership was
+modified, and no independent research stage gate was closed.
+
+Anonymous roadmap synchronization reported all four snapshots current. Verification:
+61 bulk, validation-batch and L2 UI tests passed, including seven executed JavaScript
+handler tests. New regressions cover all three title-only resolved labels, revisions,
+unavailable bodies and retained failure behavior. JavaScript syntax and
+`git diff --check` passed.
