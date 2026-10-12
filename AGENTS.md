@@ -551,6 +551,9 @@ decisions recorded separately from verified body access in review notes. Bulk an
 single-article validation pages show the latest accepted reviewer and human verdict,
 or explicitly state that the article is not reviewed. Status is scoped to each
 batch member's final-review pointer; drafts and failed saves cannot change it.
+Both validation views require an independent reason selected from a shared list,
+with optional details. Reasons remain separate from verdicts and are composed into
+the existing append-only review reason field; no schema change is needed.
 Reviewer identities remain confined to protected validation responses. These
 interface features do not establish independently validated research results.
 The collection Runs monitor now supports opt-in token/CSRF cooperative Stop for
@@ -849,6 +852,17 @@ When uncertain about a research assumption, document the uncertainty rather than
 
 ## 31. Current Development Priority
 
+Latest human-validation observation — **13 October 2026, 01:50:38 EAT**:
+one protected random development-validation batch contains 400 members, all with
+resolved initial/final human-review pointers and zero pending. Batch status remains
+`in_review`; completion timestamp is unset. Recording the 400 reviews is complete,
+but acceptance/finalization and private evaluation remain separate next steps.
+The read-only audit found 381 latest title-only notes, 10 verified-body-access notes,
+9 other/unspecified notes and zero final-pointer lineage mismatches. Preserve
+the frozen instrument and history, document evidence/independence limits, and
+do not infer metrics or a closed research gate from review counts. See
+`docs/research/l2_human_validation_progress_20261013.md`. The zero-batch figures
+in the following 8 October audit are historical and superseded for review progress.
 
 Current read-only development audit beginning **8 October 2026, 22:50 EAT**:
 2,119 article versions; compatible L0 covers all (2,076 valid / 39 needs_review /

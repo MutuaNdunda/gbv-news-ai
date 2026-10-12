@@ -58,7 +58,16 @@ Current State now records the 536-version observation from 3 October; its earlie
 407-record figure was a planning snapshot. Neither is a fixed eligibility count,
 a validated final corpus, or permission to include every local collection artifact.
 
-## Current operational handoff — 8 October 2026
+## Current human-review handoff — 13 October 2026
+
+Read-only database verification at 01:50:38 EAT confirms 400/400 resolved saved
+reviews in one protected random development-validation batch and zero pending.
+The batch remains `in_review`; accepted completion and independent evaluation are
+separate next steps. See the [review-coverage report](../research/l2_human_validation_progress_20261013.md)
+for evidence basis and instrument limits. Public snapshots remain the planning
+authority and were not manually rewritten to imply a completed research gate.
+
+## Earlier operational handoff — 8 October 2026
 
 The public snapshots still describe the historical 536/324 baseline. A fresh
 read-only audit beginning 22:50 EAT records 2,119 versions, complete compatible

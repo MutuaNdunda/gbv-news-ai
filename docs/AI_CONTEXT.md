@@ -4,12 +4,22 @@
 
 ## 1. Project Summary
 
-Current dated operational observation: **8 October 2026, audit beginning 22:50 EAT**:
+Latest human-review observation: **13 October 2026, 01:50:38 EAT**:
+one protected random development-validation batch has 400/400 resolved human
+reviews, initial/final pointers present and zero pending. Status is `in_review`;
+the completion timestamp is unset. Review recording is complete, while acceptance,
+batch finalization and private evaluation remain separate. Latest access notes:
+381 title-only / 10 verified-body opened / 9 other or unspecified; zero final-pointer
+article/version/prediction/guideline mismatches. See the
+[review-coverage report](research/l2_human_validation_progress_20261013.md).
+Do not present these counts as metrics, validated incidence or final-test completion.
+
+Earlier corpus/automation observation: **8 October 2026, audit beginning 22:50 EAT**:
 2,119 articles/versions; current L0 2,076 valid / 39 review / 4 invalid;
 L1 1,417 Kenya / 130 non-Kenya / 529 ambiguous; dev-v1 model 246 GBV /
 1,049 non-GBV / 122 borderline, with compatible eligible coverage complete.
-No annotation run was persisted as running. Validation schema is ready; zero
-batches/members exist. Metadata-only screened formal-source unseen support is
+No annotation run was persisted as running. Validation schema was ready; zero
+batches/members existed at that date. Metadata-only screened formal-source unseen support was
 1,089, before private object/language/period/near-duplicate checks, with Standard
 zero. See [dataset creation](research/validation_dataset_creation.md) and the
 engineering log. Never substitute historical 536/324 counts for this dated state,
@@ -1106,6 +1116,10 @@ Summaries follow each batch member's final-review pointer and display the review
 identity recorded at save time. Drafts/failed saves do not change saved status;
 reviewer identities remain inside protected validation responses. This is a
 configured local identity, not authenticated multi-user reviewer accounts.
+Both validation views use the shared `INDEPENDENT_REASONS` dropdown and optional
+900-character details. The server composes their readable text into the existing
+review reason; category selection never determines the verdict. Bulk drafts retain
+both values after failures, and legacy free-text submissions remain compatible.
 Existing local auth/CSRF and schema are reused;
 no new migration or model execution is needed. See [bulk operator guide](bulk_l2_validation.md).
 

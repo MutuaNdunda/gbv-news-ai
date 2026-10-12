@@ -5,6 +5,13 @@ token, reviewer identity, guideline configuration and 30-minute signed session
 are required. This interface works with existing frozen membership; it does not
 create, resample or freeze a research batch. Single-article review remains available.
 
+**Review-coverage milestone — 13 October 2026:** one protected development-validation
+batch now has 400/400 resolved saved reviews and zero pending, confirmed read-only
+at 01:50:38 EAT. Its status is still `in_review`; completing the accepted batch and
+running private evaluation are separate steps. See the
+[progress report](research/l2_human_validation_progress_20261013.md). Do not equate
+the saved-review counter with frozen acceptance or measured model performance.
+
 ## Review a page
 
 Choose 10, 20 (default), 50 or 100 articles per page. Filters are Unreviewed,
@@ -45,7 +52,28 @@ Inline choices use the existing vocabulary:
 | Needs adjudication | `needs_adjudication`, NULL human label |
 | Skip | No review or semantic label |
 
-Record a concise independent reason for every decision. At the researcher's request
+Select an independent reason for every decision and optionally add details:
+
+| Reason option | Intended use |
+| --- | --- |
+| Local politics | Political reporting in the local context |
+| Clear reported GBV incident | Reporting with clear evidence of a reported GBV event |
+| Other local news | Other domestic news topics |
+| International news | Reporting about events outside Kenya |
+| GBV-related reporting (policy, prevention or commentary) | Substantive GBV coverage beyond a specific incident |
+| Sports news | Sports reporting |
+| Insufficient evidence / unclear relevance | Evidence is inadequate for a confident decision |
+| Other reason | A rationale outside the listed categories |
+
+Choose the human verdict independently. A politics, international or sports topic
+can still contain GBV; choosing a reason never assigns or changes the verdict.
+Additional details are optional for every category, including Other reason, and
+are limited to 900 characters. The server stores the readable category followed
+by any details in the existing review-reason field. Missing/unknown categories or
+invalid details fail that row; failed drafts retain both inputs. Older free-text
+reasons and open forms remain supported, and saved history is unchanged.
+
+At the researcher's request
 on 12 October 2026, GBV, Not GBV and Borderline can be saved from the title alone.
 Opening verified article text is optional; use it when the headline provides
 insufficient context, or record an unresolved decision. Existing
@@ -100,7 +128,9 @@ tab before retrying. A browser crash can still lose unsaved drafts.
 - Saves require a dedicated signed-session CSRF token, at most 100 unique rows,
   at most 200,000 decoded JSON characters, and a 1,200,000-byte request limit.
   Other endpoints retain their existing 16 KiB limit. Reasons retain the existing
-  1,000-character limit.
+  1,000-character limit; new optional details are capped at 900 characters so the
+  selected category and details fit together. Submitted categories are checked
+  against the shared reason list.
 - Signed, 30-minute body-access receipts bind the batch, member, extraction/hash,
   final-review pointer, reviewer identity and guideline. Tampered/stale receipts
   cannot be recorded as verified body access. Submitted invalid receipts still fail
@@ -123,6 +153,8 @@ lazy content, blinding, lineage/history, 100-row persistence, query-count bounds
 partial failures, conflicts, duplicate retries, skips, receipt checks, access,
 resume and immutable completion. Review-status regressions verify pending status,
 latest reviewer/verdict after revisions, escaped identities and final-test blinding.
+Reason regressions verify every option, optional details, server-side rejection,
+verdict independence and single-article error retention.
 `tests/js/validation_bulk.test.cjs` executes the
 actual JavaScript handlers against a small DOM adapter for keyboard/inline controls,
 lazy expansion, immediate saved-status updates, partial-save draft retention, explicit conflict refresh and

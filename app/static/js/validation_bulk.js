@@ -21,6 +21,8 @@
     row.querySelector('.bulk-saved-choice').textContent = reviewed ? verdicts[choice] || choice : '';
   }
   const announce = (row, text) => { row.querySelector('.bulk-row-message').textContent = text; };
+  const readReason = row => ({reason_category: row.querySelector('.bulk-reason-category').value,
+    reason_details: row.querySelector('.bulk-reason').value});
   const updateCount = () => {
     document.getElementById('bulk-unsaved').textContent = Array.from(drafts.values())
       .filter(d => d.choice && d.choice !== 'skip').length;
@@ -33,9 +35,8 @@
   function choose(row, choice) {
     if (saving || !row.querySelector('.bulk-labels')) return;
     focus(row);
-    const reason = row.querySelector('.bulk-reason').value;
     if (choice === 'skip') drafts.delete(row.dataset.memberId);
-    else drafts.set(row.dataset.memberId, {choice, reason});
+    else drafts.set(row.dataset.memberId, {choice, ...readReason(row)});
     row.querySelectorAll('[data-choice]').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.choice === choice));
     });
@@ -90,13 +91,16 @@
       button.addEventListener('click', () => choose(row, button.dataset.choice));
     });
     const reason = row.querySelector('.bulk-reason');
-    if (reason) reason.addEventListener('input', () => {
+    const category = row.querySelector('.bulk-reason-category');
+    const updateReason = () => {
       const draft = drafts.get(row.dataset.memberId) || {choice: ''};
-      draft.reason = reason.value;
-      if (draft.choice || draft.reason) drafts.set(row.dataset.memberId, draft);
+      Object.assign(draft, readReason(row));
+      if (draft.choice || draft.reason_category || draft.reason_details) drafts.set(row.dataset.memberId, draft);
       else drafts.delete(row.dataset.memberId);
       updateCount();
-    });
+    };
+    if (reason) reason.addEventListener('input', updateReason);
+    if (category) category.addEventListener('change', updateReason);
   });
   if (focused) focus(focused);
   document.addEventListener('keydown', event => {
@@ -125,7 +129,7 @@
       body_receipt: states.get(row).receipt}));
     saving = true;
     save.disabled = true;
-    root.querySelectorAll('.bulk-labels button, .bulk-reason').forEach(el => { el.disabled = true; });
+    root.querySelectorAll('.bulk-labels button, .bulk-reason, .bulk-reason-category').forEach(el => { el.disabled = true; });
     message.textContent = `Saving ${selected.length} decisions…`;
     try {
       const response = await fetch(root.dataset.saveUrl, {method: 'POST', credentials: 'same-origin', cache: 'no-store',
@@ -143,6 +147,7 @@
           row.dataset.expectedFinal = result.final_id;
           showReview(row, result.human_choice, result.reviewer_identity);
           row.querySelector('.bulk-reason').value = '';
+          row.querySelector('.bulk-reason-category').value = '';
           row.querySelectorAll('[data-choice]').forEach(button => button.setAttribute('aria-pressed', 'false'));
           states.get(row).receipt = ''; // Any further body access must match the new review pointer.
           row.querySelector('.bulk-body-state').textContent = 'Reopen to record verified body access for another decision';
@@ -177,7 +182,7 @@
     } finally {
       saving = false;
       save.disabled = false;
-      root.querySelectorAll('.bulk-labels button, .bulk-reason').forEach(el => { el.disabled = false; });
+      root.querySelectorAll('.bulk-labels button, .bulk-reason, .bulk-reason-category').forEach(el => { el.disabled = false; });
       updateCount();
     }
   });

@@ -36,10 +36,19 @@ The observed 20-version synchronous trial exceeded the current 30-second Gunicor
 worker timeout. Use the CLI for large runs, and keep the existing App Engine
 deployment read-only until bounded execution is configured deliberately.
 
-## Current deployment limits — 8 October 2026
+## Local review progress — 13 October 2026
+
+The protected local workspace now has 400/400 resolved saved reviews in one
+development-validation batch, verified read-only at 01:50:38 EAT. The batch remains
+`in_review`; finalization/evaluation are separate. See the
+[review-coverage report](research/l2_human_validation_progress_20261013.md).
+This local progress does not authorize remote review or demonstrate App Engine
+schema readiness, reviewer authentication or production deployment.
+
+## Earlier deployment observation — 8 October 2026
 
 Local development now observes 2,119 versions and 1,417 compatible dev-v1 model
-predictions; validation schema preflight is ready, with zero real batches. These
+predictions; validation schema preflight was ready, with zero real batches at that date. These
 local facts do not prove App Engine schema/artifact availability or production
 readiness. Validation creation and article review remain direct-local only. Follow
 [the dataset-creation guide](research/validation_dataset_creation.md) locally.

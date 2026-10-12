@@ -1,6 +1,6 @@
 # Create the first independent L2 validation dataset
 
-Updated **8 October 2026 (EAT)**. This is the operator guide for preparing
+Updated **13 October 2026 (EAT)**. This is the operator guide for preparing
 `L2-VALIDATION-V1`, a **development-validation reference batch** for the existing
 `l2-afroxlmr-dev-v1`. It does not create a batch, approve the draft sampling protocol,
 change the finalized semantic codebook or authorize retraining/final testing.
@@ -11,6 +11,15 @@ Read the [finalized codebook](l2_gbv_relevance_codebook_v1.0.md),
 and [current engineering status](../roadmap/IMPLEMENTATION_STATUS.md) together.
 The implementation supports dataset creation; research readiness depends on the
 agreed design and actual unseen eligible support.
+
+**Current review progress:** the researcher completed recording 400 human
+validations. The read-only 13 October, 01:50:38 EAT audit confirms 400/400 resolved
+members in one protected development-validation batch, with no pending reviews.
+The batch is still `in_review`; inspect/accept the decisions, document the evidence
+procedure and frozen instrument, then complete the batch before private evaluation.
+Do not create another batch merely because earlier documentation said zero existed.
+See the [review-coverage report](l2_human_validation_progress_20261013.md).
+The preparation steps below remain guidance for additional separately agreed batches.
 
 ## 1. Establish the frame and decisions before creating a draft
 

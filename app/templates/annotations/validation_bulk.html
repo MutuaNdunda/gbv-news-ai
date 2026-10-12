@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 {% from 'annotations/review_status.html' import review_status %}
+{% from 'annotations/independent_reason.html' import independent_reason %}
 {% block title %}Bulk L2 review{% endblock %}
 {% block content %}
 <div id="bulk-review" data-save-url="{{ url_for('validation.bulk_save', batch_id=batch.id) }}" data-csrf="{{ csrf }}">
 <div class="d-flex justify-content-between flex-wrap gap-2"><h1 class="h3">{{ batch.name }} · Bulk Review</h1><a href="{{ url_for('validation.detail', batch_id=batch.id) }}">Batch progress / single-article review</a></div>
 <p>{{ batch.purpose }} · {{ batch.status }} · Codebook {{ batch.guideline_version }}</p>
 {% if batch.purpose == 'diagnostic' %}<p class="alert alert-warning">Diagnostic error analysis; this batch does not establish independent model performance.</p>{% endif %}
-<p class="alert alert-info">You can save GBV, Not GBV or Borderline from the title alone when it provides enough evidence. Open the full article when context is needed. Reviews record whether verified full text was opened or the decision was title-only. Use Unsure when evidence or language competence is insufficient; request adjudication when another qualified decision is required. Record a brief independent reason without names or copied passages. Model answers remain withheld throughout bulk review.</p>
+<p class="alert alert-info">You can save GBV, Not GBV or Borderline from the title alone when it provides enough evidence. Open the full article when context is needed. Reviews record whether verified full text was opened or the decision was title-only. Use Unsure when evidence or language competence is insufficient; request adjudication when another qualified decision is required. Select an independent reason and optionally add details without names or copied passages. Model answers remain withheld throughout bulk review.</p>
 <div class="card card-body mb-3" aria-live="polite">
 <div class="d-flex flex-wrap gap-3"><span>Total: <strong>{{ progress.total }}</strong></span><span>Saved human reviews: <strong id="bulk-saved">{{ progress.reviewed }}</strong></span><span>Remaining initial reviews: <strong id="bulk-remaining">{{ progress.pending }}</strong></span><span>Current page: <strong>{{ rows|length }}</strong></span><span>Unsaved decisions: <strong id="bulk-unsaved">0</strong></span></div>
 <progress id="bulk-progress" class="w-100 mt-2" max="{{ progress.total or 1 }}" value="{{ progress.reviewed }}" aria-label="Saved human reviews"></progress>
@@ -28,7 +29,7 @@
 {% if batch.status != 'completed' %}
 <div class="d-flex flex-wrap gap-1 bulk-labels" role="group" aria-label="Independent human decision">
 {% for value,label in [('gbv','GBV'),('not_gbv','Not GBV'),('unable_to_determine','Unsure / insufficient evidence'),('borderline','Borderline relevance'),('needs_adjudication','Needs adjudication'),('skip','Skip')] %}<button type="button" class="btn btn-sm btn-outline-primary" data-choice="{{ value }}" aria-pressed="false">{{ label }}</button>{% endfor %}</div>
-<label class="small mt-2" for="reason-{{ row.id }}">Independent reason {{ '(required for a revision)' if row.final_human_validation_id else '(required)' }}</label><textarea id="reason-{{ row.id }}" class="form-control form-control-sm bulk-reason" rows="1" maxlength="1000" placeholder="Conduct/context and why it is substantive, absent or uncertain"></textarea>
+{{ independent_reason(reason_options, 'reason-' ~ row.id, bulk=True) }}
 {% endif %}
 <p class="bulk-row-message small mt-2 mb-0" role="status" aria-live="polite"></p>
 {% if batch.status != 'completed' %}<button type="button" class="btn btn-sm btn-outline-secondary bulk-refresh mt-2" hidden>Refresh saved version · keep draft</button>{% endif %}

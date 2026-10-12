@@ -1,12 +1,25 @@
 # L2 transformer development performance
 
+## Human-review coverage update — 13 October 2026
+
+A read-only audit at 01:50:38 EAT confirms 400/400 resolved saved human reviews
+in one protected random development-validation batch pinned to this dev-v1 model.
+The batch remains `in_review`; no completion timestamp is recorded. Review
+recording is complete, but batch acceptance/finalization and private evaluation
+remain separate. This task did not compute accuracy, precision, recall, F1 or
+calibration. Most latest reviews are recorded as title-only (381); ten record
+verified-body access and nine have other/unspecified access notes. See the
+[review-coverage report](research/l2_human_validation_progress_20261013.md) for
+instrument identity, evidence limitations and next steps. The zero-batch count
+in the earlier audit below is historical, not the current review state.
+
 ## Current coverage observation — 8 October 2026, audit beginning 22:50 EAT
 
 The same configured dev-v1 artifact now has **1,417/1,417** compatible eligible
 predictions: **246 gbv / 1,049 not_gbv / 122 borderline**, zero eligible pending.
 Upstream L0/L1 covers the expanded 2,119-version observation. Training remains
 322 records; no retraining or model/threshold change is asserted by this audit.
-Validation schema is ready; zero real reference batches/members exist and independent
+At that date validation schema was ready; zero real reference batches/members existed and independent
 accuracy/precision/recall/F1/calibration remain unmeasured. Metadata screening
 finds 1,089 potentially unseen formal-source candidates, with Standard zero, before
 full object/language/period/duplicate-family/exposure checks. See

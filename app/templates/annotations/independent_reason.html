@@ -1,0 +1,10 @@
+{% macro independent_reason(options, field_id, selected='', details='', bulk=False) -%}
+<label class="small mt-2" for="{{ field_id }}">Independent reason (required)</label>
+<select id="{{ field_id }}" name="reason_category" class="form-select form-select-sm bulk-reason-category" aria-required="true" {{ 'required' if not bulk }}>
+<option value="" {{ 'selected' if not selected }}>Choose an independent reason</option>
+{% for value, label in options.items() %}<option value="{{ value }}" {{ 'selected' if selected == value }}>{{ label }}</option>{% endfor %}
+</select>
+<label class="small mt-2" for="{{ field_id }}-details">Additional details (optional)</label>
+<textarea id="{{ field_id }}-details" name="reason_details" class="form-control form-control-sm bulk-reason" rows="1" maxlength="900" placeholder="Add context for your verdict, or explain Other reason">{{ details }}</textarea>
+<p class="small mb-2">Choose the verdict separately; the reason does not set it. Avoid names or copied article passages.</p>
+{%- endmacro %}

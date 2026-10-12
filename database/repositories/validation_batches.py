@@ -320,6 +320,9 @@ class ValidationBatchRepository:
                 else:
                     try:
                         with session.begin_nested():
+                            if 'reason_category' in row:
+                                from annotations.validation import compose_independent_reason
+                                row['reason'] = compose_independent_reason(row['reason_category'], row.get('reason_details', ''))
                             if not all(isinstance(row.get(k, ''), str) for k in ('choice', 'reason', 'expected_final', 'body_receipt')):
                                 raise ValueError('Decision fields must be text.')
                             member = members.get(row['member_id'])

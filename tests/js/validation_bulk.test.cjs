@@ -72,6 +72,7 @@ function setup() {
       const button = labels.add(new Element('button')); button.dataset.choice = choice;
     }
     row.add(new Element('textarea', {class: 'bulk-reason'}));
+    row.add(new Element('select', {class: 'bulk-reason-category'}));
     row.add(new Element('p', {class: 'bulk-row-message'}));
     row.add(new Element('button', {class: 'bulk-refresh'})).hidden = true;
     const body = row.add(new Element('div', {class: 'bulk-body'})); body.hidden = true;
@@ -149,6 +150,8 @@ test('partial save keeps unsuccessful drafts, updates saved progress, and submit
 test('title-only resolved decisions save without fetching article bodies', async () => {
   const ui = setup(); await ui.key('g'); await ui.key('j'); await ui.key('n');
   for (const row of ui.rows) {
+    const category = row.querySelector('.bulk-reason-category');
+    category.value = 'other'; await category.fire('change');
     const reason = row.querySelector('.bulk-reason');
     reason.value = 'Synthetic title provides sufficient evidence'; await reason.fire('input');
   }
@@ -160,6 +163,8 @@ test('title-only resolved decisions save without fetching article bodies', async
   assert.equal(ui.calls[0].url, '/bulk/save');
   const decisions = JSON.parse(ui.calls[0].options.body.get('decisions'));
   assert.deepEqual(decisions.map(row => row.body_receipt), ['', '']);
+  assert.deepEqual(decisions.map(row => row.reason_category), ['other', 'other']);
+  assert.equal(decisions[0].reason_details, 'Synthetic title provides sufficient evidence');
   assert.equal(ui.unsaved.textContent, 0);
   assert.equal(ui.saved.textContent, 2);
   assert.match(ui.message.textContent, /2 saved; 0 failed/);
@@ -167,6 +172,8 @@ test('title-only resolved decisions save without fetching article bodies', async
   assert.equal(ui.rows[0].querySelector('.bulk-review-details').hidden, false);
   assert.equal(ui.rows[0].querySelector('.bulk-reviewer').textContent, 'Synthetic reviewer');
   assert.equal(ui.rows[0].querySelector('.bulk-saved-choice').textContent, 'GBV');
+  assert.equal(ui.rows[0].querySelector('.bulk-reason-category').value, '');
+  assert.equal(ui.rows[0].querySelector('.bulk-reason').value, '');
 });
 
 test('network/access failures retain drafts and navigation guards prevent accidental loss', async () => {
@@ -178,6 +185,28 @@ test('network/access failures retain drafts and navigation guards prevent accide
   assert.equal((await ui.window.fire('beforeunload')).prevented, true);
   assert.equal((await ui.document.fire('click', {target: ui.link})).prevented, true);
   assert.equal((await ui.filter.fire('submit')).prevented, true);
+});
+
+test('reason selections and optional details remain drafts until a successful save', async () => {
+  const ui = setup(); const row = ui.rows[0];
+  const category = row.querySelector('.bulk-reason-category');
+  const details = row.querySelector('.bulk-reason');
+  category.value = 'sports_news'; await category.fire('change');
+  assert.equal((await ui.window.fire('beforeunload')).prevented, true);
+  await ui.key('g', category);  // Native dropdown typing must not assign a verdict.
+  assert.equal(ui.unsaved.textContent, 0);
+  await ui.key('n');
+  details.value = 'Synthetic extra context'; await details.fire('input');
+  ui.replies.push({data: {saved: 0, failed: 1, results: [
+    {member_id: 'one', status: 'failed', error: 'Synthetic storage failure'}]}});
+  await ui.form.fire('submit');
+  assert.equal(category.value, 'sports_news');
+  assert.equal(details.value, 'Synthetic extra context');
+  assert.equal(ui.unsaved.textContent, 1);
+  const submitted = JSON.parse(ui.calls[0].options.body.get('decisions'))[0];
+  assert.equal(submitted.reason_category, 'sports_news');
+  assert.equal(submitted.reason_details, 'Synthetic extra context');
+  assert.equal(submitted.choice, 'not_gbv');
 });
 
 test('concurrent conflict requires explicit refresh, preserves draft, and revises current pointer', async () => {
@@ -210,12 +239,15 @@ test('a failed save retains valid body access so correcting a reason does not re
   await ui.form.fire('submit');
   assert.match(ui.message.textContent, /Record an independent decision reason/);
   const reason = ui.rows[0].querySelector('.bulk-reason');
+  const category = ui.rows[0].querySelector('.bulk-reason-category');
+  category.value = 'clear_gbv_incident'; await category.fire('change');
   reason.value = 'Synthetic context rationale'; await reason.fire('input');
   ui.replies.push({data: {saved: 1, failed: 0, progress: {reviewed: 1, pending: 1}, results: [
     {member_id: 'one', status: 'saved', final_id: 'saved-one', human_choice: 'gbv'}]}});
   await ui.form.fire('submit');
   const retry = JSON.parse(ui.calls[2].options.body.get('decisions'))[0];
   assert.equal(retry.body_receipt, 'verified-receipt');
-  assert.equal(retry.reason, 'Synthetic context rationale');
+  assert.equal(retry.reason_category, 'clear_gbv_incident');
+  assert.equal(retry.reason_details, 'Synthetic context rationale');
   assert.equal(ui.unsaved.textContent, 0);
 });

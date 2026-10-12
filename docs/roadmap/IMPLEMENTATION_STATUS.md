@@ -4,6 +4,35 @@ This engineering log records executed code and observations. The public Sheet
 remains the planning source of truth; synchronized CSVs were not edited manually.
 No private article content, victim information or reference labels belong here.
 
+## Current human-review coverage — 13 October 2026, 01:50:38 EAT
+
+The researcher reported completing 400 human validations. Read-only aggregate
+verification confirms one protected random development-validation batch pinned to
+`l2-afroxlmr-dev-v1`, with 400 requested/actual members, 400 initial and 400 final
+review pointers, 400 resolved, zero pending and zero unresolved/adjudication cases.
+Batch status is still `in_review`; completion timestamp is unset. One member has
+a revision, and no final-review article/version/prediction/guideline mismatch was
+found. Latest access-note basis: 381 title-only, 10 verified-body opened, nine other
+or unspecified. Historical rows across all reviews are separate: 703 L2 and 11 L1.
+
+**Recording human-review coverage is complete; accepted batch completion and
+independent evaluation are not asserted.** The audit made no writes and calculated
+no performance metrics. It did not re-audit sampling representativeness, near-
+duplicate independence or full-context evidence. The frozen guideline is a
+checksum-based `docs/annotations.md` reference; reconcile the actual instrument
+and title-only evidence procedure before reporting findings. See the
+[aggregate progress report](../research/l2_human_validation_progress_20261013.md).
+Earlier zero-batch observations in this log remain dated historical evidence.
+
+Documentation alignment records this milestone across operator, research and
+architecture guides without changing the finalized codebook, protected membership,
+public Sheet or canonical CSVs. Anonymous roadmap synchronization on 13 October
+reported all four snapshots current; canonical planning still lists the historical
+development baseline and research validation as pending. Review recording does not
+authorize a planning gate change, retraining or final-test claims. The latest reason-
+dropdown runtime verification remains 64 relevant tests passed, including eight
+executed JavaScript handler tests; this documentation audit did not rerun them.
+
 ## L2 draft creation and filtered-results repair — 8 October 2026, 23:40 EAT
 
 The researcher reported an immediate Forbidden response after a cloud-backed
@@ -1776,3 +1805,27 @@ reflects the identity recorded with the accepted decision, not the current
 configuration or a multi-user login. No runtime behavior, public Sheet, private
 review or research stage gate changed in this documentation pass. The latest
 relevant runtime verification remains the 62-test run above.
+
+### Independent reason selection — 13 October 2026
+
+User-requested independent reasons now appear as a shared dropdown on protected
+bulk and single-article validation forms: Local politics; Clear reported GBV incident;
+Other local news; International news; GBV-related reporting (policy, prevention or
+commentary); Sports news; Insufficient evidence / unclear relevance; and Other
+reason. Optional details accept up to 900 characters. Reason selection is required
+for submitted decisions and is independent of the verdict; topic categories do not
+automatically classify or exclude GBV.
+
+The server validates the option and details and composes their readable text into
+the existing append-only `review_reason` field. Legacy free-text submissions and
+historical reasons remain supported. Bulk failures preserve category/details drafts;
+successful rows clear their inputs. Single-article errors retain reason values.
+No migration, dependency, model change, real review write or codebook rewrite was
+performed. README, AGENTS, annotation documentation, bulk guide and AI context are
+aligned. This extends the L2 review interface without closing a research stage gate.
+
+Anonymous roadmap sync reported all four snapshots current. Verification: 64
+relevant bulk/validation/L2 UI tests passed, including eight executed JavaScript
+handler tests. Coverage verifies every category, optional details, invalid selection
+and length rejection, verdict independence, error retention and legacy compatibility.
+JavaScript syntax and `git diff --check` passed.

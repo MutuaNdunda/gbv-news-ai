@@ -1,12 +1,24 @@
 # Automated Annotation Pipeline
 
-## Current validation entry — read-only audit beginning 8 October 2026, 22:50 EAT
+## Current human-validation progress — 13 October 2026
+
+The researcher has completed recording 400 human validations. A read-only audit
+at 01:50:38 EAT confirms one protected random development-validation batch with
+400/400 resolved members, initial/final pointers present and zero pending. Its
+status remains `in_review`; batch completion and private evaluation are still
+separate steps. The latest review notes comprise 381 title-only, 10 verified-body
+access and nine other/unspecified bases. No final-pointer lineage mismatches were
+found. See the [aggregate progress report](research/l2_human_validation_progress_20261013.md)
+for instrument/evidence limits and the next operation. This is not a final-test
+completion or an independent performance claim.
+
+## Earlier coverage audit — 8 October 2026, 22:50 EAT
 
 The latest observed development corpus has **2,119 versions** with complete
 compatible eligible L0/L1/model coverage: L0 2,076 valid / 39 review / 4 invalid;
 L1 1,417 Kenya / 130 non-Kenya / 529 ambiguous; dev-v1 model 246 GBV /
 1,049 non-GBV / 122 borderline. No annotation run was persisted as running.
-Validation schema is ready, but there are no real validation batches or members.
+Validation schema was ready; at that date there were no real validation batches or members.
 Training provenance remains the same 322-record development dataset. Metadata-only
 screening finds 1,089 potential unseen formal-source candidates, Standard zero,
 before GCS/language/period/near-duplicate and review-exposure checks. The unchanged
@@ -204,7 +216,7 @@ remains open. This table reflects the current verified implementation.
 | Reviewed/mixed datasets | Reviewed 300 (3/297); mixed 322 (10/312). Two borderline excluded, no exact duplicates/unresolved; no frozen independent reference set. | Sections 1, 15, 21 describe label policy, manifest/hash, reference exclusion and imbalance. | [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
 | Real AfroXLMR model | Locally configured `l2-afroxlmr-dev-v1`; 12-layer encoder, binary head; weighted fine-tuning and offline reload executed. | Section 21 contains architecture, diagram, parameters, training and inference behavior. | [L2 performance](l2_model_performance.md), [README](../README.md) |
 | L2 persisted inference | 324/324 compatible results: 11/307/6; zero pending. Two pending-only resume passes completed; 300 earlier model rows unchanged. Model outputs have no independent validation. | Sections 1, 14, 21 record current closure, historical timing and research limits. | [L2 performance](l2_model_performance.md), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
-| L2 validation engineering | Seeded batches, blinded initial review, automatic protection and private pinned evaluation implemented; additive migration installed/behavior-verified in development, no real batch or independent metrics. | Section 22 describes schema, routes, sampling, exclusion, reference policy and limitations. | [Operator steps](../README.md#l2-validation-and-protected-reference), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
+| L2 validation engineering and review coverage | Seeded batches, blinded review, training protection and private evaluation implemented. On 13 October, one protected development batch has 400/400 resolved saved reviews; status remains `in_review`, with finalization/evaluation separate. | Section 22 describes schema, routes, sampling and reference policy. Review counts do not establish independent metrics. | [Operator steps](../README.md#l2-validation-and-protected-reference), [Review progress](research/l2_human_validation_progress_20261013.md), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
 | Database readiness | Required L2 constraints/index/trigger installed and behavior-tested in development; schema readiness true. Other targets need independent verification. | Sections 11, 20–21 distinguish schema contracts from verified installation. | [Deployment guide](app_engine_deployment.md), [README](../README.md) |
 | Research validation / later layers | No independent accuracy/F1/calibration; L3–L5, contextual NER, geocoding, mapping, prospective near-real-time integration remain unimplemented. | Sections 16–17, 21 preserve open gates and future scope. | [Roadmap guide](roadmap/README.md), [Agent guidance](../AGENTS.md) |
 
@@ -2262,6 +2274,20 @@ Existing review vocabulary, initial/final pointers and completed-batch protectio
 are preserved. Body access is recorded in existing review notes; bulk resolved
 labels can also be saved from titles alone and are explicitly recorded as title-only.
 Open verified full text when more context is needed.
+
+Bulk and single-article validation forms require an **Independent reason** dropdown
+selection and provide optional **Additional details** (up to 900 characters).
+The shared options in `annotations.validation.INDEPENDENT_REASONS` cover local
+politics, clear reported GBV incidents, other local news, international news,
+GBV-related policy/prevention/commentary, sports news, insufficient evidence and
+other reasons. These are rationale categories, not new semantic labels: they do
+not automatically set or restrict the human verdict. Server-side validation
+rejects missing/unknown selections and invalid details. It stores the readable
+category plus optional details in the existing `human_validations.review_reason`;
+earlier free-text reasons and older open forms remain supported. Bulk row failures
+retain category/details drafts; successful saves clear only the saved row's inputs.
+Single-article validation errors retain submitted reason values for correction.
+No migration or automatic reclassification is introduced.
 
 Each protected bulk card and single-article validation page displays **Article not
 reviewed** until the member has a saved human decision, then **Article reviewed**

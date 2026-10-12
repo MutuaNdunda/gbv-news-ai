@@ -22,10 +22,20 @@ review acceptance, support and execution controls have not been confirmed as
 completed. Codebook finalization alone does not create `L2-VALIDATION-V1` or
 establish independent metrics.
 
+**Execution progress note — 13 October 2026:** a read-only check at 01:50:38 EAT
+confirms one protected random development-validation batch with 400/400 resolved
+saved human reviews and zero pending. Its status remains `in_review`; batch
+finalization and evaluation are separate. This observed N is an execution fact,
+not retrospective approval of this draft's sampling assumptions or evidence policy.
+The latest access notes record 381 title-only decisions, ten verified-body openings
+and nine other/unspecified bases. See the [progress report](l2_human_validation_progress_20261013.md)
+for the frozen instrument and research limits. This note does not alter proposed
+sample-size/support thresholds, certify independence or close a research gate.
+
 **Readiness update — 8 October 2026, audit beginning 22:50 EAT:** the development
 corpus now contains 2,119 versions with complete compatible eligible L0/L1/model
 coverage; dev-v1 has 1,417 results (246/1,049/122), and validation schema is ready.
-There are zero validation batches/members. Training/historical/exact-hash metadata
+At that date there were zero validation batches/members. Training/historical/exact-hash metadata
 screening finds 1,089 potential unseen formal-source candidates: Nation 285,
 Citizen 113, Star 392, Taifa Leo 299, Standard zero. This is not the full verified
 sampling frame: GCS content/language, agreed dates, duplicate families and prior

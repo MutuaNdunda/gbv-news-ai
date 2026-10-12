@@ -1,5 +1,12 @@
 # GBV News AI
 
+**Human-validation progress — 13 October 2026:** a read-only database check confirms
+400/400 resolved reviews in one protected random development-validation batch,
+with zero pending initial reviews. The batch remains `in_review`; accepting/finalizing
+it and running private evaluation are separate next steps. See the
+[review-coverage report](docs/research/l2_human_validation_progress_20261013.md)
+for evidence basis and research limits. Earlier zero-batch counts below are dated history.
+
 GBV News AI is a postgraduate research project that aims to develop an ethical, human-supervised system for identifying, classifying, geotagging, and mapping gender-based violence (GBV) reporting in Kenyan digital news. The planned system will investigate multilingual approaches for English, Swahili, Sheng, and code-switched content, where available.
 
 The collection pipeline and automated L0 extraction-quality / L1 Kenya-relevance
@@ -15,7 +22,9 @@ archived publisher reporting, as described below.
 
 The repository includes a Flask monitor for collection and automated annotations,
 with an optional protected, bounded annotation trigger and a protected local Human
-Review workspace. Sampled human validation remains incomplete. The first
+Review workspace. The first 400-member L2 batch has complete recorded review
+coverage; L0/L1 sampled validation, batch finalization and independent L2 evaluation
+remain separate outstanding work. The first
 task-specific AfroXLMR development model is trained locally. Future work
 includes larger-corpus retraining, independent multilingual evaluation, location
 extraction, geocoding and mapping interfaces. Data collection and validation
@@ -88,9 +97,10 @@ L0 remains 519 valid / 17 needs_review; L1 v2 324 kenya / 35 not_kenya /
 160 ambiguous. Independent research validation and L3–L5 remain pending.
 Reproducible L2 batches, blinded initial review, protected reference exclusion and
 private evaluation are now implemented in the existing local workspace. The new
-validation migration is **installed and behavior-verified in development**; no real batch or independent
-metrics were generated. The codebook is now researcher-finalized; agree the
-sampling protocol and acceptance criteria before review;
+validation migration is **installed and behavior-verified in development**. At the
+13 October audit, one protected batch has 400/400 resolved saved reviews but remains
+`in_review`; this task generated no independent metrics. The codebook is researcher-finalized;
+document the actual sampling/review procedure and acceptance criteria before reporting results;
 see [validation setup](#l2-validation-and-protected-reference) and
 [the validation specification](docs/annotations.md#22-l2-validation-and-protected-reference-workflow).
 
@@ -180,8 +190,9 @@ for current frame/support and protocol checks. Other targets require steps 1–3
 6. Select **Review Next** for single-article review, or **Bulk Review** for 10/20/50/100
    headline cards with lazy body expansion, inline decisions and one bulk save.
    Bulk review keeps model feedback withheld throughout; single-article review
-   offers the existing permitted comparison after the initial decision. Record an
-   independent reason. Bulk review allows title-only labels and records that basis;
+   offers the existing permitted comparison after the initial decision. Select an
+   independent reason from the dropdown and optionally add details (up to 900
+   characters); choose the human verdict separately. Bulk review allows title-only labels and records that basis;
    open verified body context when the headline is insufficient. Bulk cards and
    single-article validation pages show **Article not reviewed**, or **Article reviewed**
    with **Reviewed by** and the human **Verdict** from the latest saved revision.

@@ -9,6 +9,7 @@ from sqlalchemy import event, select
 from sqlalchemy.exc import OperationalError
 
 from annotations.validation_batches import membership_digest
+from annotations.validation import INDEPENDENT_REASONS
 from database.models import Article, ArticleVersion, AutomatedAnnotation, HumanValidation, ValidationBatchMember
 from database.repositories.validation_batches import ValidationBatchRepository
 from tests.test_l2_ui import L2ReviewFixture
@@ -65,6 +66,52 @@ class BulkValidationFixture(L2ReviewFixture):
 
 
 class BulkValidationTests(BulkValidationFixture):
+    def test_reason_dropdown_and_optional_details_save_without_changing_verdict(self):
+        batch = self.batch(); response = self.open_bulk(batch)
+        members = self.repo.detail(batch.id)['members']
+        soup = BeautifulSoup(response.data, 'html.parser')
+        category = soup.select_one('.bulk-reason-category')
+        self.assertFalse(category.has_attr('required'))  # Unselected bulk rows must not block the form.
+        self.assertEqual([option['value'] for option in category.select('option')][1:], list(INDEPENDENT_REASONS))
+        for index, (key, label) in enumerate(INDEPENDENT_REASONS.items()):
+            member = self.repo.member(batch.id, members[0].id)['member']
+            row = self.decision(member, 'not_gbv', expected=str(member.final_human_validation_id or ''))
+            row.update(reason_category=key, reason_details='Synthetic context' if index % 2 else '',
+                       reason='Ignored legacy text')
+            result = self.submit(batch, [row]).json
+            self.assertEqual((result['saved'], result['failed']), (1, 0))
+            member = self.repo.member(batch.id, member.id)['member']
+            with self.sessions() as db:
+                review = db.get(HumanValidation, member.final_human_validation_id)
+                self.assertEqual(review.review_reason, label + (' — Synthetic context' if index % 2 else ''))
+                self.assertEqual(review.human_label, 'not_gbv')
+        row = self.decision(members[1], 'gbv')
+        for category, details in [('', ''), ('invented', ''), (None, ''), ('other', None), ('other', 'x'*901)]:
+            row.update(reason_category=category, reason_details=details)
+            self.assertEqual(self.submit(batch, [row]).json['failed'], 1)
+        self.assertEqual(self.count(), len(INDEPENDENT_REASONS))
+
+    def test_single_article_reason_selection_and_error_retention(self):
+        batch = self.batch(); self.open_bulk(batch); member = self.repo.detail(batch.id)['members'][0]
+        url = f'/annotations/review/{member.automated_annotation_id}?batch_id={batch.id}&member_id={member.id}'
+        html = self.client.get(url)
+        soup = BeautifulSoup(html.data, 'html.parser')
+        self.assertTrue(soup.select_one('[name=reason_category]').has_attr('required'))
+        with self.client.session_transaction() as session:
+            csrf = session['human_review_csrf']
+        form = dict(action='save', csrf_token=csrf, choice='not_gbv', expected_final='',
+                    reason_category='sports_news', reason_details='Synthetic sports context')
+        invalid = dict(form, reason_details='x'*901)
+        response = self.client.post(url, data=invalid)
+        self.assertEqual(response.status_code, 422)
+        soup = BeautifulSoup(response.data, 'html.parser')
+        self.assertEqual(soup.select_one('[name=reason_category] option[selected]')['value'], 'sports_news')
+        self.assertEqual(soup.select_one('[name=reason_details]').text, 'x'*901)
+        self.assertEqual(self.client.post(url, data=form).status_code, 303)
+        with self.sessions() as db:
+            review = db.scalar(select(HumanValidation))
+            self.assertEqual(review.review_reason, 'Sports news — Synthetic sports context')
+
     def test_review_status_shows_latest_reviewer_verdict_and_unreviewed_members(self):
         batch = self.batch(purpose='final_test'); response = self.open_bulk(batch)
         members = self.repo.detail(batch.id)['members']

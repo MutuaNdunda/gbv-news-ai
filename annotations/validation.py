@@ -16,6 +16,29 @@ STATUSES = {"not_reviewed": "Not reviewed", "confirmed": "Reviewed — confirmed
 
 REVIEW_FILTERS = {**STATUSES, "reviewed": "All recorded reviews"}
 
+INDEPENDENT_REASONS = {
+    'local_politics': 'Local politics',
+    'clear_gbv_incident': 'Clear reported GBV incident',
+    'local_news': 'Other local news',
+    'international_news': 'International news',
+    'gbv_related_reporting': 'GBV-related reporting (policy, prevention or commentary)',
+    'sports_news': 'Sports news',
+    'insufficient_evidence': 'Insufficient evidence / unclear relevance',
+    'other': 'Other reason',
+}
+
+
+def compose_independent_reason(category, details=''):
+    """Store the selected reason and optional context in the existing reason field."""
+    if not isinstance(category, str) or category not in INDEPENDENT_REASONS:
+        raise ValueError('Select an independent reason from the list.')
+    if not isinstance(details, str):
+        raise ValueError('Additional reason details must be text.')
+    details = details.strip()
+    if len(details) > 900:
+        raise ValueError('Additional reason details are limited to 900 characters.')
+    return INDEPENDENT_REASONS[category] + (f' — {details}' if details else '')
+
 
 class ReviewConflict(ValueError):
     """Another review was saved after the displayed form was loaded."""

@@ -7,7 +7,7 @@ from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.security import csrf_token, local_review_request, require_csrf, review_authenticated, review_enabled, unlock_review
-from annotations.validation import ReviewConflict
+from annotations.validation import ReviewConflict, INDEPENDENT_REASONS, compose_independent_reason
 from database.repositories.validation_batches import ValidationBatchRepository
 
 blueprint=Blueprint('validation',__name__,url_prefix='/annotations/validation')
@@ -168,8 +168,10 @@ def review_member(annotation_id):
             if request.form.get('action') not in ('save','save_next'):abort(400)
             if not content.get('article_text') and request.form.get('choice') not in ('unable_to_determine','needs_adjudication'):
                 raise ValueError('Verified article text is required for a resolved reference decision.')
-            if not request.form.get('reason','').strip():raise ValueError('Record an independent decision reason.')
-            repository().save_decision(batch_id,member_id,request.form.get('choice',''),request.form.get('reason',''),
+            reason = (compose_independent_reason(request.form['reason_category'], request.form.get('reason_details', ''))
+                      if 'reason_category' in request.form else request.form.get('reason', ''))
+            if not reason.strip():raise ValueError('Record an independent decision reason.')
+            repository().save_decision(batch_id,member_id,request.form.get('choice',''),reason,
                 current_app.config['HUMAN_REVIEWER_ID'],current_app.config['HUMAN_REVIEW_GUIDELINE_VERSION'],
                 request.form.get('expected_final',''))
             current_app.logger.info('human_review_completed validation_batch_id=%s member_id=%s',batch_id,member_id)
@@ -195,7 +197,8 @@ def review_member(annotation_id):
         title=content.get('content_article',{}).get('title') or article['article'].title,
         article_text=content.get('article_text'),content_issue=content.get('content_issue'),comparison=comparison,
         initial=initial,final_review=data['reviews'].get(member.final_human_validation_id),
-        error=error,csrf=csrf_token('human_review_csrf'))
+        error=error,reason_options=INDEPENDENT_REASONS,reason_form=request.form,
+        csrf=csrf_token('human_review_csrf'))
     response.status_code=status
     return response
 
@@ -245,7 +248,8 @@ def bulk(batch_id):
         return unavailable_response(str(exc))
     except SQLAlchemyError:
         return unavailable_response('Validation storage unavailable; verify schema installation.')
-    return private_response('annotations/validation_bulk.html', **data, csrf=csrf_token(BULK_CSRF))
+    return private_response('annotations/validation_bulk.html', **data,
+        reason_options=INDEPENDENT_REASONS, csrf=csrf_token(BULK_CSRF))
 
 
 @blueprint.get('/<uuid:batch_id>/bulk/<uuid:member_id>/body')
