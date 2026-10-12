@@ -546,6 +546,13 @@ results, and optional protected bounded L0/L1 execution. A separate protected lo
 Human Review workspace now supports L0/L1/L2 confirmation, correction, uncertainty
 and append-only review history. Only unlocked direct-local sessions retrieve verified
 full article text; remote review is blocked. Collection launch remains CLI-only.
+Frozen L2 batches support protected bulk review, including user-authorized title-only
+decisions recorded separately from verified body access in review notes. Bulk and
+single-article validation pages show the latest accepted reviewer and human verdict,
+or explicitly state that the article is not reviewed. Status is scoped to each
+batch member's final-review pointer; drafts and failed saves cannot change it.
+Reviewer identities remain confined to protected validation responses. These
+interface features do not establish independently validated research results.
 The collection Runs monitor now supports opt-in token/CSRF cooperative Stop for
 updated trial/monthly workers, bounded worker heartbeats and explicit ownership-
 checked orphan reconciliation. Apply `20261008_add_collection_run_control.sql`

@@ -12,6 +12,14 @@
   let dialogOpen = false;
   const states = new Map(rows.map(row => [row, {receipt: '', loadedAt: 0, loading: false}]));
   const hasDrafts = () => drafts.size > 0;
+  const verdicts = {gbv: 'GBV', not_gbv: 'Not GBV', borderline: 'Borderline',
+    unable_to_determine: 'Unsure / insufficient evidence', needs_adjudication: 'Needs adjudication'};
+  function showReview(row, choice, reviewer, reviewed = true) {
+    row.querySelector('.bulk-review-status').textContent = reviewed ? 'Article reviewed' : 'Article not reviewed';
+    row.querySelector('.bulk-review-details').hidden = !reviewed;
+    row.querySelector('.bulk-reviewer').textContent = reviewed ? reviewer || '' : '';
+    row.querySelector('.bulk-saved-choice').textContent = reviewed ? verdicts[choice] || choice : '';
+  }
   const announce = (row, text) => { row.querySelector('.bulk-row-message').textContent = text; };
   const updateCount = () => {
     document.getElementById('bulk-unsaved').textContent = Array.from(drafts.values())
@@ -61,7 +69,7 @@
       }
       if (refresh) {
         row.dataset.expectedFinal = data.expected_final;
-        row.querySelector('.bulk-saved-choice').textContent = data.human_choice;
+        showReview(row, data.human_choice, data.reviewer_identity, Boolean(data.expected_final));
         row.querySelector('.bulk-refresh').hidden = true;
       }
       state.receipt = data.body_receipt || '';
@@ -133,7 +141,7 @@
         if (result.status === 'saved') {
           drafts.delete(result.member_id);
           row.dataset.expectedFinal = result.final_id;
-          row.querySelector('.bulk-saved-choice').textContent = result.human_choice;
+          showReview(row, result.human_choice, result.reviewer_identity);
           row.querySelector('.bulk-reason').value = '';
           row.querySelectorAll('[data-choice]').forEach(button => button.setAttribute('aria-pressed', 'false'));
           states.get(row).receipt = ''; // Any further body access must match the new review pointer.

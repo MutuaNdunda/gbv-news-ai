@@ -12,6 +12,22 @@ Reviewed (including recorded unresolved decisions), Needs adjudication and All
 members. Server-side pagination and progress remain scoped to the selected batch.
 Completed batches can be inspected but cannot be edited.
 
+Each article displays **Article not reviewed** until this batch member has a saved
+human decision. Reviewed articles display **Article reviewed**, **Reviewed by** and
+the human **Verdict**. The latest accepted revision supplies the reviewer and verdict;
+drafts and failed saves never change the saved status. Successful bulk saves update
+the card immediately, and the same status appears on the protected single-article
+validation page. Unsure and Needs adjudication are shown explicitly. These summaries
+remain scoped to frozen membership and expose no model answers.
+
+For example: **Article reviewed · Reviewed by: [saved reviewer] · Verdict: Not GBV**.
+The displayed reviewer is the server-configured identity recorded with that saved
+decision, not an authenticated user account or the current configuration value.
+The member's accepted final-review pointer supplies this summary; reviews elsewhere
+do not silently change this batch's decision. Choose **Reviewed** or **All members**
+to revisit saved cards, since the default **Unreviewed** filter omits them after
+reloading. Save remaining drafts before refreshing to load an updated interface.
+
 Headlines, source, publication date, unvalidated language metadata, logical article
 ID and extraction-version ID appear in compact cards. **Read article** expands the
 exact stored extraction on demand. Page loads never retrieve bodies. Expansion
@@ -105,8 +121,10 @@ competence and independent adjudication remain governed by the existing protocol
 `tests/test_bulk_validation.py` exercises real synthetic Flask/SQL pagination,
 lazy content, blinding, lineage/history, 100-row persistence, query-count bounds,
 partial failures, conflicts, duplicate retries, skips, receipt checks, access,
-resume and immutable completion. `tests/js/validation_bulk.test.cjs` executes the
+resume and immutable completion. Review-status regressions verify pending status,
+latest reviewer/verdict after revisions, escaped identities and final-test blinding.
+`tests/js/validation_bulk.test.cjs` executes the
 actual JavaScript handlers against a small DOM adapter for keyboard/inline controls,
-lazy expansion, partial-save draft retention, explicit conflict refresh and
+lazy expansion, immediate saved-status updates, partial-save draft retention, explicit conflict refresh and
 navigation guards. `tests/test_bulk_validation_js.py` runs these with Node.js as
 part of offline discovery. Tests do not depend on cloud or model inference.

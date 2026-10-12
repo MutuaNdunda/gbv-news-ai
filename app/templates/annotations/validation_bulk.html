@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from 'annotations/review_status.html' import review_status %}
 {% block title %}Bulk L2 review{% endblock %}
 {% block content %}
 <div id="bulk-review" data-save-url="{{ url_for('validation.bulk_save', batch_id=batch.id) }}" data-csrf="{{ csrf }}">
@@ -22,7 +23,8 @@
 <article class="bulk-row card card-body mb-2" tabindex="0" data-member-id="{{ row.id }}" data-expected-final="{{ row.final_human_validation_id or '' }}" data-body-url="{{ url_for('validation.bulk_body', batch_id=batch.id, member_id=row.id) }}" aria-label="Article {{ row.selection_order }}">
 <div class="d-flex justify-content-between gap-2"><h2 class="h5 bulk-headline">{{ row.selection_order }}. {{ row.title }}</h2><button type="button" class="btn btn-sm btn-outline-secondary bulk-expand" aria-expanded="false" aria-controls="body-{{ row.id }}">Read article</button></div>
 <p class="small text-secondary mb-2">{{ row.source }} · {{ row.published_at or 'Publication date unavailable' }} · Language metadata: {{ row.language or 'unknown' }}<br>Article: {{ row.article_id }} · Version: {{ row.article_version_id }}</p>
-<p class="small mb-2">Saved: <strong class="bulk-saved-choice">{{ row.human_label or row.review_decision or 'Unreviewed' }}</strong> · <span class="bulk-body-state">Body not opened in this session</span></p>
+{{ review_status(row.final_human_validation_id, row.reviewer_identity, row.human_label or row.review_decision) }}
+<p class="small mb-2"><span class="bulk-body-state">Body not opened in this session</span></p>
 {% if batch.status != 'completed' %}
 <div class="d-flex flex-wrap gap-1 bulk-labels" role="group" aria-label="Independent human decision">
 {% for value,label in [('gbv','GBV'),('not_gbv','Not GBV'),('unable_to_determine','Unsure / insufficient evidence'),('borderline','Borderline relevance'),('needs_adjudication','Needs adjudication'),('skip','Skip')] %}<button type="button" class="btn btn-sm btn-outline-primary" data-choice="{{ value }}" aria-pressed="false">{{ label }}</button>{% endfor %}</div>

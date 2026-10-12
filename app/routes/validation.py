@@ -194,7 +194,8 @@ def review_member(annotation_id):
     response=private_response('annotations/validation_review.html',batch=batch,member=member,
         title=content.get('content_article',{}).get('title') or article['article'].title,
         article_text=content.get('article_text'),content_issue=content.get('content_issue'),comparison=comparison,
-        initial=initial,error=error,csrf=csrf_token('human_review_csrf'))
+        initial=initial,final_review=data['reviews'].get(member.final_human_validation_id),
+        error=error,csrf=csrf_token('human_review_csrf'))
     response.status_code=status
     return response
 
@@ -258,7 +259,7 @@ def bulk_body(batch_id, member_id):
         payload = {'title': content.get('content_article', {}).get('title') or data['article'].title,
                    'article_text': content.get('article_text'), 'content_issue': content.get('content_issue'),
                    'body_receipt': None, 'expected_final': str(data['member'].final_human_validation_id or ''),
-                   'human_choice': data['human_choice']}
+                   'human_choice': data['human_choice'], 'reviewer_identity': data['reviewer_identity']}
         if content.get('article_text'):
             member = data['member']
             payload['body_receipt'] = body_signer().dumps(dict(batch=str(batch_id), member=str(member_id),

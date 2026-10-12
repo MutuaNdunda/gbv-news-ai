@@ -62,7 +62,10 @@ function setup() {
     row.dataset = {memberId: id, expectedFinal: '', bodyUrl: '/body/'+id};
     row.add(new Element('h2', {class: 'bulk-headline'}));
     row.add(new Element('button', {class: 'bulk-expand'}));
-    row.add(new Element('strong', {class: 'bulk-saved-choice'}));
+    row.add(new Element('strong', {class: 'bulk-review-status'})).textContent = 'Article not reviewed';
+    const details = row.add(new Element('span', {class: 'bulk-review-details'})); details.hidden = true;
+    details.add(new Element('strong', {class: 'bulk-reviewer'}));
+    details.add(new Element('strong', {class: 'bulk-saved-choice'}));
     row.add(new Element('span', {class: 'bulk-body-state'}));
     const labels = row.add(new Element('div', {class: 'bulk-labels'}));
     for (const choice of ['gbv','not_gbv','unable_to_determine','borderline','needs_adjudication','skip']) {
@@ -131,6 +134,10 @@ test('partial save keeps unsuccessful drafts, updates saved progress, and submit
   assert.equal(ui.remaining.textContent, 1);
   assert.equal(ui.rows[0].querySelector('[data-choice="gbv"]').getAttribute('aria-pressed'), 'true');
   assert.equal(ui.rows[1].dataset.expectedFinal, 'final-two');
+  assert.equal(ui.rows[0].querySelector('.bulk-review-status').textContent, 'Article not reviewed');
+  assert.equal(ui.rows[0].querySelector('.bulk-review-details').hidden, true);
+  assert.equal(ui.rows[1].querySelector('.bulk-review-status').textContent, 'Article reviewed');
+  assert.equal(ui.rows[1].querySelector('.bulk-saved-choice').textContent, 'Unsure / insufficient evidence');
   assert.match(ui.message.textContent, /1 row: Open verified body/);
   assert.equal(JSON.parse(ui.calls[0].options.body.get('decisions')).length, 2);
   assert.equal(ui.save.disabled, false);
@@ -146,7 +153,7 @@ test('title-only resolved decisions save without fetching article bodies', async
     reason.value = 'Synthetic title provides sufficient evidence'; await reason.fire('input');
   }
   ui.replies.push({data: {saved: 2, failed: 0, progress: {reviewed: 2, pending: 0}, results: [
-    {member_id: 'one', status: 'saved', final_id: 'final-one', human_choice: 'gbv'},
+    {member_id: 'one', status: 'saved', final_id: 'final-one', human_choice: 'gbv', reviewer_identity: 'Synthetic reviewer'},
     {member_id: 'two', status: 'saved', final_id: 'final-two', human_choice: 'not_gbv'}]}});
   await ui.form.fire('submit');
   assert.equal(ui.calls.length, 1);
@@ -156,6 +163,10 @@ test('title-only resolved decisions save without fetching article bodies', async
   assert.equal(ui.unsaved.textContent, 0);
   assert.equal(ui.saved.textContent, 2);
   assert.match(ui.message.textContent, /2 saved; 0 failed/);
+  assert.equal(ui.rows[0].querySelector('.bulk-review-status').textContent, 'Article reviewed');
+  assert.equal(ui.rows[0].querySelector('.bulk-review-details').hidden, false);
+  assert.equal(ui.rows[0].querySelector('.bulk-reviewer').textContent, 'Synthetic reviewer');
+  assert.equal(ui.rows[0].querySelector('.bulk-saved-choice').textContent, 'GBV');
 });
 
 test('network/access failures retain drafts and navigation guards prevent accidental loss', async () => {
@@ -175,9 +186,11 @@ test('concurrent conflict requires explicit refresh, preserves draft, and revise
   await ui.form.fire('submit');
   assert.equal(ui.rows[0].querySelector('.bulk-refresh').hidden, false);
   assert.equal(ui.rows[0].dataset.expectedFinal, '');
-  ui.replies.push({data: {article_text: 'Synthetic body', body_receipt: 'current-receipt', expected_final: 'new-final', human_choice: 'needs_adjudication'}});
+  ui.replies.push({data: {article_text: 'Synthetic body', body_receipt: 'current-receipt', expected_final: 'new-final', human_choice: 'needs_adjudication', reviewer_identity: 'Another synthetic reviewer'}});
   await ui.rows[0].querySelector('.bulk-refresh').fire('click'); await ui.tick();
   assert.equal(ui.rows[0].dataset.expectedFinal, 'new-final');
+  assert.equal(ui.rows[0].querySelector('.bulk-reviewer').textContent, 'Another synthetic reviewer');
+  assert.equal(ui.rows[0].querySelector('.bulk-saved-choice').textContent, 'Needs adjudication');
   assert.equal(ui.unsaved.textContent, 1);
   ui.replies.push({data: {saved: 1, failed: 0, progress: {reviewed: 1, pending: 1}, results: [
     {member_id: 'one', status: 'saved', final_id: 'revision', human_choice: 'unable_to_determine'}]}});

@@ -2261,7 +2261,24 @@ per-row save results. Model feedback stays withheld throughout bulk review.
 Existing review vocabulary, initial/final pointers and completed-batch protection
 are preserved. Body access is recorded in existing review notes; bulk resolved
 labels can also be saved from titles alone and are explicitly recorded as title-only.
-Open verified full text when more context is needed. See [bulk review details](bulk_l2_validation.md)
+Open verified full text when more context is needed.
+
+Each protected bulk card and single-article validation page displays **Article not
+reviewed** until the member has a saved human decision, then **Article reviewed**
+with **Reviewed by** and the human **Verdict**. These values come from the review
+linked by `validation_batch_members.final_human_validation_id`, not the immutable
+initial decision or the currently configured reviewer. The identity is the
+server-configured `HUMAN_REVIEWER_ID` recorded at the time of that save; it is not
+an authenticated multi-user account. Revisions display the latest accepted reviewer
+and verdict while preserving earlier history. Unsure and Needs adjudication stay
+explicit. A successful bulk save updates the card immediately; failed saves and
+draft selections never change its saved status. The body endpoint's explicit
+conflict refresh returns the current reviewer and human verdict without model
+feedback. Reviewer identity appears only within protected validation responses.
+Existing batch/extraction membership determines status; a review from another
+prediction or batch does not silently become this member's accepted decision.
+
+See [bulk review details](bulk_l2_validation.md)
 for access controls, draft/resume behavior, concurrency and limits. This interface
 does not change sampling methodology or create a real validation batch.
 

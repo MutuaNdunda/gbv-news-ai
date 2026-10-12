@@ -1099,7 +1099,14 @@ savepoints. Bulk responses withhold machine outputs even after review. Shared
 append-only decision logic preserves initial/final pointers and stale-version
 checks; notes distinguish verified body access from title-only resolved decisions.
 Bulk review allows title-only labeling at the researcher's request; full-context
-reading remains recommended for uncertain headlines. Existing local auth/CSRF and schema are reused;
+reading remains recommended for uncertain headlines. Protected bulk and single-article
+validation views show the latest saved reviewer and human verdict, or explicitly
+state that the article is not reviewed; bulk cards update after successful saves.
+Summaries follow each batch member's final-review pointer and display the reviewer
+identity recorded at save time. Drafts/failed saves do not change saved status;
+reviewer identities remain inside protected validation responses. This is a
+configured local identity, not authenticated multi-user reviewer accounts.
+Existing local auth/CSRF and schema are reused;
 no new migration or model execution is needed. See [bulk operator guide](bulk_l2_validation.md).
 
 All machine count cards open paginated label-filtered result lists. Rows and article

@@ -65,6 +65,40 @@ class BulkValidationFixture(L2ReviewFixture):
 
 
 class BulkValidationTests(BulkValidationFixture):
+    def test_review_status_shows_latest_reviewer_verdict_and_unreviewed_members(self):
+        batch = self.batch(purpose='final_test'); response = self.open_bulk(batch)
+        members = self.repo.detail(batch.id)['members']
+        soup = BeautifulSoup(response.data, 'html.parser')
+        for card in soup.select('[data-member-id]'):
+            self.assertEqual(card.select_one('.bulk-review-status').text, 'Article not reviewed')
+            self.assertTrue(card.select_one('.bulk-review-details').has_attr('hidden'))
+        result = self.submit(batch, [self.decision(members[0], 'not_gbv')]).json['results'][0]
+        self.assertEqual(result['reviewer_identity'], 'configured-researcher')
+        self.repo.save_decision(batch.id, members[0].id, 'needs_adjudication',
+            'Synthetic independent revision', '<Synthetic second reviewer>', 'synthetic-test-guide', result['final_id'])
+        response = self.client.get(self.path(batch) + '?status=all')
+        soup = BeautifulSoup(response.data, 'html.parser')
+        card = soup.select_one(f'[data-member-id="{members[0].id}"]')
+        self.assertEqual(card.select_one('.bulk-review-status').text, 'Article reviewed')
+        self.assertFalse(card.select_one('.bulk-review-details').has_attr('hidden'))
+        self.assertEqual(card.select_one('.bulk-reviewer').text, '<Synthetic second reviewer>')
+        self.assertEqual(card.select_one('.bulk-saved-choice').text, 'Needs adjudication')
+        self.assertIsNone(card.find('synthetic'))
+        body = self.body(batch, members[0]).json
+        self.assertEqual(body['reviewer_identity'], '<Synthetic second reviewer>')
+        self.assertEqual(body['human_choice'], 'needs_adjudication')
+        for member, expected_status, expected_verdict in (
+                (members[0], 'Article reviewed', 'Needs adjudication'),
+                (members[1], 'Article not reviewed', '')):
+            path = f'/annotations/review/{member.automated_annotation_id}?batch_id={batch.id}&member_id={member.id}'
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            summary = BeautifulSoup(response.data, 'html.parser').select_one('.validation-review-summary')
+            self.assertEqual(summary.select_one('.bulk-review-status').text, expected_status)
+            self.assertEqual(summary.select_one('.bulk-saved-choice').text, expected_verdict)
+            self.assertNotIn('Machine label:', response.get_data(as_text=True))
+        self.assertNotIn('gbv_probability', soup.get_text())
+
     def test_headlines_page_sizes_sql_pagination_and_no_body_reads(self):
         batch = self.batch(size=123)
         self.open_bulk(batch)
@@ -102,7 +136,8 @@ class BulkValidationTests(BulkValidationFixture):
         self.assertTrue(body.json['body_receipt'])
         self.assertIn('Synthetic article', body.json['article_text'])
         self.assertEqual(body.headers['Cache-Control'], 'private, no-store')
-        self.assertEqual(set(body.json), {'title', 'article_text', 'content_issue', 'body_receipt', 'expected_final', 'human_choice'})
+        self.assertEqual(set(body.json), {'title', 'article_text', 'content_issue', 'body_receipt', 'expected_final', 'human_choice', 'reviewer_identity'})
+        self.assertIsNone(body.json['reviewer_identity'])
         for forbidden in ('gbv_probability', 'positive_threshold', 'synthetic_prediction', 'Machine label:', 'l2-ui-model'):
             self.assertNotIn(forbidden, response.get_data(as_text=True))
             self.assertNotIn(forbidden, body.get_data(as_text=True))

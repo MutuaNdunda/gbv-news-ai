@@ -228,7 +228,7 @@ class ValidationBatchRepository:
                 ValidationBatchMember.article_id, ValidationBatchMember.article_version_id,
                 ValidationBatchMember.source, ValidationBatchMember.language, ValidationBatchMember.status,
                 ValidationBatchMember.final_human_validation_id, Article.title, Article.published_at,
-                HumanValidation.human_label, HumanValidation.review_decision).join(
+                HumanValidation.human_label, HumanValidation.review_decision, HumanValidation.reviewer_identity).join(
                     Article, Article.id == ValidationBatchMember.article_id).outerjoin(
                     HumanValidation, HumanValidation.id == ValidationBatchMember.final_human_validation_id
                 ).where(ValidationBatchMember.validation_batch_id == batch_id)
@@ -253,7 +253,7 @@ class ValidationBatchRepository:
         self.require_schema()
         with self.sessions() as session:
             row = session.execute(select(ValidationBatch, ValidationBatchMember, Article, ArticleVersion,
-                HumanValidation.human_label, HumanValidation.review_decision).join(
+                HumanValidation.human_label, HumanValidation.review_decision, HumanValidation.reviewer_identity).join(
                 ValidationBatchMember, ValidationBatchMember.validation_batch_id == ValidationBatch.id).join(
                 Article, Article.id == ValidationBatchMember.article_id).join(
                 ArticleVersion, ArticleVersion.id == ValidationBatchMember.article_version_id).outerjoin(
@@ -261,13 +261,14 @@ class ValidationBatchRepository:
                 ValidationBatch.id == batch_id, ValidationBatchMember.id == member_id)).one_or_none()
             if row is None:
                 raise LookupError('Batch member not found.')
-            batch, member, article, version, human_label, review_decision = row
+            batch, member, article, version, human_label, review_decision, reviewer_identity = row
             if batch.status == 'draft':
                 raise ValueError('Freeze membership before review.')
             if member.content_hash != version.content_hash or version.article_id != member.article_id:
                 raise ValueError('Pinned extraction lineage changed.')
             return dict(batch=batch, member=member, article=article, version=version,
-                        human_choice=human_label or review_decision or 'Unreviewed')
+                        human_choice=human_label or review_decision or 'Unreviewed',
+                        reviewer_identity=reviewer_identity)
 
     def save_decision(self, batch_id, member_id, choice, reason, identity, guideline, expected_final=None,
                       *, body_receipt=None, body_signer=None):
@@ -329,7 +330,8 @@ class ValidationBatchRepository:
                                 identity, guideline, row.get('expected_final', ''), row.get('body_receipt', ''), body_signer)
                             session.flush()
                             result.update(status='saved', final_id=str(review.id),
-                                          human_choice=review.human_label or review.review_decision)
+                                          human_choice=review.human_label or review.review_decision,
+                                          reviewer_identity=review.reviewer_identity)
                     except ReviewConflict as exc:
                         result.update(status='conflict', error=str(exc))
                     except (ValueError, RuntimeError) as exc:

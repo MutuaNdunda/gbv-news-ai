@@ -1,9 +1,10 @@
-{% extends 'base.html' %}{% block title %}Validation review{% endblock %}{% block content %}
+{% extends 'base.html' %}{% from 'annotations/review_status.html' import review_status %}{% block title %}Validation review{% endblock %}{% block content %}
 <h1 class="h3">{{ batch.name }} · member {{ member.selection_order }}</h1>
 <a href="{{ url_for('validation.detail',batch_id=batch.id) }}">Batch progress</a>
 <p>{{ batch.purpose }} · Codebook {{ batch.guideline_version }} · Source {{ member.source }} · Language metadata {{ member.language or 'unknown' }}</p>
 {% if batch.purpose=='diagnostic' %}<p class="alert alert-warning">Diagnostic error analysis; this is not independent model evaluation.</p>{% endif %}
 <h2 class="h4">{{ title }}</h2>{% if content_issue %}<p class="alert alert-warning">{{ content_issue }}</p>{% endif %}
+{{ review_status(final_review, final_review.reviewer_identity if final_review else '', (final_review.human_label or final_review.review_decision) if final_review else '') }}
 {% if article_text %}<div class="article-text border p-3">{{ article_text }}</div>{% endif %}
 {% if error %}<p class="alert alert-warning">{{ error }}</p>{% endif %}
 {% if comparison %}<section class="card card-body mt-3"><h2 class="h5">Pinned model comparison · after initial decision</h2>

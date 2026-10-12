@@ -182,7 +182,12 @@ for current frame/support and protocol checks. Other targets require steps 1–3
    Bulk review keeps model feedback withheld throughout; single-article review
    offers the existing permitted comparison after the initial decision. Record an
    independent reason. Bulk review allows title-only labels and records that basis;
-   open verified body context when the headline is insufficient. See the
+   open verified body context when the headline is insufficient. Bulk cards and
+   single-article validation pages show **Article not reviewed**, or **Article reviewed**
+   with **Reviewed by** and the human **Verdict** from the latest saved revision.
+   Successful bulk saves update that display immediately; drafts and failed saves
+   leave the saved status unchanged. Use **Reviewed** or **All members** to revisit
+   saved articles. See the
    [bulk review guide](docs/bulk_l2_validation.md) for shortcuts, partial failures,
    draft warnings and resume. Review all members and
    complete the batch to freeze accepted final pointers. Unresolved/adjudication

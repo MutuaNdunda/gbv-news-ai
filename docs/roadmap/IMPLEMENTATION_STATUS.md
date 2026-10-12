@@ -1747,3 +1747,32 @@ Anonymous roadmap synchronization reported all four snapshots current. Verificat
 handler tests. New regressions cover all three title-only resolved labels, revisions,
 unavailable bodies and retained failure behavior. JavaScript syntax and
 `git diff --check` passed.
+
+### Article review status display — 12 October 2026
+
+Protected bulk cards and single-article validation views now display an explicit
+unreviewed status or the latest accepted human review's reviewer identity and verdict.
+Successful bulk saves update the card immediately; explicit conflict refresh retrieves
+the current reviewer/verdict while retaining drafts. Failed saves and draft choices
+do not change saved status. Initial review history remains separate from the final
+accepted pointer. Unresolved decisions display Unsure or Needs adjudication, and
+bulk/final-test feedback continues to withhold machine answers. Reviewer identity
+is added only to protected validation projections/responses; public article pages
+are unchanged. No migration, model execution or real human decision is introduced.
+
+Anonymous roadmap synchronization reported all four snapshots current. Verification:
+62 bulk/validation/L2 UI tests passed, including seven executed JavaScript handler
+tests. Added coverage verifies pending status, saved reviewer identity, current
+revision verdict, escaped identities, final-test blinding and immediate card updates.
+JavaScript syntax and `git diff --check` passed. This is an extension to the structured
+L2 validation interface, not completion of a research validation gate.
+
+Documentation alignment, 13 October 2026: README operator steps, annotation
+architecture, bulk operator guide, AI context and AGENTS now describe saved
+reviewer/verdict display, pending status, revision selection, draft/failure behavior,
+and protected identity scope. The roadmap guide records the successful anonymous
+13 October synchronization; all four snapshots reported current. Reviewer display
+reflects the identity recorded with the accepted decision, not the current
+configuration or a multi-user login. No runtime behavior, public Sheet, private
+review or research stage gate changed in this documentation pass. The latest
+relevant runtime verification remains the 62-test run above.

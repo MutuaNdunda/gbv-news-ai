@@ -1,0 +1,7 @@
+{% macro review_status(reviewed, reviewer='', choice='') -%}
+{% set verdicts = {'gbv': 'GBV', 'not_gbv': 'Not GBV', 'borderline': 'Borderline', 'unable_to_determine': 'Unsure / insufficient evidence', 'needs_adjudication': 'Needs adjudication'} %}
+<p class="small mb-2 validation-review-summary" role="status" aria-live="polite">
+<strong class="bulk-review-status">{{ 'Article reviewed' if reviewed else 'Article not reviewed' }}</strong>
+<span class="bulk-review-details" {{ 'hidden' if not reviewed }}> · Reviewed by: <strong class="bulk-reviewer">{{ reviewer or '' }}</strong> · Verdict: <strong class="bulk-saved-choice">{{ verdicts.get(choice, choice) if reviewed else '' }}</strong></span>
+</p>
+{%- endmacro %}
