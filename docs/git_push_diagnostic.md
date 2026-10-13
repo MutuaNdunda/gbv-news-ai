@@ -1,5 +1,15 @@
 # Git push diagnostic — 8 October 2026
 
+## Model Performance status — 13 October 2026
+
+The new Model Performance implementation/documentation and first private
+development evaluation are separate from the historical push investigation
+below. No commit or push is performed by this Markdown update. Before any later
+commit, inspect the actual diff/status and `git ls-files data`; private evaluation
+JSON/JSONL/CSV/Markdown, audit notes, model artifacts and `.env` must remain ignored.
+Never force-add the private readable results note under `data/l2/evaluation-notes/`.
+See [the dashboard guide](l2_model_performance_dashboard.md).
+
 The user confirmed **no current push error**. A network-enabled
 `git push --dry-run origin main` succeeded, reporting:
 

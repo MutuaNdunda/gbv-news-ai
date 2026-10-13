@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block title %}Model Performance{% endblock %}{% block content %}
+<h1 class="h3">Unlock Model Performance</h1><p>Private researcher comparisons require a separate capability. Human Review access does not unlock model performance. Comparisons stay blocked while any blinded batch is active.</p>
+<form method="post" class="card card-body" style="max-width:36rem"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="unlock"><label for="performance-token">Researcher performance token</label><input id="performance-token" name="performance_token" type="password" class="form-control my-2" required autocomplete="off"><button class="btn btn-primary">Unlock private performance</button></form>
+{% endblock %}

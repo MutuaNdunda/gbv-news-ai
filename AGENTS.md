@@ -1,5 +1,23 @@
 # AGENTS.md
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
+
+The separate local researcher route `/annotations/model-performance` loads
+checksummed private completed-batch reports. It requires a distinct performance
+capability; active blinded batches block comparisons. GET never infers, retrains,
+evaluates, completes batches or edits references. Verified body access and
+append-only blind quality revisions retain existing protections.
+
+The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
+Scores, reports and the readable results note stay under ignored `data/l2/`;
+never copy them into public planning snapshots or commit them. See
+[the dashboard guide](docs/l2_model_performance_dashboard.md). This operational
+update supersedes older in-review/no-evaluation statements without changing
+semantic codebook versions, model identity, stage gates or historical evidence.
+
 ## 1. Project Purpose
 
 This repository supports a postgraduate research project focused on building an ethical, human-supervised, near-real-time multilingual AI system for identifying, classifying, geotagging, and mapping gender-based violence (GBV) reporting in Kenyan digital news.
@@ -852,7 +870,7 @@ When uncertain about a research assumption, document the uncertainty rather than
 
 ## 31. Current Development Priority
 
-Latest human-validation observation — **13 October 2026, 01:50:38 EAT**:
+Historical human-validation observation, superseded for batch status/evaluation by the Model Performance update above — **13 October 2026, 01:50:38 EAT**:
 one protected random development-validation batch contains 400 members, all with
 resolved initial/final human-review pointers and zero pending. Batch status remains
 `in_review`; completion timestamp is unset. Recording the 400 reviews is complete,
@@ -1153,7 +1171,9 @@ downstream eligibility follows the synchronized Annotation Layers and Stage Gate
 L0/L1 are implemented and executed. L2 weak supervision, model infrastructure and
 local review, reviewed/mixed export and the first real development model are
 implemented. Full eligible model coverage and development L2 schema installation
-are complete; independent L2 validation remains pending. The successful anonymous
+are complete; the first completed-batch private development evaluation now exists,
+while independently accepted research evidence and final-test validation remain
+pending. The successful anonymous
 sync on 6 October refreshed all four exports and records 324/324 development
 coverage and independent validation as current priority. CSVs were not manually
 rewritten and the public Sheet was not changed. The roadmap permits location/NER

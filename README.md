@@ -1,11 +1,10 @@
 # GBV News AI
 
-**Human-validation progress — 13 October 2026:** a read-only database check confirms
-400/400 resolved reviews in one protected random development-validation batch,
-with zero pending initial reviews. The batch remains `in_review`; accepting/finalizing
-it and running private evaluation are separate next steps. See the
-[review-coverage report](docs/research/l2_human_validation_progress_20261013.md)
-for evidence basis and research limits. Earlier zero-batch counts below are dated history.
+**Model Performance — 13 October 2026:** `L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.
+The protected dashboard is at `/annotations/model-performance`. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
+See [the dashboard operator guide](docs/l2_model_performance_dashboard.md) for
+setup, report loading and evidence limits. Earlier in-review/zero-batch counts
+below are dated history; actual scores remain in ignored private artifacts.
 
 GBV News AI is a postgraduate research project that aims to develop an ethical, human-supervised system for identifying, classifying, geotagging, and mapping gender-based violence (GBV) reporting in Kenyan digital news. The planned system will investigate multilingual approaches for English, Swahili, Sheng, and code-switched content, where available.
 
@@ -23,8 +22,9 @@ archived publisher reporting, as described below.
 The repository includes a Flask monitor for collection and automated annotations,
 with an optional protected, bounded annotation trigger and a protected local Human
 Review workspace. The first 400-member L2 batch has complete recorded review
-coverage; L0/L1 sampled validation, batch finalization and independent L2 evaluation
-remain separate outstanding work. The first
+coverage and is now completed with a verified private development report. L0/L1
+sampled validation, reference-quality follow-up and independent final testing remain
+separate outstanding work. The first
 task-specific AfroXLMR development model is trained locally. Future work
 includes larger-corpus retraining, independent multilingual evaluation, location
 extraction, geocoding and mapping interfaces. Data collection and validation
@@ -48,7 +48,7 @@ sampling design; do not claim five-publisher coverage from four represented sour
 Follow [Create the first independent L2 validation dataset](docs/research/validation_dataset_creation.md)
 for design decisions, local setup, preview/create/freeze, review and private export.
 
-The latest offline suite is **382 run / 381 passed / 1 optional integration skipped**,
+At that 8 October milestone the offline suite was **382 run / 381 passed / 1 optional integration skipped**,
 zero failures. `/runs` supports SQL status filters and opt-in cooperative Stop;
 its separate collection-control migration is not installed in the observed target.
 It is required before updated collectors, not before reference-batch creation.
@@ -123,7 +123,10 @@ infrastructure are implemented; sampled-validation and research exit gates remai
 The successful anonymous sync on 7 October records completed model training,
 324/324 development inference and independent validation as the current priority.
 All four snapshots were refreshed; the public Sheet was not changed.
-Independent evaluation remains pending; synchronized CSVs are not manually edited.
+The first private development evaluation is now generated. The synchronized Sheet
+continues to describe validation as pending; this planning/evidence mismatch is
+recorded in the engineering log. Final testing/research gates remain open;
+synchronized CSVs are not manually edited.
 See [the roadmap workflow](docs/roadmap/README.md) and
 [implementation status](docs/roadmap/IMPLEMENTATION_STATUS.md).
 
@@ -231,6 +234,40 @@ No final-test batch is created automatically. This local workflow does not isola
 reviewers from ordinary machine-result pages; use the blind batch route before
 inspecting predictions. Independent A/B reviewers and separate adjudication records
 remain future work. See [the annotation specification](docs/annotations.md#22-l2-validation-and-protected-reference-workflow).
+
+## Private Model Performance
+
+Open `/annotations/model-performance` after configuring the existing local Human
+Review settings plus `MODEL_PERFORMANCE_ENABLED=1` and a distinct strong
+`MODEL_PERFORMANCE_TOKEN`. The page loads checksummed private completed-batch
+reports from `data/l2/evaluations`; GET never evaluates or writes. Human Review
+unlock does not grant researcher access. Active blinded batches block comparisons.
+The completed `L2-VALIDATION-V1` has a verified private report at
+`data/l2/evaluations/L2-VALIDATION-V1-v1/evaluation_report.json`. Select it after unlocking; do not complete it again or rerun
+evaluation just to view the page. Only unfinished batches show evaluation pending.
+A readable, private results note is at `data/l2/evaluation-notes/L2-VALIDATION-V1-v1/MODEL_PERFORMANCE_RESULTS.md`.
+
+Run `scripts/audit_l2_references.py --batch L2-VALIDATION-V1 --output-dir
+data/l2/reference-audits/<new-version>` with `.venv/bin/python` for a read-only
+private preflight. Agree evidence/scope/instrument acceptance before using the
+existing protected completion action. The evaluator now shares full classification,
+abstention, probability, subgroup, exploratory development threshold and interval
+definitions with the dashboard. No actual model scores are established by adding
+this interface. See [the operator guide](docs/l2_model_performance_dashboard.md)
+for configuration, denominator definitions, security, immutable exports and the
+exact completion/evaluation checkpoint. No additional migration/dependency is needed.
+
+Generate a new private researcher token locally:
+
+```bash
+openssl rand -hex 32
+```
+
+Copy the generated 64-character string into `.env` as `MODEL_PERFORMANCE_TOKEN`,
+set `MODEL_PERFORMANCE_ENABLED=1`, and restart Flask. Use that token to unlock
+Model Performance; keep it distinct from `HUMAN_REVIEW_TOKEN`. Do not put a real
+token in documentation or Git. The normal private report contains the metrics;
+tracked Markdown only records status, methodology and private artifact locations.
 
 ## Corpus Collection Monitor
 

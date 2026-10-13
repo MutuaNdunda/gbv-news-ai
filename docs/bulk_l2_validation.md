@@ -1,13 +1,24 @@
 # Bulk L2 human validation
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.
+
+The sealed batch can be inspected but cannot be revised through bulk review.
+Model comparisons live in the separate protected researcher dashboard, not the
+blind cards. Do not create another batch merely because the historical milestone
+below still describes in-review progress. See [the dashboard guide](l2_model_performance_dashboard.md).
+
+The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
 Open **L2 Validation → a frozen batch → Bulk Review**. The existing local review
 token, reviewer identity, guideline configuration and 30-minute signed session
 are required. This interface works with existing frozen membership; it does not
 create, resample or freeze a research batch. Single-article review remains available.
 
-**Review-coverage milestone — 13 October 2026:** one protected development-validation
-batch now has 400/400 resolved saved reviews and zero pending, confirmed read-only
-at 01:50:38 EAT. Its status is still `in_review`; completing the accepted batch and
+**Historical pre-completion coverage — 13 October 2026:** one protected development-validation
+batch then had 400/400 resolved saved reviews and zero pending, confirmed read-only
+at 01:50:38 EAT. At that audit its status was `in_review`; completing the accepted batch and
 running private evaluation are separate steps. See the
 [progress report](research/l2_human_validation_progress_20261013.md). Do not equate
 the saved-review counter with frozen acceptance or measured model performance.

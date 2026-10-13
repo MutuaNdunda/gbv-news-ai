@@ -369,7 +369,8 @@ class ValidationBatchTests(L2ReviewFixture):
         for member in self.repo.detail(batch.id)['members']:self.save_member(batch,member)
         self.repo.complete(batch.id)
         with tempfile.TemporaryDirectory(dir=ROOT/'data') as directory, \
-                patch('scripts.evaluate_l2_validation.create_session_factory',return_value=self.sessions):
+                patch('scripts.evaluate_l2_validation.create_session_factory',return_value=self.sessions), \
+                patch('database.repositories.validation_batches.training_membership',return_value=self.training):
             one=Path(directory)/'one';two=Path(directory)/'two'
             self.assertEqual(main(['--batch',batch.name,'--output-dir',str(one)]),0)
             self.assertEqual(main(['--batch',batch.name,'--output-dir',str(two)]),0)

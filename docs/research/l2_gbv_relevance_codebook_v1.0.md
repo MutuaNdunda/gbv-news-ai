@@ -199,6 +199,7 @@ Material changes to semantics, genre coverage or reviewer procedure require a ne
 | --- | --- | --- | --- |
 | 1.0 | 7 October 2026 | Initial draft operational L2 definitions, five-publisher scope, multilingual guidance and synthetic examples; linked to proposed validation protocol. | Pending |
 | 1.0 | 7 October 2026 | Researcher confirmed finalization; recorded the existing v1.0 semantic rules as finalized and separated remaining sampling/execution controls. No classifier, labels or runtime configuration changed. | Researcher-confirmed; separate supervisor/ethics approval not asserted |
+| 1.0 (operational addendum) | 13 October 2026 | Recorded completed development batch/private evaluation and reporting limitations; no change to semantic definitions, sampling rules, frozen guideline or model. Preserve the originally approved archived content/checksum. | Documentation update requested by researcher; new supervisor/ethics/protocol approval not asserted |
 
 ## Remaining research governance and execution decisions
 
@@ -206,3 +207,18 @@ Material changes to semantics, genre coverage or reviewer procedure require a ne
 - **TODO SUPERVISOR / RESEARCH DECISION — documentary reconciliation:** record required proposal/ethics amendment evidence, Citizen TV/Citizen Digital mapping, named owner, approval and effective date. The researcher's five-publisher instruction is already specified; seven-source engineering inclusion is not formal approval.
 - **TODO SUPERVISOR DECISION — language competence:** approve language identification conventions, bilingual/Sheng competence, translation limits and linguistic validation of the synthetic training examples.
 - **TODO SUPERVISOR DECISION — review acceptance:** approve second-review coverage, adjudication and initial-versus-post-feedback accepted-reference policy through the companion protocol. Do not represent workflow agreement as independent truth.
+
+## Operational addendum — 13 October 2026; no semantic version change
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
+
+This is an operational-status addendum only. It changes no v1.0 semantic label
+definition, study scope, sampling proposal, reviewer rule, named guideline or
+approval state. Preserve the original archived approved instrument/checksum;
+the batch's frozen checksum-based guideline is not replaced with this edited
+working document. Completion/evaluation do not imply new supervisor/ethics
+approval or automatic adoption of the draft protocol.
+
+The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
+See [the dashboard and evaluation guide](../l2_model_performance_dashboard.md).

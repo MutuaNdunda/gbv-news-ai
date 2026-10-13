@@ -271,7 +271,7 @@ class ValidationBatchRepository:
                         reviewer_identity=reviewer_identity)
 
     def save_decision(self, batch_id, member_id, choice, reason, identity, guideline, expected_final=None,
-                      *, body_receipt=None, body_signer=None):
+                      *, body_receipt=None, body_signer=None, verified_body=False):
         """Single-article review shares the same append-only decision contract."""
         with self.sessions.begin() as session:
             self.serialize(session)
@@ -285,7 +285,7 @@ class ValidationBatchRepository:
                 HumanValidation.automated_annotation_id == annotation.id).order_by(
                     HumanValidation.created_at.desc(), HumanValidation.id.desc()).limit(1)) if annotation else None
             review = self._append_decision(session, batch, member, annotation, version, latest,
-                choice, reason, identity, guideline, expected_final, body_receipt, body_signer)
+                choice, reason, identity, guideline, expected_final, body_receipt, body_signer, verified_body=verified_body)
         return review
 
     def save_bulk_decisions(self, batch_id, rows, identity, guideline, body_signer):
@@ -345,7 +345,7 @@ class ValidationBatchRepository:
         return results
 
     def _append_decision(self, session, batch, member, annotation, version, latest,
-                         choice, reason, identity, guideline, expected_final, body_receipt, body_signer):
+                         choice, reason, identity, guideline, expected_final, body_receipt, body_signer, *, verified_body=False):
         """Append a review and advance only the permitted member decision pointers."""
         batch_id = batch.id if batch else None
         member_id = member.id if member else None
@@ -359,7 +359,7 @@ class ValidationBatchRepository:
             raise ValueError('Choose a supported independent human decision.')
         if not isinstance(reason, str) or not reason.strip():
             raise ValueError('Record an independent decision reason.')
-        notes = ''
+        notes = 'Single review: verified body opened.' if verified_body else ''
         if body_signer is not None:
             opened = False
             if body_receipt:
@@ -417,14 +417,53 @@ class ValidationBatchRepository:
         return batch
 
     def evaluation_rows(self,identifier,final_experiment=False):
-        data=self.detail(identifier);batch=data['batch']
+        batch, rows, _, _, _ = self.reference_snapshot(identifier)
         if batch.purpose=='final_test' and not final_experiment:
             raise ValueError('Final-test feedback is sealed. Use --final-experiment only for the approved final experiment.')
-        with self.sessions() as session:
-            rows=[(m,session.get(AutomatedAnnotation,m.automated_annotation_id),
-                   session.get(HumanValidation,m.final_human_validation_id) if m.final_human_validation_id else None)
-                  for m in data['members']]
         return batch,rows
+
+    def reference_snapshot(self, identifier):
+        """One consistent, read-only snapshot; bounded queries, no body retrieval."""
+        self.require_schema()
+        with self.sessions() as session:
+            if session.bind.dialect.name == 'postgresql':
+                session.execute(text('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'))
+            try:
+                query = select(ValidationBatch).where(ValidationBatch.id == UUID(str(identifier)))
+            except ValueError:
+                query = select(ValidationBatch).where(ValidationBatch.name == str(identifier))
+            batch = session.scalar(query)
+            if batch is None:
+                raise LookupError('Validation batch not found.')
+            members = session.scalars(select(ValidationBatchMember).where(
+                ValidationBatchMember.validation_batch_id == batch.id).order_by(ValidationBatchMember.selection_order)).all()
+            annotations = {a.id: a for a in session.scalars(select(AutomatedAnnotation).where(
+                AutomatedAnnotation.id.in_([m.automated_annotation_id for m in members])))}
+            reviews = {r.id: r for r in session.scalars(select(HumanValidation).where(
+                HumanValidation.automated_annotation_id.in_([m.automated_annotation_id for m in members])))}
+            articles = {a.id: a for a in session.scalars(select(Article).where(Article.id.in_([m.article_id for m in members])))}
+            versions = {v.id: v for v in session.scalars(select(ArticleVersion).where(
+                ArticleVersion.id.in_([m.article_version_id for m in members])))}
+            return batch, [(m, annotations.get(m.automated_annotation_id), reviews.get(m.final_human_validation_id))
+                           for m in members], articles, reviews, versions
+
+    def reference_audit(self, identifier, verify_training=False):
+        from annotations.reference_quality import assess_references
+        batch, rows, articles, reviews, versions = self.reference_snapshot(identifier)
+        training = None
+        if verify_training:
+            training = self.training_provider()
+            # Include historical body hashes of every training article, as at freeze.
+            training['membership']['content_hashes'].update(AnnotationRepository(self.sessions).reference_content_hashes(
+                training['membership']['article_ids'], training['membership']['article_version_ids']))
+        return assess_references(batch, rows, training, articles, reviews, versions)
+
+    def has_blinded_assignments(self):
+        """No independent assignment registry exists: fail closed for all active batches."""
+        self.require_schema()
+        with self.sessions() as session:
+            return session.scalar(select(ValidationBatch.id).where(
+                ValidationBatch.status.in_(('frozen', 'in_review'))).limit(1)) is not None
 
 
 def schema_readiness(sessions):

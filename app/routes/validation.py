@@ -118,7 +118,13 @@ def detail(batch_id):
         if request.method=='POST':
             action=request.form.get('action')
             if action=='freeze':repository().freeze(batch_id)
-            elif action=='complete':repository().complete(batch_id)
+            elif action=='complete':
+                if request.form.get('reference_quality_accepted') != '1':
+                    raise ValueError('Explicitly accept the reference-quality limitations before completion.')
+                audit=repository().reference_audit(batch_id,verify_training=True)
+                if audit['issues'] or not audit['training_exclusion_verified']:
+                    raise ValueError('Reference integrity or exact training-exclusion verification failed.')
+                repository().complete(batch_id)
             else:abort(400)
             session.pop(MANAGEMENT_CSRF,None)
             return redirect(url_for('validation.detail',batch_id=batch_id),code=303)
@@ -142,7 +148,7 @@ def next_member(batch_id):
     member=data['next_member']
     if member is None:return redirect(url_for('validation.detail',batch_id=batch_id))
     return redirect(url_for('annotations.review',annotation_id=member.automated_annotation_id,
-                           batch_id=batch_id,member_id=member.id))
+                           batch_id=batch_id,member_id=member.id,**({'blind':'1'} if request.args.get('blind')=='1' else {})))
 
 
 def review_member(annotation_id):
@@ -173,13 +179,15 @@ def review_member(annotation_id):
             if not reason.strip():raise ValueError('Record an independent decision reason.')
             repository().save_decision(batch_id,member_id,request.form.get('choice',''),reason,
                 current_app.config['HUMAN_REVIEWER_ID'],current_app.config['HUMAN_REVIEW_GUIDELINE_VERSION'],
-                request.form.get('expected_final',''))
+                request.form.get('expected_final',''),verified_body=bool(content.get('article_text')))
             current_app.logger.info('human_review_completed validation_batch_id=%s member_id=%s',batch_id,member_id)
             session.pop('human_review_csrf',None)
-            flash('Independent human decision saved.' if batch.purpose=='final_test' else
+            flash('Independent human decision saved; model feedback remains withheld.' if batch.purpose=='final_test' or request.args.get('blind')=='1' else
                   'Independent human decision saved; the pinned prediction is now available for comparison.','success')
-            if request.form.get('action')=='save_next':return redirect(url_for('validation.next_member',batch_id=batch_id),code=303)
-            return redirect(url_for('annotations.review',annotation_id=annotation_id,batch_id=batch_id,member_id=member_id),code=303)
+            if request.form.get('action')=='save_next':return redirect(url_for('validation.next_member',batch_id=batch_id,
+                **({'blind':'1'} if request.args.get('blind')=='1' else {})),code=303)
+            return redirect(url_for('annotations.review',annotation_id=annotation_id,batch_id=batch_id,member_id=member_id,
+                **({'blind':'1'} if request.args.get('blind')=='1' else {})),code=303)
         except ReviewConflict as exc:error=str(exc);status=409
         except (ValueError,RuntimeError) as exc:error=str(exc);status=422
         except SQLAlchemyError:error='Decision could not be saved; reload before retrying.';status=503
@@ -189,7 +197,7 @@ def review_member(annotation_id):
         with service().sessions() as db:
             from database.models import HumanValidation
             initial=db.get(HumanValidation,member.initial_human_validation_id)
-        if batch.purpose!='final_test':
+        if batch.purpose!='final_test' and request.args.get('blind')!='1':
             a=article['annotation']
             comparison={'label':a.label,'probability':a.evidence.get('gbv_probability'),
                         'method_version':a.method_version,'model_version':a.evidence.get('model_version')}
@@ -197,6 +205,7 @@ def review_member(annotation_id):
         title=content.get('content_article',{}).get('title') or article['article'].title,
         article_text=content.get('article_text'),content_issue=content.get('content_issue'),comparison=comparison,
         initial=initial,final_review=data['reviews'].get(member.final_human_validation_id),
+        blind_review=request.args.get('blind')=='1',
         error=error,reason_options=INDEPENDENT_REASONS,reason_form=request.form,
         csrf=csrf_token('human_review_csrf'))
     response.status_code=status

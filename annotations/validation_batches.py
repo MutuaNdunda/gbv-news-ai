@@ -110,14 +110,34 @@ def evaluate_rows(batch, rows):
                 or annotation.method_name != batch.model_method_name or annotation.method_version != batch.model_method_version
                 or annotation.evidence.get('model_version') != batch.model_version):
             raise ValueError('Pinned model lineage mismatch.')
+        if annotation.method_name != 'afroxlmr_gbv_relevance' or getattr(annotation, 'layer', 'L2') != 'L2':
+            raise ValueError('Evaluation requires a pinned L2 model, never weak labels.')
         if (review is None or not member.initial_human_validation_id or review.id != member.final_human_validation_id
                 or review.automated_annotation_id != annotation.id or review.article_id != member.article_id
                 or review.article_version_id != member.article_version_id or review.guideline_version != batch.guideline_version):
             raise ValueError('Missing accepted human reference or mismatched review lineage.')
+        if getattr(review, 'layer', 'L2') != 'L2' or review.review_decision not in ('confirmed','corrected','unable_to_determine','needs_adjudication'):
+            raise ValueError('Invalid human reference decision.')
         probability = annotation.evidence.get('gbv_probability')
-        if not isinstance(probability, (float, int)) or not math.isfinite(probability) or not 0 <= probability <= 1:
+        if isinstance(probability, bool) or not isinstance(probability, (float, int)) or not math.isfinite(probability) or not 0 <= probability <= 1:
             raise ValueError('Pinned model probability is invalid.')
         h = review.human_label if review.review_decision in ('confirmed', 'corrected') else None
+        if h is None and review.review_decision in ('confirmed','corrected'):
+            raise ValueError('Resolved human reference is missing its label.')
+        if h is not None and h not in ('gbv', 'not_gbv', 'borderline'):
+            raise ValueError('Invalid human reference label.')
+        if annotation.label not in ('gbv', 'not_gbv', 'borderline'):
+            raise ValueError('Invalid pinned model label.')
+        thresholds = {k: annotation.evidence.get(k) for k in ('positive_threshold', 'negative_threshold')}
+        if all(v is not None for v in thresholds.values()):
+            if any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) for v in thresholds.values()):
+                raise ValueError('Invalid pinned thresholds.')
+            if not 0 <= thresholds['negative_threshold'] < thresholds['positive_threshold'] <= 1:
+                raise ValueError('Invalid pinned thresholds.')
+            expected = ('gbv' if probability >= thresholds['positive_threshold'] else
+                        'not_gbv' if probability <= thresholds['negative_threshold'] else 'borderline')
+            if expected != annotation.label:
+                raise ValueError('Pinned threshold decision mismatch.')
         human[h or review.review_decision] += 1; model[annotation.label] += 1
         unresolved += h is None
         abstained += annotation.label == 'borderline'
@@ -126,11 +146,14 @@ def evaluate_rows(batch, rows):
                    'FN' if h == 'gbv' else 'FP' if annotation.label == 'gbv' else 'TN'] += 1
         exported.append({'member_id': str(member.id), 'article_id': str(member.article_id),
                          'article_version_id': str(member.article_version_id), 'annotation_id': str(annotation.id),
+                         'content_hash': member.content_hash,
                          'initial_human_validation_id': str(member.initial_human_validation_id),
                          'final_human_validation_id': str(review.id), 'human_label': h,
                          'human_decision': review.review_decision, 'model_label': annotation.label,
                          'gbv_probability': annotation.evidence.get('gbv_probability'),
+                         'positive_threshold': thresholds['positive_threshold'], 'negative_threshold': thresholds['negative_threshold'],
                          'model_version': batch.model_version, 'method_version': batch.model_method_version,
+                         'guideline_version': batch.guideline_version, 'source': member.source, 'language': member.language,
                          'stratum': member.sampling_stratum, 'selection_order': member.selection_order,
                          'adjudication_status': 'pending' if review.review_decision == 'needs_adjudication' else 'not_adjudicated'})
     n = sum(matrix.values());tp,fp,tn,fn = (matrix[x] for x in ('TP','FP','TN','FN'))
@@ -138,7 +161,7 @@ def evaluate_rows(batch, rows):
     diagnostic = batch.purpose == 'diagnostic'
     metrics = None if diagnostic else {'accuracy': ratio(tp+tn,n), 'precision': ratio(tp,tp+fp),
                 'recall': ratio(tp,tp+fn), 'f1': ratio(2*tp,2*tp+fp+fn)}
-    return {'batch_id': str(batch.id), 'batch_name': batch.name, 'purpose': batch.purpose,
+    report = {'batch_id': str(batch.id), 'batch_name': batch.name, 'purpose': batch.purpose,
             'model_version': batch.model_version, 'method_version': batch.model_method_version,
             'sampling_strategy': batch.sampling_strategy, 'seed': batch.seed, 'configuration': batch.configuration,
             'total_members': len(rows), 'reviewed': len(rows), 'resolved': len(rows)-unresolved,
@@ -150,4 +173,17 @@ def evaluate_rows(batch, rows):
             'weighting': 'none; proportional stratification uses largest-remainder allocation, finite-sample rounding remains',
             'warning': 'DIAGNOSTIC / ENRICHED: error analysis only; no representative/population metrics.' if diagnostic else
                        'Metrics describe this unseen reviewed sample; subgroup support and abstentions limit generalization.',
-            'roc_auc': None, 'pr_auc': None, 'calibration': None}, exported
+            'roc_auc': None, 'pr_auc': None, 'calibration': None}
+    from annotations.reference_quality import evidence_basis
+    from annotations.l2_evaluation import extend_report, category
+    for pair, (_, _, review) in zip(exported, rows):
+        pair['evidence_basis'] = evidence_basis(review)
+        pair['error_category'] = category(pair)
+    report.update(guideline_version=batch.guideline_version, status=batch.status,
+        calculation_timestamp=str(getattr(batch, 'completed_at', None) or 'unrecorded'),
+        calculation_timestamp_policy='Completed-reference timestamp anchors deterministic calculation; generation time is file metadata.',
+        architecture='AfroXLMR binary text classifier',
+        thresholds={k: sorted({r[k] for r in exported if r[k] is not None}) for k in ('positive_threshold','negative_threshold')})
+    if any(len(v) > 1 for v in report['thresholds'].values()):
+        raise ValueError('Mixed pinned thresholds in one model batch.')
+    return extend_report(report, exported), exported

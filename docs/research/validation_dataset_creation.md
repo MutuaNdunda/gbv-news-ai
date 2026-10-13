@@ -1,5 +1,13 @@
 # Create the first independent L2 validation dataset
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The first batch already exists and is sealed; the preparation
+steps below now guide additional separately agreed batches, not recreating it.
+Use the existing report to inspect performance. See [the dashboard guide](../l2_model_performance_dashboard.md).
+
+The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model. The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
 Updated **13 October 2026 (EAT)**. This is the operator guide for preparing
 `L2-VALIDATION-V1`, a **development-validation reference batch** for the existing
 `l2-afroxlmr-dev-v1`. It does not create a batch, approve the draft sampling protocol,
@@ -12,10 +20,10 @@ and [current engineering status](../roadmap/IMPLEMENTATION_STATUS.md) together.
 The implementation supports dataset creation; research readiness depends on the
 agreed design and actual unseen eligible support.
 
-**Current review progress:** the researcher completed recording 400 human
+**Historical pre-completion review progress:** the researcher completed recording 400 human
 validations. The read-only 13 October, 01:50:38 EAT audit confirms 400/400 resolved
 members in one protected development-validation batch, with no pending reviews.
-The batch is still `in_review`; inspect/accept the decisions, document the evidence
+At that observation the batch was `in_review`; inspect/accept the decisions, document the evidence
 procedure and frozen instrument, then complete the batch before private evaluation.
 Do not create another batch merely because earlier documentation said zero existed.
 See the [review-coverage report](l2_human_validation_progress_20261013.md).

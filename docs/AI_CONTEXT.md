@@ -1,10 +1,24 @@
 # GBV News AI — AI Project Context
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
+
+Authoritative private artifacts: `data/l2/evaluations/L2-VALIDATION-V1-v1/evaluation_report.json` and the companion readable results
+note `data/l2/evaluation-notes/L2-VALIDATION-V1-v1/MODEL_PERFORMANCE_RESULTS.md`. Preserve them outside Git. Latest full suite: 432 run,
+431 passed, one optional installed-model integration skipped, zero failures.
+
+The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
+## Private L2 Model Performance — 13 October 2026
+
+The separate local researcher workspace at `/annotations/model-performance` loads immutable private completed-batch reports produced by `scripts/evaluate_l2_validation.py` and the shared `annotations/l2_evaluation.py` engine. It never runs inference or changes references on GET. A distinct researcher capability, private responses and a conservative global active-blinded-batch guard protect comparisons/exports. `scripts/audit_l2_references.py` and the protected blind audit view support metadata/evidence checks. The real 400-member development batch is now `completed`, with its first verified private report generated at 16:22:39 EAT on 13 October. Its 342 binary references and 58 semantic borderline retain significant evidence-quality limitations; no final-test or research-gate completion is asserted. See [dashboard guide](l2_model_performance_dashboard.md).
+
 > This file is a fast technical orientation for AI coding agents. Read AGENTS.md for development/research constraints and README.md for operational commands. The source code remains authoritative for actual implementation.
 
 ## 1. Project Summary
 
-Latest human-review observation: **13 October 2026, 01:50:38 EAT**:
+Historical human-review observation, superseded for lifecycle/evaluation status: **13 October 2026, 01:50:38 EAT**:
 one protected random development-validation batch has 400/400 resolved human
 reviews, initial/final pointers present and zero pending. Status is `in_review`;
 the completion timestamp is unset. Review recording is complete, while acceptance,
@@ -65,7 +79,9 @@ L2 now has separate provisional weak supervision, private bootstrap exports,
 AfroXLMR-compatible PyTorch training, installed-artifact inference and protected local review.
 The first real AfroXLMR development model, `l2-afroxlmr-dev-v1`, is now trained and
 configured locally; L2 operational closure at 6 October 2026, 00:04 EAT confirms 324/324 compatible
-results (11/307/6), zero pending and installed L2 schema. Independent evaluation remains pending.
+results (11/307/6), zero pending and installed L2 schema. That operational milestone
+preceded the first private development evaluation on 13 October; final independent
+testing remains pending.
 Human-review state reconfirmed at 22:59 EAT on 5 October: 324 eligible; weak machine 7/15/302,
 human overlay 10/312/2. Reviews: 300 corrected plus two confirmed borderline;
 22 weak binary labels unreviewed. Reviewed-only export has 300 records (3/297),
@@ -80,8 +96,8 @@ manifest and `docs/roadmap/IMPLEMENTATION_STATUS.md`. Offline reload and bounded
 objects absent at the initial check; no automatic migration. A later read-only
 22:59 EAT audit reconfirmed 300 persisted results (10/284/6), 24 pending, and a failed
 run with OperationalError followed by AnnotationLockLost. The later operational closure installed all four required schema objects and
-verified rolled-back behavior; previous schema gaps are historical. See `docs/l2_model_performance.md`; independent
-performance remains unmeasured.
+verified rolled-back behavior; previous schema gaps are historical. See `docs/l2_model_performance.md`; the 13 October completed-batch development
+report supersedes the earlier unmeasured state, with reference-quality limitations.
 Historical full suite including installed-model integration: **304 passed**,
 zero failures/skips, on 6 October. Latest 8 October suite: **387 run, 386 passed,
 one optional installed-model integration skipped**, zero failures. The later 8 October
@@ -982,7 +998,9 @@ AI_CONTEXT.md.
   fails selection closed; existing annotation/review semantics are unchanged.
 - Blind initial review, stricter final-test feedback and pending adjudication counts;
   private completed-batch evaluator with pinned lineage, conditional binary metrics,
-  abstentions, diagnostic warning and deterministic hashes. No real evaluation run.
+  abstentions, diagnostic warning and deterministic hashes. The first real private
+  development report was generated on 13 October and verified by the dashboard
+  loader; GET never evaluates or writes.
 - Offline tests cover parsing, orchestration, persistence/recovery, monitor behavior,
   local imports, roadmap sync, rules, generation reads, actual SQL current queries,
   gating, counters, failure isolation, force/idempotency and UI protection. See
@@ -1004,9 +1022,13 @@ AI_CONTEXT.md.
 ### Planned / Not Implemented
 
 - Real independent reference-label datasets and completed validation/calibration;
-  sampling/protection engineering exists, but no real batch is created or reviewed.
+  sampling/protection engineering exists; one protected 400-member development batch
+  is completed with a private development evaluation. Reference-quality follow-up,
+  independently accepted research evidence and final testing remain separate.
 - Independent A/B reviewer assignment, separate adjudication records, semantic
-  near-duplicate grouping, subgroup metrics/AUC/calibration and date strata.
+  near-duplicate grouping and date strata. Completed-report subgroup/AUC/calibration
+  calculations are implemented and a private development report exists; final-test
+  evaluation and research-gate acceptance remain pending.
 - Independently validated research GBV classifier, agreed accuracy/fairness metrics,
   corpus freeze and protected held-out evaluation. Initial development training exists.
 - NER, location-role reasoning, geocoding, maps, and privacy-aware presentation.

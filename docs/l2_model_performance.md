@@ -1,10 +1,27 @@
 # L2 transformer development performance
 
-## Human-review coverage update — 13 October 2026
+## Reading the current private results
+
+The authoritative readable results note is `data/l2/evaluation-notes/L2-VALIDATION-V1-v1/MODEL_PERFORMANCE_RESULTS.md`; it is derived
+from the immutable checksummed report, with actual denominator/support and
+confidence interval details. It stays private and Git-ignored.
+
+The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model. The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
+## First authorized private development evaluation — 13 October 2026
+
+Following the researcher's completion and request to inspect performance, read-only verification found `L2-VALIDATION-V1` completed at 16:19:19 EAT. The private v2 evaluator generated its first immutable report at 16:22:39 EAT under ignored `data/l2/evaluations/L2-VALIDATION-V1-v1/`. The dashboard loader verified checksums, membership, model/guideline identity, accepted pointers and training-exclusion evidence. Scores and record-level evidence remain private. This supersedes earlier pending-evaluation statements; title-only evidence, scope/instrument and duplicate-family limitations remain. No retraining, inference, label or threshold changes occurred.
+
+## Private performance dashboard — 13 October 2026
+
+The Model Performance engineering implementation now includes completed-only private reports, class/abstention/probability metrics, subgroup and interval diagnostics, protected errors/exports and a blinded reference-quality audit. At initial implementation the batch remained `in_review` and no live scores were
+generated. It was subsequently completed and privately evaluated as recorded above. See [the dashboard operator guide](l2_model_performance_dashboard.md) for the fresh read-only support/evidence audit, definitions, configuration and acceptance checkpoint.
+
+## Historical pre-completion human-review coverage — 13 October 2026
 
 A read-only audit at 01:50:38 EAT confirms 400/400 resolved saved human reviews
 in one protected random development-validation batch pinned to this dev-v1 model.
-The batch remains `in_review`; no completion timestamp is recorded. Review
+At the historical morning audit the batch was `in_review`; no completion timestamp was recorded. Review
 recording is complete, but batch acceptance/finalization and private evaluation
 remain separate. This task did not compute accuracy, precision, recall, F1 or
 calibration. Most latest reviews are recorded as title-only (381); ten record
@@ -38,8 +55,8 @@ summary, private training manifest and bounded offline-reload report. No private
 article text, reviewer identities or per-article identifiers are published here.
 
 This is **initial development evidence**. Model output counts are not accuracy,
-verified incident counts or validated GBV prevalence. No independent held-out
-human evaluation has been performed; accuracy, precision, recall, F1, AUC and
+verified incident counts or validated GBV prevalence. At the historical development baseline no independent held-out
+human evaluation had been performed; accuracy, precision, recall, F1, AUC and
 calibration are **not established**. L2 research stage gates remain open.
 
 **7 October documentation update:** the researcher confirmed L2 codebook v1.0

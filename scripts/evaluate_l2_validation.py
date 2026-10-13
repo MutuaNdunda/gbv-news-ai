@@ -1,6 +1,5 @@
 """Export completed pinned L2 reference/prediction pairs privately; no inference or writes to DB."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import sys
@@ -10,6 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from annotations.l2_training import private_output
 from annotations.validation_batches import evaluate_rows
+from annotations.evaluation_reports import persist_report
 from database.repositories.validation_batches import ValidationBatchRepository
 from database.session import create_session_factory
 
@@ -25,16 +25,22 @@ def main(argv=None):
         if not output.is_relative_to(ROOT / 'data'):
             raise ValueError('Evaluation output must be under ignored data/.')
         if output.exists():raise ValueError('Use a new private output directory.')
-        batch,rows=ValidationBatchRepository(create_session_factory()).evaluation_rows(args.batch,args.final_experiment)
+        repo=ValidationBatchRepository(create_session_factory())
+        batch,rows=repo.evaluation_rows(args.batch,args.final_experiment)
         report,pairs=evaluate_rows(batch,rows)
-        payload=''.join(json.dumps(r,sort_keys=True,ensure_ascii=False)+'\n' for r in pairs)
-        report['records_sha256']=hashlib.sha256(payload.encode()).hexdigest()
-        serialized=json.dumps(report,sort_keys=True,indent=2,ensure_ascii=False)+'\n'
-        output.mkdir(parents=True,exist_ok=False)
-        (output/'evaluation_pairs.jsonl').write_text(payload)
-        (output/'evaluation_report.json').write_text(serialized)
-        (output/'manifest.json').write_text(json.dumps({'batch_id':str(batch.id),'batch_name':batch.name,
-            'evaluation_pairs_sha256':report['records_sha256'],'evaluation_report_sha256':hashlib.sha256(serialized.encode()).hexdigest()},sort_keys=True,indent=2)+'\n')
+        # Exact training exclusion is rechecked for research purposes. Synthetic/legacy
+        # callers can still use evaluate_rows; the operator CLI fails closed.
+        quality=repo.reference_audit(args.batch,verify_training=True)
+        quality.pop('audit_candidates')
+        if batch.purpose != 'diagnostic' and (quality['issues'] or not batch.protect_from_training):
+            raise ValueError('Reference integrity/training exclusion failed; inspect the private audit.')
+        if batch.purpose != 'diagnostic' and not quality['training_exclusion_verified']:
+            raise ValueError('Exact training exclusion could not be verified.')
+        report['reference_quality']=quality
+        if any(r['positive_threshold'] is None or r['negative_threshold'] is None for r in pairs):
+            raise ValueError('Missing frozen model thresholds; no report can substitute assumed thresholds.')
+        report['final_experiment_released']=bool(args.final_experiment and batch.purpose=='final_test')
+        persist_report(output,batch,report,pairs)
     except (ValueError,RuntimeError,LookupError) as exc:
         print(str(exc),file=sys.stderr);return 2
     except SQLAlchemyError:

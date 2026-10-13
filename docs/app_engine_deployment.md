@@ -1,5 +1,17 @@
 # App Engine deployment
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.
+
+Model Performance is a direct-local, separate-capability researcher workspace.
+`MODEL_PERFORMANCE_ENABLED=1` and a separate strong `MODEL_PERFORMANCE_TOKEN`
+are local opt-ins; generate a token with `openssl rand -hex 32` and keep it private.
+Do not place private reports in App Engine static assets or expose diagnostics
+remotely. No deployment, new remote-authentication design, cloud credential or
+production-model configuration change is made here. See
+[the dashboard guide](l2_model_performance_dashboard.md).
+
 The monitor uses the App Engine standard Python 3.14 runtime and Gunicorn. `app.yaml`
 contains no credentials. The deployed service needs these environment variables:
 
@@ -36,11 +48,11 @@ The observed 20-version synchronous trial exceeded the current 30-second Gunicor
 worker timeout. Use the CLI for large runs, and keep the existing App Engine
 deployment read-only until bounded execution is configured deliberately.
 
-## Local review progress — 13 October 2026
+## Historical pre-completion local review progress — 13 October 2026
 
 The protected local workspace now has 400/400 resolved saved reviews in one
-development-validation batch, verified read-only at 01:50:38 EAT. The batch remains
-`in_review`; finalization/evaluation are separate. See the
+development-validation batch, verified read-only at 01:50:38 EAT. At that historical audit the batch was
+`in_review`; finalization/evaluation were separate. See the
 [review-coverage report](research/l2_human_validation_progress_20261013.md).
 This local progress does not authorize remote review or demonstrate App Engine
 schema readiness, reviewer authentication or production deployment.

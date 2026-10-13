@@ -1,5 +1,16 @@
 # January–August 2026 archive collection
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
+
+Collection stays separate from classification/evaluation. This development
+report measures the frozen unseen eligible frame against accepted human pointers;
+it does not establish exhaustive publisher coverage, incident prevalence,
+verified article languages or end-to-end collection/eligibility recall.
+Near-duplicate/syndication and publisher/window limits remain. See
+[Model Performance](l2_model_performance_dashboard.md).
+
 The collection window is **1 January–31 August 2026, inclusive**. Discovery scans
 archive capture months from August backwards to January, for Nation, Citizen,
 Standard, Star, Tuko, Kenyans.co.ke, and Taifa Leo in each month. Publication metadata, rather than capture or
@@ -16,7 +27,7 @@ including GBV and non-GBV reporting; it is not an ingestion stopping rule.
 Annotation and validation are separate downstream workflows; automated L0/L1,
 L2 weak supervision, local review and the first real AfroXLMR development model
 now exist. Seeded independent/diagnostic batch sampling, blinded first review,
-protected membership and private evaluation are implemented; no real reference
+protected membership and private evaluation are implemented at the historical milestone; no real reference
 batch or active-learning cycle has been executed. Use the
 [validation dataset-creation guide](research/validation_dataset_creation.md).
 

@@ -324,6 +324,7 @@ The migration enables RLS on the new tables; this does not imply a public review
 | --- | --- | --- | --- |
 | 1.0 | 7 October 2026 | Initial development-validation design; formal five-source scope; training/exact-duplicate exclusions; multilingual and sample-size planning; audited workflow limits and pending approvals. | Pending |
 | 1.0 | 7 October 2026 | Recorded companion codebook finalization and current roadmap synchronization; sampling design/acceptance and real batch execution remain pending. | Protocol approval not asserted |
+| 1.0 (operational addendum) | 13 October 2026 | Recorded completed development batch/private evaluation and reporting limitations; no change to semantic definitions, sampling rules, frozen guideline or model. Preserve the originally approved archived content/checksum. | Documentation update requested by researcher; new supervisor/ethics/protocol approval not asserted |
 
 ## Decisions Requiring Supervisor Approval
 
@@ -336,3 +337,18 @@ The migration enables RLS on the new tables; this does not imply a public review
 - **TODO SUPERVISOR DECISION — performance acceptance:** preregister numeric acceptance criteria, treatment/cost of abstentions, minimum evidence and whether the available conditional metrics meet the research objective; supplementary engineering metrics must remain separate from formal five-source claims.
 - **TODO SUPERVISOR DECISION — later calibration/final test:** approve when development-validation reuse can guide thresholds, later model comparison, separate final-test sampling/design, frozen experiment and one-time reporting policy.
 - **TODO SUPERVISOR / RESEARCH DECISION — authorization and archive:** name the owner, record approval/effective date and versioned content/eligible-frame archive, and resolve blocking implementation gaps before a separately authorized real batch.
+
+## Operational addendum — 13 October 2026; no semantic version change
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
+
+This is an operational-status addendum only. It changes no v1.0 semantic label
+definition, study scope, sampling proposal, reviewer rule, named guideline or
+approval state. Preserve the original archived approved instrument/checksum;
+the batch's frozen checksum-based guideline is not replaced with this edited
+working document. Completion/evaluation do not imply new supervisor/ethics
+approval or automatic adoption of the draft protocol.
+
+The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
+See [the dashboard and evaluation guide](../l2_model_performance_dashboard.md).

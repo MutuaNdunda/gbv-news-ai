@@ -1,11 +1,77 @@
 # Automated Annotation Pipeline
 
-## Current human-validation progress — 13 October 2026
+## Current L2 handoff — 13 October 2026
+
+The first development-validation cycle has a completed protected batch, a verified
+private evaluation and a detailed version-one report. The artifact is still
+`l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`; training, preprocessing,
+model identity and the original 0.80/0.20 thresholds have not changed.
+
+| Completed milestone | Evidence / boundary |
+| --- | --- |
+| Automated L0/L1 and L2 model infrastructure | Collection gates, versioned inference, separate append-only human decisions and protected training exclusion remain implemented. Dated corpus counts below are not a fresh live inventory. |
+| Human batch completion | `L2-VALIDATION-V1`, development validation, 400 frozen members; completed 13 October at 16:19:19 EAT. Initial and accepted-final pointers are sealed. |
+| First private evaluation | Generated at 16:22:39 EAT using `l2-human-evaluation-v2`; validated by the dashboard loader against checksums, exact model/guideline/membership/pointers and training exclusions. |
+| Evaluation cohorts | 342 binary human references and 58 semantic borderline exclusions; 322 non-abstaining binary comparisons. Coverage and probability analyses retain their separate denominators. |
+| Model Performance page | `/annotations/model-performance`; persisted metrics, confusion matrix, probability/calibration plots, exploratory development thresholds, subgroups, intervals and protected diagnostics/exports. |
+| Detailed version-one report | Private Markdown plus offline HTML, 18 sections and six SVG figures, with architecture/training provenance, interpretations, limitations and source/output checksums. |
+| Executed engineering verification | Latest recorded full suite: 432 run, 431 passed, one optional installed-model integration skipped, zero failures. This documentation follow-up does not rerun inference or the suite. |
+
+Primary private evaluation:
+`data/l2/evaluations/L2-VALIDATION-V1-v1/evaluation_report.json`.
+Detailed report:
+`data/private_reports/l2_afroxlmr_dev_v1_20261013/MODEL_V1_PERFORMANCE_REPORT.md`
+and its `.html` companion. These reports, figures and manifests remain Git-ignored;
+actual performance values are not copied into tracked specification text.
+
+Completion establishes a sealed software reference version, not a gold standard
+or a closed research gate. Recorded evidence is 381 title-only decisions, ten
+verified-body-access notes and nine other/unspecified notes. Frozen-instrument
+reconciliation, publisher scope, unverified language/publication metadata,
+near-duplicate dependencies and independent adjudication remain scientific limits.
+Opening a body is not proof of correct reading. No final held-out test, calibration
+fit, adopted threshold change or new model training is established.
+
+### Immediate next steps
+
+1. **Inspect the existing baseline.** Read the private detailed report and use the
+   protected page for false-negative, abstention and subgroup diagnostics. Viewing
+   requires local performance configuration/unlock, not a new evaluation.
+2. **Agree reference-quality follow-up.** Reconcile the frozen guideline with the
+   finalized codebook, the title-only evidence procedure, reviewer competence and
+   accepted-reference policy. Approve any independent full-context verification
+   design before execution; choose the primary blinded sample by human label,
+   publisher and evidence basis, not model disagreement.
+3. **Preserve the sealed batch.** Completed references cannot be revised through
+   current batch routes. Any further accepted reference or adjudication must use
+   an explicitly approved, separately versioned follow-up design. Independent A/B
+   assignment and dedicated adjudication records remain implementation gaps; do
+   not reopen, replace pointers or treat general review edits as revised v1 truth.
+4. **Resolve frame and upstream evidence gaps.** Check actual study-source scope
+   (Standard absent; engineering sources present), publication window/catalog
+   dates, independently assessed languages, related/syndicated stories and
+   sampled L0/L1 correctness. Use the actual current frame for new work, not a
+   historical count or publisher identity as proof of language.
+5. **Plan later experiments after those decisions.** Agree research acceptance
+   criteria and additional independently reviewed positive training support. Any
+   new baseline, retraining, calibration or threshold adoption requires separate
+   authorization, immutable experiment identities and exclusion of protected
+   articles/versions/hashes and related families. Keep development feedback
+   separate from an untouched future final test. L3–L5/NER/geocoding are separately
+   gated work, not an automatic next implementation.
+
+The public roadmap remains the sequencing/stage-gate authority. Its synchronized
+planning rows still describe validation as pending; the newer completed private
+report is recorded here without editing canonical CSVs or claiming gate closure.
+See [the dashboard guide](l2_model_performance_dashboard.md) and
+[the current engineering handoff](roadmap/IMPLEMENTATION_STATUS.md).
+
+## Historical pre-completion human-validation progress — 13 October 2026
 
 The researcher has completed recording 400 human validations. A read-only audit
 at 01:50:38 EAT confirms one protected random development-validation batch with
 400/400 resolved members, initial/final pointers present and zero pending. Its
-status remains `in_review`; batch completion and private evaluation are still
+status was `in_review`; batch completion and private evaluation were then
 separate steps. The latest review notes comprise 381 title-only, 10 verified-body
 access and nine other/unspecified bases. No final-pointer lineage mismatches were
 found. See the [aggregate progress report](research/l2_human_validation_progress_20261013.md)
@@ -27,8 +93,9 @@ model's increased prediction coverage is not retraining or independent accuracy.
 Use [the dataset-creation guide](research/validation_dataset_creation.md) before
 preview/create/freeze; the codebook is finalized and the protocol remains draft.
 The separate collection-control migration is not installed and is not a prerequisite
-for validation creation. The latest full suite ran 387 tests: 386 passed, one optional
-installed-model integration skipped. Earlier counts/tests below are historical.
+for validation creation. At that 8 October milestone the full suite ran 387 tests: 386 passed, one optional
+installed-model integration skipped. Use the current handoff above for the latest
+recorded verification; earlier counts/tests below are historical.
 
 ## 1. Purpose and scope
 
@@ -216,9 +283,9 @@ remains open. This table reflects the current verified implementation.
 | Reviewed/mixed datasets | Reviewed 300 (3/297); mixed 322 (10/312). Two borderline excluded, no exact duplicates/unresolved; no frozen independent reference set. | Sections 1, 15, 21 describe label policy, manifest/hash, reference exclusion and imbalance. | [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
 | Real AfroXLMR model | Locally configured `l2-afroxlmr-dev-v1`; 12-layer encoder, binary head; weighted fine-tuning and offline reload executed. | Section 21 contains architecture, diagram, parameters, training and inference behavior. | [L2 performance](l2_model_performance.md), [README](../README.md) |
 | L2 persisted inference | 324/324 compatible results: 11/307/6; zero pending. Two pending-only resume passes completed; 300 earlier model rows unchanged. Model outputs have no independent validation. | Sections 1, 14, 21 record current closure, historical timing and research limits. | [L2 performance](l2_model_performance.md), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
-| L2 validation engineering and review coverage | Seeded batches, blinded review, training protection and private evaluation implemented. On 13 October, one protected development batch has 400/400 resolved saved reviews; status remains `in_review`, with finalization/evaluation separate. | Section 22 describes schema, routes, sampling and reference policy. Review counts do not establish independent metrics. | [Operator steps](../README.md#l2-validation-and-protected-reference), [Review progress](research/l2_human_validation_progress_20261013.md), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
+| L2 validation engineering and review coverage | Seeded batches, blinded review, training protection and private evaluation implemented. On 13 October, one protected development batch has 400/400 resolved saved reviews; it was later completed at 16:19:19 EAT and privately evaluated at 16:22:39 EAT. | Section 22 describes schema, routes, sampling and reference policy. Review counts do not establish independent metrics. | [Operator steps](../README.md#l2-validation-and-protected-reference), [Review progress](research/l2_human_validation_progress_20261013.md), [Implementation status](roadmap/IMPLEMENTATION_STATUS.md) |
 | Database readiness | Required L2 constraints/index/trigger installed and behavior-tested in development; schema readiness true. Other targets need independent verification. | Sections 11, 20–21 distinguish schema contracts from verified installation. | [Deployment guide](app_engine_deployment.md), [README](../README.md) |
-| Research validation / later layers | No independent accuracy/F1/calibration; L3–L5, contextual NER, geocoding, mapping, prospective near-real-time integration remain unimplemented. | Sections 16–17, 21 preserve open gates and future scope. | [Roadmap guide](roadmap/README.md), [Agent guidance](../AGENTS.md) |
+| Research validation / later layers | Private development classification/probability metrics exist with reference-quality limits; no final-test evidence is established. L3–L5, contextual NER, geocoding, mapping and prospective near-real-time integration remain unimplemented. | Sections 16–17, 21 preserve open gates and future scope. | [Roadmap guide](roadmap/README.md), [Agent guidance](../AGENTS.md) |
 
 Documentation is mapped to implementation and dated evidence, not inferred from
 roadmap task status. The collection protocol's sampling contract, `.env.example`
@@ -2333,7 +2400,7 @@ abstention rate uses all batch members. Scores are **conditional on binary human
 references and non-abstaining model output**, not whole-corpus accuracy. Undefined
 denominators yield JSON `null`, not invented zero scores. Diagnostic reports retain
 counts/confusion pairs but return `metrics: null` with an explicit warning.
-AUC, calibration and subgroup metrics have reserved fields but are not computed.
+The 6 October evaluator initially reserved AUC/calibration fields. The 13 October extension now computes frozen-probability ROC/AP/calibration and observed subgroups in completed private reports; no live batch has been evaluated. See Section 23.
 There is no threshold tuning or training-loss-as-accuracy conversion.
 
 ### Installation, tests and research readiness
@@ -2370,7 +2437,7 @@ readiness before creating a batch. The preflight is read-only:
 ```
 
 The following installation/fingerprint and 304-test evidence is **historical**;
-the latest full suite ran 387 tests (386 passed, one optional integration skipped).
+the 8 October full suite ran 387 tests (386 passed, one optional integration skipped).
 Those runtime checks belong to the later 8 October draft/results repair; no real
 batch operations were performed for that repair or the preceding Markdown update.
 The initial engineering implementation performed no live database reads/writes.
@@ -2394,3 +2461,53 @@ progress, reference pinning, evaluator math/private hashes and old-export reject
 Fifteen later live PostgreSQL behavior checks passed and were rolled back in development.
 Use finalized codebook v1.0, agree sampling/acceptance criteria, validate prerequisites and expand unseen
 positive/source/language support before independent performance claims.
+
+## 23. Private L2 Model Performance and reference-quality audit
+
+### Implemented reporting
+
+Both the CLI and Flask use the same deterministic v2 metric definitions. The CLI
+creates immutable private bundles; Flask loads previously generated evidence.
+Classification reports use accepted binary human references and non-abstaining
+model decisions. Probability-level ROC/AP, Brier/log-loss and calibration include
+all valid binary human references, including model abstentions. The report retains
+both-class/macro/weighted/micro metrics, exact supports, coverage/abstention
+quantities, observed publisher/language groups and documented intervals. Null
+metrics are shown as N/A, and language metadata is not inferred from publisher.
+
+The default evaluation uses original pinned model decisions. Alternative thresholds
+are explicitly exploratory, do not write predictions, and are unavailable for
+final-test tuning. Error categories describe model–human comparisons; qualitative
+causes require researcher coding and verified context, not automatic explanation.
+
+### Protection and lifecycle
+
+The page is direct-local and requires a separate researcher capability. Human
+Review unlock alone cannot expose comparisons. Active blinded batches block
+comparisons, diagnostic bodies and exports. Responses are private/no-store;
+article text uses the existing generation/hash-verified private reader. Default
+exports exclude article bodies, headlines, reviewer identities and review reasons.
+GET never infers, evaluates, retrains, completes batches or changes references.
+
+The blind quality-audit proposal selects deterministically by accepted human binary
+label × publisher × evidence basis without model-based enrichment. Before sealing,
+`blind=1` preserves model hiding across append-only revision/save navigation.
+**The current v1 batch is completed: those revision paths cannot edit it.** Any
+post-completion verification/accepted-reference change needs an approved separate
+version/workflow, preserving initial/final history and the original evaluation.
+
+### Current evidence and next action
+
+The completed batch's first private evaluation was generated on 13 October at
+16:22:39 EAT. The detailed private report now provides 18 sections, six figures,
+training/architecture provenance, subgroup/error interpretation, uncertainty,
+limitations and checksummed source/output identities. It derives from existing
+artifacts; generating it did not execute a new model evaluation or modify history.
+
+The next operation is researcher-approved reference-quality follow-up and private
+interpretation of the baseline, following the current handoff above. Do not create
+another first batch, overwrite its report, silently replace frozen guideline
+identity, assume all references are full-body verified, or retrain merely because
+scores are now available. The research acceptance/final-test gates remain open.
+
+See [full definitions and operator steps](l2_model_performance_dashboard.md).

@@ -1,5 +1,17 @@
 # Project roadmap snapshots
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.
+
+The four anonymous roadmap exports were refreshed successfully during this
+documentation update and remained current. Their planning rows still describe
+validation as pending; preserve the canonical Sheet and document this newer
+engineering/evaluation evidence in `IMPLEMENTATION_STATUS.md`. No actual scores,
+references or reviewer identities are written to public snapshots.
+
+The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model. Research gates remain open. See [Model Performance](../l2_model_performance_dashboard.md).
+
 The public, read-only [GBV News AI - Next Steps Roadmap](https://docs.google.com/spreadsheets/d/1GOoK7CiJBZj1Cj-jv6M16E0rXFSCzzpOiwneNl8qarA/edit)
 Google Sheet is the planning source of truth for implementation sequencing. These
 CSV files are synchronized snapshots for coding agents and local development.
@@ -58,11 +70,11 @@ Current State now records the 536-version observation from 3 October; its earlie
 407-record figure was a planning snapshot. Neither is a fixed eligibility count,
 a validated final corpus, or permission to include every local collection artifact.
 
-## Current human-review handoff — 13 October 2026
+## Historical pre-completion review handoff — 13 October 2026
 
 Read-only database verification at 01:50:38 EAT confirms 400/400 resolved saved
 reviews in one protected random development-validation batch and zero pending.
-The batch remains `in_review`; accepted completion and independent evaluation are
+At that historical audit the batch was `in_review`; accepted completion and independent evaluation were
 separate next steps. See the [review-coverage report](../research/l2_human_validation_progress_20261013.md)
 for evidence basis and instrument limits. Public snapshots remain the planning
 authority and were not manually rewritten to imply a completed research gate.

@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 
 from flask import Flask
 from flask.logging import default_handler
@@ -27,6 +28,10 @@ def create_app(config=None, services=None):
                             HUMAN_REVIEW_TOKEN=os.environ.get("HUMAN_REVIEW_TOKEN", ""),
                             HUMAN_REVIEWER_ID=os.environ.get("HUMAN_REVIEWER_ID", ""),
                             HUMAN_REVIEW_GUIDELINE_VERSION=os.environ.get("HUMAN_REVIEW_GUIDELINE_VERSION", ""),
+                            MODEL_PERFORMANCE_ENABLED=os.environ.get('MODEL_PERFORMANCE_ENABLED') == '1',
+                            MODEL_PERFORMANCE_TOKEN=os.environ.get('MODEL_PERFORMANCE_TOKEN', ''),
+                            MODEL_PERFORMANCE_REPORT_ROOT=os.environ.get('MODEL_PERFORMANCE_REPORT_ROOT',
+                                str(Path(__file__).resolve().parents[1]/'data/l2/evaluations')),
                             SECRET_KEY=os.environ.get("FLASK_SECRET_KEY"),
                             SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Strict",
                             SESSION_COOKIE_SECURE=os.environ.get("GAE_ENV") == "standard",
@@ -63,4 +68,6 @@ def create_app(config=None, services=None):
     app.register_blueprint(annotations)
     from app.routes.validation import blueprint as validation
     app.register_blueprint(validation)
+    from app.routes.model_performance import blueprint as model_performance
+    app.register_blueprint(model_performance)
     return app

@@ -1,5 +1,18 @@
 # L2 human-validation review coverage — 13 October 2026
 
+## Model Performance status — 13 October 2026
+
+`L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.
+
+The 01:50:38 EAT audit below is retained as historical evidence of pre-completion
+coverage and access notes. Its `in_review` status and proposed next operation
+are superseded for the current batch. Accepted pointers are now sealed; the
+new private report, not the review count, supplies performance comparisons.
+
+The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
+
+See [the dashboard operator guide](../l2_model_performance_dashboard.md).
+
 The researcher reported completing 400 human validations. A read-only,
 repeatable-read database audit at **13 October 2026, 01:50:38 EAT** confirmed
 complete recorded review coverage for one protected development-validation batch.

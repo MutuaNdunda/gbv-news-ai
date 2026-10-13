@@ -1,5 +1,14 @@
 # Collection Runs: control and recovery
 
+## Model Performance status — 13 October 2026
+
+The Model Performance dashboard and first private completed-batch development
+report are implemented. They are separate from collection Stop/heartbeat/orphan
+controls: performance GET never launches or stops workers, changes predictions,
+or writes references. Evaluation does not install the collection-control migration
+or repair historical collection rows. The model remains `l2-afroxlmr-dev-v1`.
+See [the private dashboard guide](l2_model_performance_dashboard.md).
+
 This change applies to `/runs`, the **collection** monitor, and to
 `scripts/trial_scraper.py` and `scripts/collect_monthly.py`. Annotation runs at
 `/annotations/runs` keep their existing execution/security/lease behavior. No
