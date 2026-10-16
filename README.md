@@ -1,5 +1,15 @@
 # GBV News AI
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](docs/research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 **Model Performance — 13 October 2026:** `L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.
 The protected dashboard is at `/annotations/model-performance`. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
 See [the dashboard operator guide](docs/l2_model_performance_dashboard.md) for
@@ -31,21 +41,21 @@ extraction, geocoding and mapping interfaces. Data collection and validation
 come first. Privacy, provenance, reproducibility, and human oversight will guide
 development throughout.
 
-## Current progress — read-only audit beginning 8 October 2026, 22:50 EAT
+## Historical corpus coverage — read-only audit beginning 8 October 2026, 22:50 EAT
 
 The development corpus contains **2,119 articles / versions**. Compatible L0 covers
 all versions (2,076 valid / 39 needs_review / 4 invalid); L1 covers all 2,076 eligible
 versions (1,417 kenya / 130 not_kenya / 529 ambiguous). The unchanged dev-v1 model
 has **1,417/1,417** compatible predictions (246 gbv / 1,049 not_gbv / 122 borderline),
-zero pending within that eligible cohort. Validation schema is ready; zero real
-validation batches/members exist. These outputs are not independently validated labels.
+zero pending within that eligible cohort. At that audit validation schema was ready
+and zero real validation batches/members existed. These outputs are not independently validated labels.
 
 Training/exact-hash metadata screening found **1,089 potential unseen candidates**
 in the formal five-source filter: Nation 285, Citizen 113, Star 392, Taifa Leo 299,
 **Standard 0**. This is an upper bound before verified GCS content/language, study
 period and near-duplicate/exposure checks. Resolve Standard support under the agreed
 sampling design; do not claim five-publisher coverage from four represented sources.
-Follow [Create the first independent L2 validation dataset](docs/research/validation_dataset_creation.md)
+Follow [L2 validation dataset creation and additional batches](docs/research/validation_dataset_creation.md)
 for design decisions, local setup, preview/create/freeze, review and private export.
 
 At that 8 October milestone the offline suite was **382 run / 381 passed / 1 optional integration skipped**,
@@ -97,9 +107,9 @@ L0 remains 519 valid / 17 needs_review; L1 v2 324 kenya / 35 not_kenya /
 160 ambiguous. Independent research validation and L3–L5 remain pending.
 Reproducible L2 batches, blinded initial review, protected reference exclusion and
 private evaluation are now implemented in the existing local workspace. The new
-validation migration is **installed and behavior-verified in development**. At the
-13 October audit, one protected batch has 400/400 resolved saved reviews but remains
-`in_review`; this task generated no independent metrics. The codebook is researcher-finalized;
+validation migration is **installed and behavior-verified in development**. At the historical
+13 October morning audit, one protected batch had 400/400 resolved saved reviews
+and was `in_review`; it was completed and privately evaluated that afternoon. The codebook is researcher-finalized;
 document the actual sampling/review procedure and acceptance criteria before reporting results;
 see [validation setup](#l2-validation-and-protected-reference) and
 [the validation specification](docs/annotations.md#22-l2-validation-and-protected-reference-workflow).

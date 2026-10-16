@@ -1,5 +1,15 @@
 # Automated Annotation Pipeline
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 ## Current L2 handoff — 13 October 2026
 
 The first development-validation cycle has a completed protected batch, a verified
@@ -1302,7 +1312,8 @@ metadata. These facts establish recorded execution coverage, not accuracy.
 | Combined pending-only repeat | Zero selected versions and no new decisions. |
 
 The initial trial used stable creation/UUID ordering, not random/stratified research
-sampling. Human validation has not been completed. No independent reference-label
+sampling. At that historical L0/L1 milestone human validation was incomplete.
+No independent reference-label
 accuracy, F1 or calibration result is established by these counts.
 
 ## 15. Reproducibility and version traceability
@@ -1368,7 +1379,8 @@ eligible pending; installed development validation schema is ready. The earlier
 validation/protected-reference workflow is now implemented in the existing local
 Human Review workspace; its additive migration is installed and behavior-verified in development.
 See [Section 22](#22-l2-validation-and-protected-reference-workflow) for engineering
-scope, operator steps and limitations. No real validation batch was created.
+scope, operator steps and limitations. The first development batch subsequently
+completed on 13 October and its private evaluation exists; see the current handoff.
 
 L2 codebook v1.0 is finalized by researcher confirmation. Agree sampling design,
 review-acceptance/adjudication policy, support and performance criteria before
@@ -1384,8 +1396,8 @@ coverage does not validate those prerequisites.
 | Validation progress and private export | Report batch completion and source/language/label coverage; separate model predictions, human decisions, unresolved cases and reference membership. Keep identities and research text out of Git and public planning files. |
 
 Reviewing the present development/training articles supports error analysis but
-cannot establish independent test performance of the current artifact. The first real
-protected reference set must exclude training articles and related duplicates;
+cannot establish independent test performance of the current artifact. Additional
+protected reference sets must exclude training articles and related duplicates;
 near-duplicate grouping and frozen membership are needed before independent
 accuracy/precision/recall/F1/AUC or calibration claims. Any sample enriched for
 borderline or positive cases requires an explicit sampling design and interpretation;

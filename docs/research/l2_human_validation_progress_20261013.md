@@ -66,7 +66,14 @@ The 400-member batch should not be confused with all historical human-validation
 rows: the same audit counted 703 L2 history rows and 11 L1 history rows, including
 earlier reviews and revisions.
 
-## Next operation
+## Current follow-up — 16 October 2026
+
+The first batch is completed and its private report exists. Preserve sealed v1
+references; use the [training-enrichment plan](l2_training_enrichment_plan.md) for
+reference-quality follow-up, new training candidates and future-test separation.
+Do not repeat completion or overwrite the report.
+
+## Historical proposed next operation — before completion
 
 1. Inspect and accept the recorded decisions under the agreed research procedure,
    documenting title-only evidence, instrument identity, source/language support,

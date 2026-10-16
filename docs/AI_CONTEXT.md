@@ -1,5 +1,15 @@
 # GBV News AI — AI Project Context
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 ## Model Performance status — 13 October 2026
 
 `L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
@@ -601,7 +611,8 @@ manifest/checksum handling and offline inference live under `annotations/` and
 `data/l2/`. The real `l2-afroxlmr-dev-v1` artifact is locally configured, trained on 322 mixed
 records with only 10 positives (three reviewed). Tiny synthetic checkpoints remain
 engineering smoke only. Full compatible prediction coverage and development schema
-readiness are verified; NER and independent model evaluation remain pending.
+readiness are verified; the first private development evaluation exists. NER and
+independent final testing remain pending.
 
 ### `app/`, `main.py`, and `app.yaml`
 
@@ -1059,22 +1070,18 @@ AI_CONTEXT.md.
 
 ## 18. Immediate Next Steps
 
-Pull the roadmap first; do not use this orientation file as a competing task list.
-The inspected roadmap currently prioritizes:
+Read the current implementation handoff alongside the canonical roadmap. The first
+L2 development batch is completed and privately evaluated; do not recreate it.
 
-1. Preserve dynamically queried corpus membership; the old 407 planning count is
-   already superseded by the synchronized 536-version observation.
-2. Inspect L0 flags and resolve parser defects through versioned reprocessing.
-3. Review initial annotation specification, thresholds and gazetteer with domain experts.
-4. Inspect L1 uncertainty and subgroup coverage; all 519 L0-valid versions now
-   have L1 decisions following the authorized full run.
-5. Create a small stratified/uncertainty-focused human reference sample and metrics.
-6. Preserve the researcher-finalized L2 codebook v1.0; inspect weak uncertainty and verify schema prerequisites for new eligible records.
-7. L2 development coverage/schema closure is complete. Validation engineering is
-   implemented and its migration installed in development. Preflight/install/verify
-   other targets independently; agree the sampling design and expand unseen support before freezing a real
-   independent batch. Protect final-test membership from tuning and training.
-   Later-layer baselines follow the synchronized roadmap.
+1. Interpret the private report and agree separately versioned reference-quality follow-up.
+2. Resolve L0/L1 quality, publisher/date/language and duplicate-family gaps.
+3. Plan broad collection plus targeted training enrichment and body-reviewed positives.
+4. Keep protected references excluded and define an untouched future final test.
+5. Agree a new versioned baseline/Transformer experiment after those decisions.
+
+See the [training-enrichment plan](research/l2_training_enrichment_plan.md) for
+proposed support and balance experiments. Historical counts below do not establish
+a current execution scope. Later layers remain subject to the roadmap gates.
 
 See `docs/roadmap/IMPLEMENTATION_STATUS.md` for current L0/L1/L2 implementation
 status, required decisions and actual validation evidence. The real 20-version

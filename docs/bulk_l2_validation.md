@@ -1,5 +1,15 @@
 # Bulk L2 human validation
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 ## Model Performance status — 13 October 2026
 
 `L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.

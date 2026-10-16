@@ -222,3 +222,13 @@ approval or automatic adoption of the draft protocol.
 The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
 
 See [the dashboard and evaluation guide](../l2_model_performance_dashboard.md).
+
+## Operational planning addendum — 16 October 2026; no semantic version change
+
+The [training-enrichment plan](l2_training_enrichment_plan.md) documents proposed
+positive-support expansion using broad collection plus separately identified
+keyword-targeted candidates. Its suggested 30–50% training balance is not a
+protocol requirement or final-test sampling ratio. Keyword presence is not a GBV
+label. Preserve the completed v1 batch, frozen instrument/checksums and all
+protected training exclusions. This addendum changes no semantic definitions,
+approval status, accepted reference, model or threshold; no new run was executed.

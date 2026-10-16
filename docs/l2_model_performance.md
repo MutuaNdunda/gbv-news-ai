@@ -1,5 +1,15 @@
 # L2 transformer development performance
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 ## Reading the current private results
 
 The authoritative readable results note is `data/l2/evaluation-notes/L2-VALIDATION-V1-v1/MODEL_PERFORMANCE_RESULTS.md`; it is derived
@@ -297,7 +307,7 @@ provenance and individual artifact SHA-256s are recorded in the private manifest
 and the [executed development-model log](roadmap/IMPLEMENTATION_STATUS.md).
 Weights, training records, private reports and `.env` remain excluded from Git.
 
-## Required work before research evaluation
+## Next research cycle after the first development evaluation
 
 1. Operational closure is complete: schema and 324/324 compatible coverage are
    verified. Preserve fail-closed leases and pending-only recovery for future runs.
@@ -311,7 +321,7 @@ Weights, training records, private reports and `.env` remain excluded from Git.
    and source/language error analysis. Tune thresholds on development validation
    only, preserving the independent final reference set.
 
-## Validation engineering and remaining research work
+## Historical validation engineering — 6 October 2026
 
 Operational coverage is complete. The
 [structured L2 validation workflow](annotations.md#22-l2-validation-and-protected-reference-workflow)
@@ -319,7 +329,8 @@ now implements reproducible batches, blind initial decisions, protected training
 exclusion and deterministic private evaluation. The new migration is **installed
 and behavior-verified in development** on 6 October at 23:48 EAT; 15 rollback-only
 guard checks passed, readiness is true and existing fingerprints are unchanged.
-No real independent batch or research scores were generated.
+No real independent batch or research scores were generated at that milestone;
+the completed development batch and private evaluation are recorded above.
 All 322 actual training articles/versions/hashes are excluded from independent
 selection; training reviews are diagnostic error analysis. Near-duplicate grouping,
 independent A/B review and separate adjudication records remain pending. Codebook

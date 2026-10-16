@@ -13,7 +13,7 @@
 | Approval status | Pending; no supervisor approval is asserted |
 | Draft prepared | 7 October 2026 |
 | Effective date | **Pending approval** |
-| Proposed first batch | `L2-VALIDATION-V1` — `development_validation` |
+| First batch (now completed; see operational addendum) | `L2-VALIDATION-V1` — `development_validation` |
 | Semantic standard | [L2 GBV Relevance Codebook v1.0](l2_gbv_relevance_codebook_v1.0.md) |
 
 **Status update — 7 October 2026:** the researcher confirmed that the companion
@@ -22,9 +22,9 @@ review acceptance, support and execution controls have not been confirmed as
 completed. Codebook finalization alone does not create `L2-VALIDATION-V1` or
 establish independent metrics.
 
-**Execution progress note — 13 October 2026:** a read-only check at 01:50:38 EAT
+**Historical pre-completion execution note — 13 October 2026:** a read-only check at 01:50:38 EAT
 confirms one protected random development-validation batch with 400/400 resolved
-saved human reviews and zero pending. Its status remains `in_review`; batch
+saved human reviews and zero pending. At that observation its status was `in_review`; batch
 finalization and evaluation are separate. This observed N is an execution fact,
 not retrospective approval of this draft's sampling assumptions or evidence policy.
 The latest access notes record 381 title-only decisions, ten verified-body openings
@@ -352,3 +352,13 @@ approval or automatic adoption of the draft protocol.
 The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
 
 See [the dashboard and evaluation guide](../l2_model_performance_dashboard.md).
+
+## Operational planning addendum — 16 October 2026; no semantic version change
+
+The [training-enrichment plan](l2_training_enrichment_plan.md) documents proposed
+positive-support expansion using broad collection plus separately identified
+keyword-targeted candidates. Its suggested 30–50% training balance is not a
+protocol requirement or final-test sampling ratio. Keyword presence is not a GBV
+label. Preserve the completed v1 batch, frozen instrument/checksums and all
+protected training exclusions. This addendum changes no semantic definitions,
+approval status, accepted reference, model or threshold; no new run was executed.

@@ -1,5 +1,15 @@
 # Private L2 Model Performance dashboard
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 ## Model Performance status — 13 October 2026
 
 `L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
@@ -111,6 +121,10 @@ public deployment or authenticated remote-review design is introduced.
 
 ## Reference-quality procedure and future-batch completion
 
+**16 October clarification:** v1 is sealed and already evaluated. Steps 2–5 below
+apply only to separately agreed new batches while still editable, not to reopening
+v1. Any post-completion quality follow-up needs a separate versioned design.
+
 1. Inspect the protected reference-quality audit and its title-only list. Agree
    evidence sufficiency, protocol/publisher scope, codebook reconciliation,
    uncertainty treatment, near-duplicate risks, reviewer competence and accepted
@@ -129,18 +143,19 @@ public deployment or authenticated remote-review design is introduced.
    history still shows previous human decisions; independent A/B annotation is
    not supplied. Do not reopen or alter a completed sealed batch.
 4. After the researcher explicitly accepts references and limitations, unlock
-   **L2 Validation → L2-VALIDATION-V1 → batch progress**, acknowledge the research
+   **L2 Validation → the new agreed batch → batch progress**, acknowledge the research
    quality statement and press **Complete · freeze accepted decisions**. The
    existing protected completion transaction and database guards remain the only
    lifecycle mechanism. The route rechecks integrity/training exclusion first;
    unresolved/semantic borderline decisions remain retained exclusions. This task
    has not performed this action and does not declare the thesis gate achieved.
-5. After separately authorizing the first private evaluation, run:
+5. For a new completed batch, separately authorize its private evaluation. Replace
+   both placeholders below with the agreed new batch and unused output directory:
 
    ```bash
    .venv/bin/python scripts/evaluate_l2_validation.py \
-     --batch L2-VALIDATION-V1 \
-     --output-dir data/l2/evaluations/L2-VALIDATION-V1-v1
+     --batch <NEW_BATCH_NAME> \
+     --output-dir data/l2/evaluations/<NEW_BATCH_NAME>-v1
    ```
 
    If that directory already exists, choose a new version. Outputs never overwrite

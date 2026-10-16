@@ -1,5 +1,32 @@
 # Repository implementation status
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](../research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
+## Markdown consistency audit — 16 October 2026
+
+Reviewed all 20 existing tracked Markdown documents before editing. Updated the
+14 affected project/research guides and added the shared enrichment plan and
+[document audit](../documentation_audit_20261016.md). Historical evidence and
+vendored resource READMEs are preserved. Corrected active first-batch instructions,
+recorded proposed training support/class balance and targeted URL-term limitations,
+and retained frozen-codebook semantics and private evidence boundaries.
+
+Roadmap verification on 16 October used `.venv/bin/python scripts/sync_roadmap.py
+--check`: all four exports matched the local snapshots, exit 0. System Python
+lacked `requests`; the existing project environment succeeded. No Sheet write or
+manual CSV edit was made. Canonical planning still predates the completed batch;
+this mismatch remains explicit. Documentation-only checks cover diff whitespace,
+new local links and scope; no live collection, database mutation, inference,
+training or research test was run.
+
 ## Current implementation handoff — 13 October 2026
 
 | Workstream | Current recorded outcome | What remains |
@@ -1232,6 +1259,11 @@ No new reference batch is created by these documentation changes.
   remains uninstalled. The long historical annotation run was not force-repeated.
 
 ## Last Roadmap Sync
+
+Latest remote verification: **16 October 2026**, project environment, read-only
+`--check`, exit 0; all four exports current against their canonical Sheet content.
+This verifies synchronization, not the scientific currency of the planning rows.
+
 
 Anonymous synchronization succeeded on **13 October 2026** during this handoff
 update; all four snapshots were current. No Sheet write or manual CSV edit was

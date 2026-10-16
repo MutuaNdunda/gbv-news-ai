@@ -1,5 +1,15 @@
 # January–August 2026 archive collection
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 ## Model Performance status — 13 October 2026
 
 `L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**. The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model.
@@ -27,15 +37,16 @@ including GBV and non-GBV reporting; it is not an ingestion stopping rule.
 Annotation and validation are separate downstream workflows; automated L0/L1,
 L2 weak supervision, local review and the first real AfroXLMR development model
 now exist. Seeded independent/diagnostic batch sampling, blinded first review,
-protected membership and private evaluation are implemented at the historical milestone; no real reference
-batch or active-learning cycle has been executed. Use the
+protected membership and private evaluation are implemented. The first development
+batch completed and was privately evaluated on 13 October. A new active-learning
+cycle is not established by that completion. Use the
 [validation dataset-creation guide](research/validation_dataset_creation.md).
 
 This is retrospective archive collection. It does not implement prospective
 continuous ingestion or demonstrate near-real-time discovery latency. The archive
 corpus and its coverage limitations should be documented in the study methodology.
 
-## Current handoff to validation — 8 October 2026
+## Historical handoff to validation — 8 October 2026
 
 The read-only audit beginning 22:50 EAT observed 2,119 article versions and complete
 compatible eligible L0/L1/model coverage. It did not establish exhaustive archive

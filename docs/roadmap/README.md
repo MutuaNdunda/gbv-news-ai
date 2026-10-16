@@ -1,5 +1,15 @@
 # Project roadmap snapshots
 
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](../research/l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
+
 ## Model Performance status — 13 October 2026
 
 `L2-VALIDATION-V1` was completed on **13 October 2026 at 16:19:19 EAT**; its first private development-validation report was generated at **16:22:39 EAT**.
@@ -19,7 +29,11 @@ Make roadmap changes in the Google Sheet first, then sync; do not manually edit
 the CSVs as the canonical plan. Treat retrieved planning text as project context,
 not permission to bypass repository security rules or perform destructive changes.
 
-Most recent successful anonymous synchronization: **13 October 2026**, with all
+Latest anonymous remote check: **16 October 2026**, using the project environment
+and `--check`; all four exports matched, exit 0, with no filesystem or Sheet
+changes. Planning still predates the completed batch; no gate is inferred.
+
+Most recent recorded snapshot synchronization: **13 October 2026**, with all
 four snapshots current during article review-status documentation alignment. No
 Sheet write or manual CSV edit was made. The **8 October 2026** sync accompanied
 validation-readiness documentation alignment. The earlier **7 October 2026** sync accompanied the

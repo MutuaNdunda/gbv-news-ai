@@ -1,4 +1,14 @@
-# Create the first independent L2 validation dataset
+# L2 validation dataset creation and additional batches
+
+## Next development cycle — 16 October 2026
+
+The first protected L2 development batch and private evaluation are complete;
+reference-quality follow-up and final-test acceptance remain open. The
+[training-enrichment plan](l2_training_enrichment_plan.md) records the next-stage sequence, broad collection
+plus targeted URL-keyword discovery, body-reviewed positive support, proposed
+30–50% training balance and protected development/final-test separation. The
+balance is an experiment suggestion, not an approved quota. No new collection,
+training, threshold change or research-gate completion is recorded by this update.
 
 ## Model Performance status — 13 October 2026
 
@@ -8,8 +18,9 @@ Use the existing report to inspect performance. See [the dashboard guide](../l2_
 
 The unchanged model is `l2-afroxlmr-dev-v1`, method `l2-47035d92f81cd5240062610d`, with original 0.80/0.20 thresholds. This is development validation, not final held-out testing or a newly trained model. The 400 accepted workflow decisions contain 342 binary references and 58 semantic borderline exclusions. Title-only evidence (381/400), frozen-instrument reconciliation, publisher scope, unverified language metadata and near-duplicate risks remain interpretation limits. A completed batch and a private report do not establish a gold standard or close the research gate.
 
-Updated **13 October 2026 (EAT)**. This is the operator guide for preparing
-`L2-VALIDATION-V1`, a **development-validation reference batch** for the existing
+Updated **16 October 2026 (EAT)**. This operator guide retains the original
+`L2-VALIDATION-V1` preparation procedure as history and guides additional separately
+agreed **development-validation reference batches** for the existing
 `l2-afroxlmr-dev-v1`. It does not create a batch, approve the draft sampling protocol,
 change the finalized semantic codebook or authorize retraining/final testing.
 
@@ -120,7 +131,7 @@ trial/monthly execution. See [collection control](../collection_run_control.md).
 
 1. Open `/annotations/validation`, unlock with the private review token, and select
    **Create Validation Batch**. Do not begin through ordinary model-result review.
-2. Enter the versioned name `L2-VALIDATION-V1`, purpose `development_validation`,
+2. Enter a new agreed versioned name (the original `L2-VALIDATION-V1` is sealed), purpose `development_validation`,
    the configured dev-v1 identity, agreed N, strategy and seed. Select **Protect
    from training** and the formal five source keys. Language filters use exact
    unvalidated stored values; do not substitute them for verified language review.
